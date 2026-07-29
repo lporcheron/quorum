@@ -1,0 +1,20 @@
+package templates
+
+// HomeProps carries the localized strings for the landing page; the
+// handler resolves them so templates stay free of i18n plumbing.
+type HomeProps struct {
+	Lang    string
+	Title   string
+	Tagline string
+	Blurb   string
+}
+
+templ Home(p HomeProps) {
+	@layout(p.Lang, p.Title) {
+		<main class="mx-auto max-w-2xl px-6 py-24">
+			<h1 class="font-display text-6xl font-semibold tracking-tight">{ p.Title }</h1>
+			<p class="mt-6 border-l-2 border-ink pl-4 text-xl">{ p.Tagline }</p>
+			<p class="mt-4 max-w-prose text-base text-ink/70">{ p.Blurb }</p>
+		</main>
+	}
+}

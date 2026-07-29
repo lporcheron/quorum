@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@source "../templates";
+
+/*
+ * Design tokens — "ballot counting" direction.
+ * The vivid blue (--color-winner) is reserved for exactly one thing:
+ * the winning column. It must not be used anywhere else.
+ */
+@theme {
+	--color-ink: #141b2d;
+	--color-paper: #f3f4f1;
+	--color-yes: #3f7d62;
+	--color-ifneedbe: #c8892b;
+	--color-no: #a8ada6;
+	--color-winner: #2f5bff;
+
+	/* Self-hosted webfonts arrive with M1; sane fallbacks until then. */
+	--font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+	--font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+}
