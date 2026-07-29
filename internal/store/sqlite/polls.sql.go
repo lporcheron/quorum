@@ -139,6 +139,22 @@ func (q *Queries) ExtendPollRetention(ctx context.Context, arg ExtendPollRetenti
 	return err
 }
 
+const finalizePoll = `-- name: FinalizePoll :exec
+UPDATE polls SET status = 'finalized', finalized_option_id = ?1, updated_at = ?2
+WHERE id = ?3
+`
+
+type FinalizePollParams struct {
+	FinalizedOptionID sql.NullInt64
+	UpdatedAt         string
+	ID                int64
+}
+
+func (q *Queries) FinalizePoll(ctx context.Context, arg FinalizePollParams) error {
+	_, err := q.db.ExecContext(ctx, finalizePoll, arg.FinalizedOptionID, arg.UpdatedAt, arg.ID)
+	return err
+}
+
 const getPollByPublicID = `-- name: GetPollByPublicID :one
 SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days FROM polls WHERE public_id = ?1
 `

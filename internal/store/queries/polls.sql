@@ -30,6 +30,10 @@ WHERE id = @id;
 -- name: UpdatePollStatus :exec
 UPDATE polls SET status = @status, updated_at = @updated_at WHERE id = @id;
 
+-- name: FinalizePoll :exec
+UPDATE polls SET status = 'finalized', finalized_option_id = @finalized_option_id, updated_at = @updated_at
+WHERE id = @id;
+
 -- name: UpdatePollAdminTokenHash :exec
 UPDATE polls SET admin_token_hash = @admin_token_hash, updated_at = @updated_at WHERE id = @id;
 

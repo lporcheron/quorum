@@ -27,6 +27,16 @@ type Identity struct {
 	CreatedAt string
 }
 
+type Job struct {
+	ID        int64
+	Type      string
+	Payload   string
+	RunAt     string
+	Attempts  int64
+	LastError sql.NullString
+	CreatedAt string
+}
+
 type LoginToken struct {
 	ID         int64
 	Email      string
