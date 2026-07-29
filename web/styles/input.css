@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @source "../templates";
+@source "../static/js/quorum.js";
 
 /*
  * Design tokens — "ballot counting" direction.
@@ -15,8 +16,236 @@
 	--color-no: #a8ada6;
 	--color-winner: #2f5bff;
 
-	/* Self-hosted webfonts arrive with M1; sane fallbacks until then. */
 	--font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 	--font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
 	--font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+}
+
+/* Self-hosted variable fonts, latin subset, embedded in the binary. */
+@font-face {
+	font-family: "Bricolage Grotesque";
+	font-style: normal;
+	font-weight: 200 800;
+	font-display: swap;
+	src: url("/static/fonts/bricolage-grotesque-latin-var.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Public Sans";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("/static/fonts/public-sans-latin-var.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Public Sans";
+	font-style: italic;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("/static/fonts/public-sans-latin-italic-var.woff2") format("woff2");
+}
+
+@layer base {
+	:focus-visible {
+		outline: 2px solid var(--color-ink);
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	/* ---- basic controls ---- */
+
+	.btn {
+		display: inline-block;
+		border: 1px solid var(--color-ink);
+		padding: --spacing(1.5) --spacing(3);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		background: transparent;
+		cursor: pointer;
+	}
+	.btn:hover { background: --alpha(var(--color-ink) / 6%); }
+	.btn-primary { background: var(--color-ink); color: var(--color-paper); }
+	.btn-primary:hover { background: --alpha(var(--color-ink) / 88%); }
+	.btn-sm { padding: --spacing(1) --spacing(2); font-size: var(--text-xs); }
+	.btn-danger { border-color: #a03030; color: #a03030; }
+	.btn-danger:hover { background: #a0303011; }
+	.btn-link {
+		background: none;
+		border: none;
+		padding: 0;
+		text-decoration: underline;
+		cursor: pointer;
+		color: inherit;
+	}
+
+	.field {
+		border: 1px solid --alpha(var(--color-ink) / 35%);
+		background: white;
+		padding: --spacing(1.5) --spacing(2);
+		font-size: var(--text-sm);
+	}
+	.lbl {
+		display: block;
+		font-size: var(--text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: --alpha(var(--color-ink) / 60%);
+		margin-bottom: --spacing(1);
+	}
+
+	.banner {
+		border: 1px solid --alpha(var(--color-ink) / 30%);
+		border-left: 3px solid var(--color-yes);
+		background: white;
+		padding: --spacing(3) --spacing(4);
+	}
+	.banner-strong { border-left-color: var(--color-ifneedbe); }
+	.notice {
+		border-left: 3px solid var(--color-ifneedbe);
+		background: --alpha(var(--color-ifneedbe) / 8%);
+		padding: --spacing(2) --spacing(3);
+		font-size: var(--text-sm);
+	}
+	.error {
+		border-left: 3px solid #a03030;
+		background: #a0303011;
+		padding: --spacing(2) --spacing(3);
+		font-size: var(--text-sm);
+	}
+
+	.panel { border: 1px solid --alpha(var(--color-ink) / 20%); background: white; padding: --spacing(4); }
+	.panel-danger { border-color: #a0303055; }
+	.panel-title { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); }
+
+	/* ---- three-state segmented control ---- */
+
+	.seg { display: inline-flex; border: 1px solid --alpha(var(--color-ink) / 35%); }
+	.seg-opt {
+		display: inline-flex;
+		align-items: center;
+		padding: --spacing(1) --spacing(2);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		cursor: pointer;
+		user-select: none;
+		border-right: 1px solid --alpha(var(--color-ink) / 20%);
+		color: --alpha(var(--color-ink) / 55%);
+		white-space: nowrap;
+	}
+	.seg-opt:last-child { border-right: none; }
+	.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-ink); outline-offset: -1px; }
+	.seg-yes:has(input:checked) { background: var(--color-yes); color: white; }
+	.seg-ifneedbe:has(input:checked) { background: var(--color-ifneedbe); color: white; }
+	.seg-no:has(input:checked) { background: var(--color-no); color: var(--color-ink); }
+	.seg-kind { border: 1px solid --alpha(var(--color-ink) / 35%); }
+	.seg-kind:has(input:checked) { background: var(--color-ink); color: var(--color-paper); }
+
+	/* ---- results matrix (desktop) ---- */
+
+	.qmatrix { border: 1px solid --alpha(var(--color-ink) / 25%); background: white; }
+	.qcell {
+		padding: --spacing(1.5) --spacing(2);
+		border-bottom: 1px solid --alpha(var(--color-ink) / 12%);
+		border-right: 1px solid --alpha(var(--color-ink) / 8%);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: --spacing(1);
+		min-height: --spacing(9);
+	}
+	.qhead { flex-direction: column; padding-top: --spacing(2.5); }
+	.qname { justify-content: flex-start; font-size: var(--text-sm); }
+	.qtally-label { justify-content: flex-start; }
+
+	.vc { font-family: var(--font-mono); font-size: var(--text-sm); }
+	.vc-yes { color: var(--color-yes); background: --alpha(var(--color-yes) / 12%); }
+	.vc-ifneedbe { color: var(--color-ifneedbe); background: --alpha(var(--color-ifneedbe) / 12%); }
+	.vc-no { color: --alpha(var(--color-ink) / 45%); background: --alpha(var(--color-no) / 18%); }
+	.vc-none { color: --alpha(var(--color-ink) / 25%); }
+
+	/* The winning column: the single place the vivid blue exists. The
+	 * fill rises from the bottom of each cell once, on load. */
+	.qwin, .qwincell {
+		background-image: linear-gradient(--alpha(var(--color-winner) / 10%), --alpha(var(--color-winner) / 10%));
+		background-repeat: no-repeat;
+		background-position: bottom;
+		background-size: 100% 100%;
+		animation: qfill 0.5s ease-out;
+	}
+	.qwin { color: var(--color-winner); border-bottom-color: --alpha(var(--color-winner) / 40%); }
+	.qtally.qwin { font-weight: 600; }
+	@keyframes qfill {
+		from { background-size: 100% 0%; }
+		to { background-size: 100% 100%; }
+	}
+
+	.qring { width: --spacing(5); height: --spacing(5); color: var(--color-winner); }
+
+	.qwinrow { box-shadow: inset 3px 0 0 var(--color-winner); padding-left: --spacing(2); }
+	.qwinbadge {
+		margin-left: --spacing(2);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		color: var(--color-winner);
+		border: 1px solid --alpha(var(--color-winner) / 40%);
+		padding: 0 --spacing(1.5);
+		white-space: nowrap;
+	}
+
+	.qdot {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: --spacing(6);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+	}
+	.qmobile-opt { border-bottom: 1px solid --alpha(var(--color-ink) / 12%); }
+	.qmobile-opt summary { cursor: pointer; list-style: none; }
+
+	/* ---- creation calendar ---- */
+
+	.cal-head { display: flex; align-items: center; gap: --spacing(2); margin-top: --spacing(2); }
+	.cal-title { font-weight: 600; font-size: var(--text-sm); min-width: --spacing(36); text-align: center; }
+	.cal-nav {
+		border: 1px solid --alpha(var(--color-ink) / 35%);
+		width: --spacing(7); height: --spacing(7);
+		cursor: pointer;
+		background: white;
+	}
+	.cal-grid {
+		display: grid;
+		grid-template-columns: repeat(7, --spacing(10));
+		gap: --spacing(0.5);
+		margin-top: --spacing(2);
+		max-width: 100%;
+	}
+	@media (max-width: 24rem) {
+		.cal-grid { grid-template-columns: repeat(7, 1fr); }
+	}
+	.cal-wd {
+		text-align: center;
+		font-size: var(--text-xs);
+		color: --alpha(var(--color-ink) / 50%);
+		padding: --spacing(1) 0;
+	}
+	.cal-day {
+		height: --spacing(10);
+		border: 1px solid --alpha(var(--color-ink) / 20%);
+		background: white;
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		cursor: pointer;
+	}
+	.cal-day:disabled { color: --alpha(var(--color-ink) / 25%); background: transparent; cursor: default; }
+	.cal-day.sel { background: var(--color-ink); color: var(--color-paper); }
+
+	.slot-day { margin-top: --spacing(3); border-left: 2px solid --alpha(var(--color-ink) / 20%); padding-left: --spacing(3); }
+	.slot-date { font-size: var(--text-sm); font-weight: 600; }
+	.slot-row { display: flex; align-items: center; gap: --spacing(2); margin-top: --spacing(1.5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { animation: none !important; transition: none !important; }
 }
