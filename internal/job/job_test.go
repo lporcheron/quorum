@@ -61,7 +61,7 @@ func TestEnqueueProcessDelete(t *testing.T) {
 	if n, _ := w.ProcessDue(ctx); n != 0 {
 		t.Errorf("job survived success: %d due", n)
 	}
-	if dead, _ := st.CountDeadJobs(ctx, maxAttempts); dead != 0 {
+	if dead, _ := st.CountDeadJobs(ctx, MaxAttempts); dead != 0 {
 		t.Errorf("dead jobs = %d", dead)
 	}
 }
@@ -93,21 +93,21 @@ func TestRetryWithBackoffThenDead(t *testing.T) {
 	}
 
 	// Burn the remaining budget: each retry doubles, capped at 1 h.
-	for i := 0; i < maxAttempts; i++ {
+	for i := 0; i < MaxAttempts; i++ {
 		c.t = c.t.Add(2 * time.Hour)
 		if _, err := w.ProcessDue(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if fails != maxAttempts {
-		t.Errorf("handler ran %d times, want %d", fails, maxAttempts)
+	if fails != MaxAttempts {
+		t.Errorf("handler ran %d times, want %d", fails, MaxAttempts)
 	}
 	// The job is dead but kept, with its error, for inspection.
-	dead, err := st.CountDeadJobs(ctx, maxAttempts)
+	dead, err := st.CountDeadJobs(ctx, MaxAttempts)
 	if err != nil || dead != 1 {
 		t.Fatalf("dead = %d, %v", dead, err)
 	}
-	rows, err := st.DueJobs(ctx, sqlite.DueJobsParams{Now: store.FormatTime(c.t.Add(100 * time.Hour)), MaxAttempts: maxAttempts, MaxBatch: 10})
+	rows, err := st.DueJobs(ctx, sqlite.DueJobsParams{Now: store.FormatTime(c.t.Add(100 * time.Hour)), MaxAttempts: MaxAttempts, MaxBatch: 10})
 	if err != nil || len(rows) != 0 {
 		t.Errorf("dead job still served to the worker")
 	}
@@ -119,13 +119,13 @@ func TestUnknownTypeGoesDead(t *testing.T) {
 	if err := q.Enqueue(ctx, "mystery", nil); err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < maxAttempts; i++ {
+	for i := 0; i < MaxAttempts; i++ {
 		if _, err := w.ProcessDue(ctx); err != nil {
 			t.Fatal(err)
 		}
 		c.t = c.t.Add(2 * time.Hour)
 	}
-	if dead, _ := st.CountDeadJobs(ctx, maxAttempts); dead != 1 {
+	if dead, _ := st.CountDeadJobs(ctx, MaxAttempts); dead != 1 {
 		t.Errorf("unknown-type job not parked as dead")
 	}
 }

@@ -1,7 +1,7 @@
 // Package job is the database-backed queue for background work —
 // today, outgoing email. One worker goroutine polls for due jobs,
 // retries failures with exponential backoff, and keeps exhausted jobs
-// in the table (attempts ≥ maxAttempts) for inspection.
+// in the table (attempts ≥ MaxAttempts) for inspection.
 package job
 
 import (
@@ -17,7 +17,10 @@ import (
 )
 
 const (
-	maxAttempts  = 10
+	// MaxAttempts is the retry budget before a job is parked as dead.
+	// Exported for the admin page and metrics, which count dead jobs.
+	MaxAttempts = 10
+
 	maxBatch     = 20
 	pollInterval = 5 * time.Second
 	baseBackoff  = time.Minute
@@ -101,7 +104,7 @@ func (w *Worker) ProcessDue(ctx context.Context) (int, error) {
 	nowStr := store.FormatTime(w.queue.now())
 	rows, err := w.queue.store.DueJobs(ctx, sqlite.DueJobsParams{
 		Now:         nowStr,
-		MaxAttempts: maxAttempts,
+		MaxAttempts: MaxAttempts,
 		MaxBatch:    maxBatch,
 	})
 	if err != nil {
@@ -138,12 +141,12 @@ func (w *Worker) runOne(ctx context.Context, row sqlite.Job) {
 		w.log.ErrorContext(ctx, "reschedule job", "job", row.ID, "error", rerr)
 	}
 	level := slog.LevelWarn
-	if attempts >= maxAttempts {
+	if attempts >= MaxAttempts {
 		level = slog.LevelError
 	}
 	w.log.Log(ctx, level, "job failed",
 		"job", row.ID, "type", row.Type, "attempt", attempts,
-		"max_attempts", maxAttempts, "retry_in", delay.String(), "error", err.Error(),
+		"max_attempts", MaxAttempts, "retry_in", delay.String(), "error", err.Error(),
 	)
 }
 
