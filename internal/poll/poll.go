@@ -58,6 +58,8 @@ var (
 	ErrPollClosed       = errors.New("poll is not open for votes")
 	ErrCommentsDisabled = errors.New("comments are disabled")
 	ErrBodyRequired     = errors.New("comment body required")
+	ErrNotFinalizable   = errors.New("poll cannot be finalized in its current state")
+	ErrNotFinalized     = errors.New("poll is not finalized")
 )
 
 // Poll is the domain view of a poll row.
@@ -81,6 +83,10 @@ type Poll struct {
 	SpaceID int64
 	// RetentionDays is the effective inactivity horizon (never 0).
 	RetentionDays int
+	// FinalizedOptionID is 0 until the organizer picks the date.
+	FinalizedOptionID int64
+	// DeletesAt is when the purge may collect the poll.
+	DeletesAt time.Time
 
 	adminTokenHash string
 }
@@ -156,6 +162,12 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 	if retentionDays <= 0 {
 		retentionDays = DefaultRetentionDays
 	}
+	var deletesAt time.Time
+	if r.DeletesAt.Valid {
+		if t, err := store.ParseTime(r.DeletesAt.String); err == nil {
+			deletesAt = t
+		}
+	}
 	return Poll{
 		ID:                r.ID,
 		PublicID:          r.PublicID,
@@ -173,6 +185,8 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 		CreatedByUserID:   r.CreatedByUserID.Int64,
 		SpaceID:           r.SpaceID.Int64,
 		RetentionDays:     retentionDays,
+		FinalizedOptionID: r.FinalizedOptionID.Int64,
+		DeletesAt:         deletesAt,
 		adminTokenHash:    r.AdminTokenHash,
 	}, nil
 }

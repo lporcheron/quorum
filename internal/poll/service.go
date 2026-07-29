@@ -500,6 +500,60 @@ func (s *Service) SetPaused(ctx context.Context, p Poll, paused bool) error {
 	return nil
 }
 
+// Finalize closes the poll on the chosen option.
+func (s *Service) Finalize(ctx context.Context, p Poll, optionID int64) (Option, error) {
+	if p.Status != StatusLive && p.Status != StatusPaused {
+		return Option{}, ErrNotFinalizable
+	}
+	row, err := s.store.GetPollOption(ctx, sqlite.GetPollOptionParams{ID: optionID, PollID: p.ID})
+	if errors.Is(err, sql.ErrNoRows) {
+		return Option{}, ErrNotFound
+	}
+	if err != nil {
+		return Option{}, fmt.Errorf("get option: %w", err)
+	}
+	if err := s.store.FinalizePoll(ctx, sqlite.FinalizePollParams{
+		ID:                p.ID,
+		FinalizedOptionID: nullInt64(optionID),
+		UpdatedAt:         store.FormatTime(s.now()),
+	}); err != nil {
+		return Option{}, fmt.Errorf("finalize poll: %w", err)
+	}
+	return optionFromRow(row)
+}
+
+// CancelEvent cancels a finalized event; the chosen option is kept so
+// the CANCEL calendar object can reference it.
+func (s *Service) CancelEvent(ctx context.Context, p Poll) error {
+	if p.Status != StatusFinalized {
+		return ErrNotFinalized
+	}
+	err := s.store.UpdatePollStatus(ctx, sqlite.UpdatePollStatusParams{
+		ID:        p.ID,
+		Status:    string(StatusCancelled),
+		UpdatedAt: store.FormatTime(s.now()),
+	})
+	if err != nil {
+		return fmt.Errorf("cancel event: %w", err)
+	}
+	return nil
+}
+
+// FinalizedOption loads the chosen option of a finalized poll.
+func (s *Service) FinalizedOption(ctx context.Context, p Poll) (Option, error) {
+	if p.FinalizedOptionID == 0 {
+		return Option{}, ErrNotFinalized
+	}
+	row, err := s.store.GetPollOption(ctx, sqlite.GetPollOptionParams{ID: p.FinalizedOptionID, PollID: p.ID})
+	if errors.Is(err, sql.ErrNoRows) {
+		return Option{}, ErrNotFound
+	}
+	if err != nil {
+		return Option{}, fmt.Errorf("get finalized option: %w", err)
+	}
+	return optionFromRow(row)
+}
+
 // Delete removes the poll and everything under it.
 func (s *Service) Delete(ctx context.Context, p Poll) error {
 	if err := s.store.DeletePoll(ctx, p.ID); err != nil {
