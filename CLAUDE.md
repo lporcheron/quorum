@@ -4,7 +4,7 @@ Self-hostable availability-poll tool (Doodle/Rallly equivalent) in pure
 Go, licensed Apache 2.0. Clean-room implementation — never copy code,
 assets, or copy text from Rallly (AGPLv3) or clone its repository.
 
-Current state: M0 done, M1 in progress. See `PLAN.md` for schema,
+Current state: M0–M5 complete (v1 feature set). See `PLAN.md` for schema,
 routes, and validated decisions. Milestones: M0 foundations → M1 poll+guest voting →
 M2 auth → M3 spaces → M4 email/finalize/ICS → M5 polish. One milestone
 at a time; each must be mergeable and demoable alone; stop and show

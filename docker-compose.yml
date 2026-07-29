@@ -1,0 +1,36 @@
+# Example deployment. Quorum is a single container with a SQLite file:
+# the volume is the whole persistence story.
+services:
+  quorum:
+    build: .
+    # or, once images are published:
+    # image: ghcr.io/lporcheron/quorum:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - quorum-data:/data
+    environment:
+      QUORUM_BASE_URL: "https://polls.example.com"
+      # --- email (optional; without it, magic links and notifications are off)
+      # QUORUM_SMTP_HOST: "smtp.example.com"
+      # QUORUM_SMTP_PORT: "587"
+      # QUORUM_SMTP_USERNAME: "quorum"
+      # QUORUM_SMTP_PASSWORD: "secret"
+      # QUORUM_SMTP_FROM: "polls@example.com"
+      # --- sign-in providers (all optional)
+      # QUORUM_OAUTH_GOOGLE_CLIENT_ID: ""
+      # QUORUM_OAUTH_GOOGLE_CLIENT_SECRET: ""
+      # QUORUM_OIDC_ISSUER_URL: "https://sso.example.com"
+      # QUORUM_OIDC_NAME: "Example SSO"
+      # QUORUM_OAUTH_OIDC_CLIENT_ID: ""
+      # QUORUM_OAUTH_OIDC_CLIENT_SECRET: ""
+      # --- instance policy
+      # QUORUM_ADMIN_EMAILS: "you@example.com"
+      # QUORUM_REGISTRATIONS_OPEN: "true"
+      # QUORUM_EMAIL_ALLOWED_DOMAINS: "example.com"
+      # QUORUM_TRUST_PROXY: "true"   # only behind a proxy that sets X-Forwarded-For
+      # QUORUM_METRICS: "false"
+
+volumes:
+  quorum-data:
