@@ -32,6 +32,31 @@ Everything is optional; defaults in parentheses.
 | `QUORUM_LOG_LEVEL` | `debug`, `info`, `warn`, `error` (`info`) |
 | `QUORUM_LOG_FORMAT` | `json` or `text` (`json`) |
 
+### Sign-in (all optional — without any of them, polls stay guest-only)
+
+| Variable | Purpose |
+|---|---|
+| `QUORUM_OAUTH_GOOGLE_CLIENT_ID` / `_CLIENT_SECRET` | Google sign-in |
+| `QUORUM_OAUTH_GITHUB_CLIENT_ID` / `_CLIENT_SECRET` | GitHub sign-in |
+| `QUORUM_OAUTH_MICROSOFT_CLIENT_ID` / `_CLIENT_SECRET` | Microsoft sign-in |
+| `QUORUM_OAUTH_MICROSOFT_TENANT` | Entra tenant (`common`) |
+| `QUORUM_OIDC_ISSUER_URL` | Generic OIDC discovery URL |
+| `QUORUM_OAUTH_OIDC_CLIENT_ID` / `_CLIENT_SECRET` | Generic OIDC client |
+| `QUORUM_OIDC_NAME` | Label on the OIDC login button (`SSO`) |
+| `QUORUM_REGISTRATIONS_OPEN` | Allow new accounts (`true`); existing users always sign in |
+| `QUORUM_EMAIL_ALLOWED_DOMAINS` | Comma-separated sign-up domain allowlist (empty = all) |
+
+OAuth callback URLs are `<base URL>/auth/<google|github|microsoft|oidc>/callback`.
+
+### Email (optional — without SMTP, magic links are disabled and the UI says so)
+
+| Variable | Purpose |
+|---|---|
+| `QUORUM_SMTP_HOST` | SMTP server; setting it enables email |
+| `QUORUM_SMTP_PORT` | SMTP port (`587`) |
+| `QUORUM_SMTP_USERNAME` / `QUORUM_SMTP_PASSWORD` | SMTP credentials (optional) |
+| `QUORUM_SMTP_FROM` | Sender address (required with SMTP) |
+
 ## License
 
 [Apache 2.0](LICENSE).
