@@ -77,6 +77,10 @@ type Poll struct {
 	CreatedAt         time.Time
 	// CreatedByUserID is 0 while the poll is unclaimed (guest-created).
 	CreatedByUserID int64
+	// SpaceID is 0 while the poll is unclaimed.
+	SpaceID int64
+	// RetentionDays is the effective inactivity horizon (never 0).
+	RetentionDays int
 
 	adminTokenHash string
 }
@@ -148,6 +152,10 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 	if err != nil {
 		return Poll{}, err
 	}
+	retentionDays := int(r.RetentionDays.Int64)
+	if retentionDays <= 0 {
+		retentionDays = DefaultRetentionDays
+	}
 	return Poll{
 		ID:                r.ID,
 		PublicID:          r.PublicID,
@@ -163,6 +171,8 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 		AllowComments:     r.AllowComments != 0,
 		CreatedAt:         createdAt,
 		CreatedByUserID:   r.CreatedByUserID.Int64,
+		SpaceID:           r.SpaceID.Int64,
+		RetentionDays:     retentionDays,
 		adminTokenHash:    r.AdminTokenHash,
 	}, nil
 }

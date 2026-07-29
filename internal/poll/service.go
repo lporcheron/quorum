@@ -14,9 +14,10 @@ import (
 	"github.com/lporcheron/quorum/internal/store/sqlite"
 )
 
-// retention is how long a poll lives without activity before the purge
-// (M5) may collect it; every vote or comment pushes the horizon back.
-const retention = 180 * 24 * time.Hour
+// DefaultRetentionDays is how long a poll lives without activity
+// before the purge (M5) may collect it; every vote or comment pushes
+// the horizon back. Spaces can override it per poll at creation time.
+const DefaultRetentionDays = 180
 
 // Service owns all poll operations.
 type Service struct {
@@ -46,6 +47,13 @@ type NewPoll struct {
 	AllowComments     bool
 	Slots             []TimedSlot
 	Dates             []Date
+	// SpaceID/CreatedByUserID attach the poll to an account's space at
+	// creation (0 for guest polls, claimable later).
+	SpaceID         int64
+	CreatedByUserID int64
+	// RetentionDays overrides DefaultRetentionDays (0 = default),
+	// typically from the space settings.
+	RetentionDays int
 }
 
 // Details is the editable subset of a poll.
@@ -92,11 +100,17 @@ func (s *Service) Create(ctx context.Context, in NewPoll) (Poll, string, error) 
 		timezone = sql.NullString{String: in.Timezone, Valid: true}
 	}
 
+	retentionDays := in.RetentionDays
+	if retentionDays <= 0 {
+		retentionDays = DefaultRetentionDays
+	}
 	var row sqlite.Poll
 	err := s.store.Tx(ctx, func(q *sqlite.Queries) error {
 		var err error
 		row, err = q.CreatePoll(ctx, sqlite.CreatePollParams{
 			PublicID:          ids.PublicID(),
+			SpaceID:           nullInt64(in.SpaceID),
+			CreatedByUserID:   nullInt64(in.CreatedByUserID),
 			AdminTokenHash:    ids.HashToken(adminToken),
 			Title:             in.Title,
 			Description:       strings.TrimSpace(in.Description),
@@ -107,7 +121,8 @@ func (s *Service) Create(ctx context.Context, in NewPoll) (Poll, string, error) 
 			HideParticipants:  boolInt(in.HideParticipants),
 			RequireVoterEmail: boolInt(in.RequireVoterEmail),
 			AllowComments:     boolInt(in.AllowComments),
-			DeletesAt:         sql.NullString{String: store.FormatTime(now.Add(retention)), Valid: true},
+			RetentionDays:     nullInt64(int64(in.RetentionDays)),
+			DeletesAt:         sql.NullString{String: store.FormatTime(now.Add(time.Duration(retentionDays) * 24 * time.Hour)), Valid: true},
 			CreatedAt:         store.FormatTime(now),
 			UpdatedAt:         store.FormatTime(now),
 		})
@@ -346,7 +361,7 @@ func (s *Service) Join(ctx context.Context, p Poll, name, email string, userID i
 		if err := insertVotes(ctx, q, row.ID, votes, now); err != nil {
 			return err
 		}
-		return extendRetention(ctx, q, p.ID, now)
+		return extendRetention(ctx, q, p, now)
 	})
 	if err != nil {
 		return Participant{}, "", err
@@ -383,7 +398,7 @@ func (s *Service) UpdateVotes(ctx context.Context, p Poll, participant Participa
 		if err := insertVotes(ctx, q, participant.ID, votes, now); err != nil {
 			return err
 		}
-		return extendRetention(ctx, q, p.ID, now)
+		return extendRetention(ctx, q, p, now)
 	})
 }
 
@@ -401,10 +416,10 @@ func insertVotes(ctx context.Context, q *sqlite.Queries, participantID int64, vo
 	return nil
 }
 
-func extendRetention(ctx context.Context, q *sqlite.Queries, pollID int64, now time.Time) error {
+func extendRetention(ctx context.Context, q *sqlite.Queries, p Poll, now time.Time) error {
 	if err := q.ExtendPollRetention(ctx, sqlite.ExtendPollRetentionParams{
-		ID:        pollID,
-		DeletesAt: sql.NullString{String: store.FormatTime(now.Add(retention)), Valid: true},
+		ID:        p.ID,
+		DeletesAt: sql.NullString{String: store.FormatTime(now.Add(time.Duration(p.RetentionDays) * 24 * time.Hour)), Valid: true},
 	}); err != nil {
 		return fmt.Errorf("extend retention: %w", err)
 	}
@@ -543,7 +558,7 @@ func (s *Service) AddComment(ctx context.Context, p Poll, participant *Participa
 		if err != nil {
 			return fmt.Errorf("insert comment: %w", err)
 		}
-		return extendRetention(ctx, q, p.ID, now)
+		return extendRetention(ctx, q, p, now)
 	})
 	if err != nil {
 		return Comment{}, err
@@ -599,6 +614,30 @@ func (s *Service) ListByCreator(ctx context.Context, userID int64) ([]Poll, erro
 		return nil, fmt.Errorf("list polls by creator: %w", err)
 	}
 	return pollsFromRows(rows)
+}
+
+// SpacePoll is a poll listed in a space, with its creator's name.
+type SpacePoll struct {
+	Poll
+	OwnerName string
+}
+
+// ListBySpace returns a space's polls, newest first. The caller is
+// responsible for the membership check (internal/space owns it).
+func (s *Service) ListBySpace(ctx context.Context, spaceID int64) ([]SpacePoll, error) {
+	rows, err := s.store.ListPollsBySpace(ctx, nullInt64(spaceID))
+	if err != nil {
+		return nil, fmt.Errorf("list polls by space: %w", err)
+	}
+	out := make([]SpacePoll, 0, len(rows))
+	for _, r := range rows {
+		p, err := pollFromRow(r.Poll)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, SpacePoll{Poll: p, OwnerName: r.OwnerName.String})
+	}
+	return out, nil
 }
 
 // ListVotedBy returns the polls where the user voted, newest first.
