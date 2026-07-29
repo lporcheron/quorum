@@ -1,11 +1,11 @@
 # Quorum
 
 Self-hostable availability-poll tool (Doodle/Rallly equivalent) in pure
-Go. Clean-room implementation — never copy code, assets, or copy text
-from Rallly (AGPLv3) or clone its repository.
+Go, licensed Apache 2.0. Clean-room implementation — never copy code,
+assets, or copy text from Rallly (AGPLv3) or clone its repository.
 
-Current state: pre-M0. See `PLAN.md` for schema, routes, and open
-decisions. Milestones: M0 foundations → M1 poll+guest voting →
+Current state: M0 done, M1 in progress. See `PLAN.md` for schema,
+routes, and validated decisions. Milestones: M0 foundations → M1 poll+guest voting →
 M2 auth → M3 spaces → M4 email/finalize/ICS → M5 polish. One milestone
 at a time; each must be mergeable and demoable alone; stop and show
 after each.

@@ -34,4 +34,4 @@ Everything is optional; defaults in parentheses.
 
 ## License
 
-Not chosen yet.
+[Apache 2.0](LICENSE).
