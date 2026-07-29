@@ -144,7 +144,7 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 		return templates.PollPageProps{}, err
 	}
 	tzName, tz := h.viewerTZ(r, p)
-	return templates.PollPageProps{
+	props := templates.PollPageProps{
 		Loc:       h.locale(r),
 		User:      h.currentUser(r),
 		Poll:      p,
@@ -154,7 +154,11 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 		Timezones: poll.CommonTimezones,
 		Me:        me,
 		EditToken: editToken,
-	}, nil
+	}
+	if p.FinalizedOptionID != 0 {
+		props.FinalizedLabel = h.finalizedOptionLabel(r, p, props.Loc.Lang, tz)
+	}
+	return props, nil
 }
 
 // ShowPoll renders the public poll page.

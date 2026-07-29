@@ -18,7 +18,9 @@ import (
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/job"
 	"github.com/lporcheron/quorum/internal/mail"
+	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/server"
 	"github.com/lporcheron/quorum/internal/space"
@@ -78,6 +80,19 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		log.Info("smtp not configured; email features are disabled")
 	}
 
-	h := handler.New(log, db, tr, polls, spaces, authsvc, providers, sessions, mailer, cfg.BaseURL)
-	return server.New(cfg, log, h, sessions).Run(ctx)
+	queue := job.NewQueue(st, nil)
+	notifier := notify.New(log, queue, mailer, polls, authsvc, tr, cfg.BaseURL, cfg.SMTP.From, nil)
+	worker := job.NewWorker(queue, log, notifier.Handlers())
+	workerDone := make(chan struct{})
+	go func() {
+		defer close(workerDone)
+		if err := worker.Run(ctx); err != nil {
+			log.Error("job worker stopped", "error", err)
+		}
+	}()
+
+	h := handler.New(log, db, tr, polls, spaces, authsvc, providers, sessions, mailer, notifier, cfg.BaseURL)
+	err = server.New(cfg, log, h, sessions).Run(ctx)
+	<-workerDone
+	return err
 }

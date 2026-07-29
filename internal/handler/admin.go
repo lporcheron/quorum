@@ -73,15 +73,16 @@ func (h *Handler) ShowPollAdmin(w http.ResponseWriter, r *http.Request) {
 		adminURL = h.baseURL + base
 	}
 	h.render(w, r, http.StatusOK, templates.AdminPage(templates.AdminProps{
-		Loc:       grid.Loc,
-		User:      h.currentUser(r),
-		Poll:      p,
-		View:      grid.View,
-		BasePath:  base,
-		AdminURL:  adminURL,
-		PublicURL: h.baseURL + "/polls/" + p.PublicID,
-		New:       r.URL.Query().Get("new") == "1" && adminURL != "",
-		Saved:     r.URL.Query().Get("saved") == "1",
+		Loc:            grid.Loc,
+		User:           h.currentUser(r),
+		Poll:           p,
+		View:           grid.View,
+		BasePath:       base,
+		AdminURL:       adminURL,
+		PublicURL:      h.baseURL + "/polls/" + p.PublicID,
+		New:            r.URL.Query().Get("new") == "1" && adminURL != "",
+		Saved:          r.URL.Query().Get("saved") == "1",
+		FinalizedLabel: h.finalizedOptionLabel(r, p, grid.Loc.Lang, p.TZ()),
 	}, grid))
 }
 

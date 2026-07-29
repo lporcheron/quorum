@@ -146,9 +146,10 @@ func (h *Handler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
 	loc := h.locale(r)
 	err := h.auth.RequestMagicLink(r.Context(), r.PostForm.Get("email"), next(r), func(email, token string) error {
 		link := h.baseURL + "/auth/email/callback?token=" + token
-		return h.mailer.Send(r.Context(), email,
+		return h.sendMail(r.Context(), email,
 			loc.T("login.magic_subject"),
 			loc.TD("login.magic_body", map[string]any{"Link": link}),
+			loc.T("nav.login"), link,
 		)
 	})
 	if err != nil && !errors.Is(err, auth.ErrEmailNotAllowed) {

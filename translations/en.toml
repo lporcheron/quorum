@@ -570,3 +570,77 @@ other = "This person is not a member of the space."
 
 [error.bad_retention]
 other = "Retention must be between 0 and 3650 days."
+
+# ---- M4: finalize, calendar, notification emails ----
+
+[admin.finalize]
+other = "Finalize"
+
+[admin.finalize_confirm]
+other = "Close the poll on this date? Every participant with an email receives the invitation."
+
+[admin.finalized_banner]
+other = "Final date:"
+
+[admin.cancel_event]
+other = "Cancel the event"
+
+[admin.cancel_help]
+other = "Participants receive a cancellation; the calendar entry is withdrawn."
+
+[admin.export_csv]
+other = "Export results (CSV)"
+
+[admin.calendar_feed]
+other = "Calendar feed (.ics)"
+
+[poll.finalized_banner]
+other = "Final date:"
+
+[poll.cancelled_banner]
+other = "This event has been cancelled."
+
+[poll.ics]
+other = "Add to calendar (.ics)"
+
+[error.not_finalizable]
+other = "This poll is already decided."
+
+[error.not_finalized]
+other = "This poll has no finalized date."
+
+[email.cta_open]
+other = "Open the poll"
+
+[email.cta_manage]
+other = "Manage the poll"
+
+[email.vote.subject]
+other = "New vote on “{{.Title}}”"
+
+[email.vote.body]
+other = "{{.Actor}} just voted on your poll “{{.Title}}”."
+
+[email.comment.subject]
+other = "New comment on “{{.Title}}”"
+
+[email.comment.body]
+other = "{{.Actor}} commented on your poll “{{.Title}}”."
+
+[email.finalized.subject]
+other = "{{.Title}} — it will be {{.Date}}"
+
+[email.finalized.body]
+other = "The poll “{{.Title}}” is decided: {{.Date}}.\n\nThe invitation is attached — add it to your calendar."
+
+[email.cancelled.subject]
+other = "{{.Title}} — cancelled"
+
+[email.cancelled.body]
+other = "The event “{{.Title}}” planned on {{.Date}} has been cancelled.\n\nThe attached file removes it from your calendar."
+
+[email.reminder.subject]
+other = "“{{.Title}}” expires soon"
+
+[email.reminder.body]
+other = "Your poll “{{.Title}}” has seen no activity for a while and will be deleted on {{.Date}}. Any vote or comment extends it."

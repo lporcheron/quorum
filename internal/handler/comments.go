@@ -29,10 +29,12 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		participant = &pa
 		back = "/polls/" + p.PublicID + "/p/" + token
 	}
-	if _, err := h.polls.AddComment(r.Context(), p, participant, r.PostForm.Get("author_name"), r.PostForm.Get("body")); err != nil {
+	c, err := h.polls.AddComment(r.Context(), p, participant, r.PostForm.Get("author_name"), r.PostForm.Get("body"))
+	if err != nil {
 		h.domainError(w, r, err)
 		return
 	}
+	h.notify.CommentPosted(r.Context(), p, c.AuthorName)
 	redirect(w, r, back)
 }
 

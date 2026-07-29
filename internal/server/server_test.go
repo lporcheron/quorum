@@ -9,11 +9,15 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/job"
+	"github.com/lporcheron/quorum/internal/mail"
+	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/internal/store"
@@ -47,28 +51,34 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL)
 	mailer := &testMailer{}
-	h := handler.New(log, db, tr, polls, spaces, authsvc, nil, sessions, mailer, cfg.BaseURL)
+	queue := job.NewQueue(st, nil)
+	notifier := notify.New(log, queue, mailer, polls, authsvc, tr, cfg.BaseURL, "quorum@example.com", nil)
+	h := handler.New(log, db, tr, polls, spaces, authsvc, nil, sessions, mailer, notifier, cfg.BaseURL)
+
+	// Run the worker for real: notification tests wait on the mailer.
+	workerCtx, stopWorker := context.WithCancel(ctx)
+	t.Cleanup(stopWorker)
+	go job.NewWorker(queue, log, notifier.Handlers()).Run(workerCtx) //nolint:errcheck // test worker
+
 	srv := New(cfg, log, h, sessions)
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
 	return ts, mailer
 }
 
-// testMailer records outgoing messages so tests can fish the magic
-// link out of the body.
+// testMailer records outgoing messages so tests can fish links out of
+// bodies and assert on notifications.
 type testMailer struct {
 	mu   sync.Mutex
-	to   []string
-	body []string
+	msgs []mail.Message
 }
 
 func (m *testMailer) Enabled() bool { return true }
 
-func (m *testMailer) Send(_ context.Context, to, _ string, body string) error {
+func (m *testMailer) Send(_ context.Context, msg mail.Message) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.to = append(m.to, to)
-	m.body = append(m.body, body)
+	m.msgs = append(m.msgs, msg)
 	return nil
 }
 
@@ -76,10 +86,30 @@ func (m *testMailer) last(t *testing.T) (string, string) {
 	t.Helper()
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if len(m.to) == 0 {
+	if len(m.msgs) == 0 {
 		t.Fatal("no mail sent")
 	}
-	return m.to[len(m.to)-1], m.body[len(m.body)-1]
+	msg := m.msgs[len(m.msgs)-1]
+	return msg.To, msg.Text
+}
+
+// waitFor polls until pred sees enough mail or times out; the worker
+// runs in the background, so notification arrival is asynchronous.
+func (m *testMailer) waitFor(t *testing.T, pred func(msgs []mail.Message) bool) []mail.Message {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		m.mu.Lock()
+		msgs := append([]mail.Message(nil), m.msgs...)
+		m.mu.Unlock()
+		if pred(msgs) {
+			return msgs
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("mail condition not met; got %d messages", len(msgs))
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 func get(t *testing.T, ts *httptest.Server, path string, header http.Header) (*http.Response, string) {

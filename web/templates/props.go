@@ -36,6 +36,9 @@ type PollPageProps struct {
 	JustJoined bool
 	// IsAdmin reveals participants even when the poll hides them.
 	IsAdmin bool
+	// FinalizedLabel is the chosen option, formatted for the viewer,
+	// when the poll is decided.
+	FinalizedLabel string
 }
 
 func (p PollPageProps) lang() string { return p.Loc.Lang }
@@ -127,6 +130,8 @@ type AdminProps struct {
 	PublicURL string
 	New       bool // just created or link just regenerated: show the save-this banner
 	Saved     bool
+	// FinalizedLabel is the chosen option's label once decided.
+	FinalizedLabel string
 }
 
 func (a AdminProps) lang() string { return a.Loc.Lang }

@@ -570,3 +570,77 @@ other = "Cette personne n'est pas membre de l'espace."
 
 [error.bad_retention]
 other = "La rétention doit être comprise entre 0 et 3650 jours."
+
+# ---- M4: finalize, calendar, notification emails ----
+
+[admin.finalize]
+other = "Finaliser"
+
+[admin.finalize_confirm]
+other = "Arrêter le sondage sur cette date ? Chaque participant avec un email reçoit l'invitation."
+
+[admin.finalized_banner]
+other = "Date retenue :"
+
+[admin.cancel_event]
+other = "Annuler l'événement"
+
+[admin.cancel_help]
+other = "Les participants reçoivent une annulation ; l'entrée de calendrier est retirée."
+
+[admin.export_csv]
+other = "Exporter les résultats (CSV)"
+
+[admin.calendar_feed]
+other = "Flux calendrier (.ics)"
+
+[poll.finalized_banner]
+other = "Date retenue :"
+
+[poll.cancelled_banner]
+other = "Cet événement a été annulé."
+
+[poll.ics]
+other = "Ajouter au calendrier (.ics)"
+
+[error.not_finalizable]
+other = "Ce sondage est déjà tranché."
+
+[error.not_finalized]
+other = "Ce sondage n'a pas de date arrêtée."
+
+[email.cta_open]
+other = "Ouvrir le sondage"
+
+[email.cta_manage]
+other = "Gérer le sondage"
+
+[email.vote.subject]
+other = "Nouveau vote sur « {{.Title}} »"
+
+[email.vote.body]
+other = "{{.Actor}} vient de voter sur votre sondage « {{.Title}} »."
+
+[email.comment.subject]
+other = "Nouveau commentaire sur « {{.Title}} »"
+
+[email.comment.body]
+other = "{{.Actor}} a commenté votre sondage « {{.Title}} »."
+
+[email.finalized.subject]
+other = "{{.Title}} — ce sera le {{.Date}}"
+
+[email.finalized.body]
+other = "Le sondage « {{.Title}} » est tranché : {{.Date}}.\n\nL'invitation est en pièce jointe — ajoutez-la à votre calendrier."
+
+[email.cancelled.subject]
+other = "{{.Title}} — annulé"
+
+[email.cancelled.body]
+other = "L'événement « {{.Title}} » prévu le {{.Date}} a été annulé.\n\nLe fichier joint le retire de votre calendrier."
+
+[email.reminder.subject]
+other = "« {{.Title}} » expire bientôt"
+
+[email.reminder.body]
+other = "Votre sondage « {{.Title}} » est resté sans activité et sera supprimé le {{.Date}}. Un vote ou un commentaire prolonge sa durée de vie."

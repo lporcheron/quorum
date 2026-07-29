@@ -42,6 +42,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /polls", s.h.CreatePoll)
 	mux.HandleFunc("GET /polls/{pollID}", s.h.ShowPoll)
 	mux.HandleFunc("GET /polls/{pollID}/grid", s.h.PollGrid)
+	mux.HandleFunc("GET /polls/{pollID}/calendar.ics", s.h.CalendarFeed)
 	mux.HandleFunc("POST /polls/{pollID}/participants", s.h.CreateParticipant)
 	mux.HandleFunc("POST /polls/{pollID}/comments", s.h.CreateComment)
 
@@ -62,6 +63,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/regenerate", s.h.RegenerateAdminToken)
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/delete", s.h.DeletePoll)
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/claim", s.h.ClaimPoll)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/finalize", s.h.FinalizePoll)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/cancel", s.h.CancelEvent)
+	mux.HandleFunc("GET /polls/{pollID}/admin/{adminToken}/export.csv", s.h.ExportCSV)
 
 	// Session-authorized mirror of the organizer routes, for claimed
 	// polls reached from the dashboard (no token in the URL).
@@ -74,6 +78,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /polls/{pollID}/manage/comments/{commentID}/delete", s.h.AdminDeleteComment)
 	mux.HandleFunc("POST /polls/{pollID}/manage/regenerate", s.h.RegenerateAdminToken)
 	mux.HandleFunc("POST /polls/{pollID}/manage/delete", s.h.DeletePoll)
+	mux.HandleFunc("POST /polls/{pollID}/manage/finalize", s.h.FinalizePoll)
+	mux.HandleFunc("POST /polls/{pollID}/manage/cancel", s.h.CancelEvent)
+	mux.HandleFunc("GET /polls/{pollID}/manage/export.csv", s.h.ExportCSV)
 
 	// Spaces.
 	mux.HandleFunc("POST /spaces", s.h.CreateSpace)

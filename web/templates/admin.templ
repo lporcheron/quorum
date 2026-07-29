@@ -52,7 +52,27 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 				<button class="btn btn-sm" type="button" data-copy="public-url" data-copied={ a.Loc.T("admin.copied") }>{ a.Loc.T("admin.copy") }</button>
 				<a class="btn btn-sm" href={ templ.URL("/polls/" + a.Poll.PublicID) }>{ a.Loc.T("admin.view_public") }</a>
 			</div>
+			<div class="mt-2 flex flex-wrap gap-4 text-sm">
+				<a class="underline" href={ templ.URL(a.adminPath("/export.csv")) }>{ a.Loc.T("admin.export_csv") }</a>
+				<a class="underline" href={ templ.URL("/polls/" + a.Poll.PublicID + "/calendar.ics") }>{ a.Loc.T("admin.calendar_feed") }</a>
+			</div>
 		</section>
+
+		if a.Poll.Status == poll.StatusFinalized {
+			<div class="banner mt-6">
+				<p>
+					<span class="font-semibold">{ a.Loc.T("admin.finalized_banner") }</span>
+					<span class="ml-1 font-mono">{ a.FinalizedLabel }</span>
+				</p>
+				<form method="post" action={ templ.URL(a.adminPath("/cancel")) } class="mt-2">
+					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.cancel_event") }</button>
+					<span class="ml-2 text-xs text-ink/60">{ a.Loc.T("admin.cancel_help") }</span>
+				</form>
+			</div>
+		}
+		if a.Poll.Status == poll.StatusCancelled {
+			<p class="error mt-6">{ a.Loc.T("poll.cancelled_banner") }</p>
+		}
 
 		<section class="panel mt-6">
 			<h2 class="panel-title">
@@ -62,20 +82,28 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 					{ a.Loc.T("admin.options_heading") }
 				}
 			</h2>
-			<form method="post" action={ templ.URL(a.adminPath("/status")) } class="mt-2">
-				if a.Poll.Status == poll.StatusPaused {
-					<input type="hidden" name="action" value="resume"/>
-					<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.resume") }</button>
-				} else {
-					<input type="hidden" name="action" value="pause"/>
-					<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.pause") }</button>
-				}
-			</form>
+			if a.Poll.Status == poll.StatusLive || a.Poll.Status == poll.StatusPaused {
+				<form method="post" action={ templ.URL(a.adminPath("/status")) } class="mt-2">
+					if a.Poll.Status == poll.StatusPaused {
+						<input type="hidden" name="action" value="resume"/>
+						<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.resume") }</button>
+					} else {
+						<input type="hidden" name="action" value="pause"/>
+						<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.pause") }</button>
+					}
+				</form>
+			}
 			<ul class="mt-3 divide-y divide-ink/10 border-y border-ink/15">
 				for _, o := range a.View.Options {
-					<li class="flex items-center justify-between gap-3 py-2 text-sm">
+					<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
 						<span>{ OptionLabel(a.lang(), o, a.Poll.TZ()) }</span>
 						<span class="ml-auto font-mono text-xs tabular-nums text-ink/60">{ a.Loc.TN("admin.option_votes", a.answers(o.ID)) }</span>
+						if a.Poll.Status == poll.StatusLive || a.Poll.Status == poll.StatusPaused {
+							<form method="post" action={ templ.URL(a.adminPath("/finalize")) }>
+								<input type="hidden" name="option_id" value={ itoa(o.ID) }/>
+								<button class="btn btn-sm" type="submit" data-confirm={ a.Loc.T("admin.finalize_confirm") }>{ a.Loc.T("admin.finalize") }</button>
+							</form>
+						}
 						<form method="post" action={ templ.URL(a.adminPath("/options/" + itoa(o.ID) + "/delete")) }>
 							<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.delete_option") }</button>
 						</form>

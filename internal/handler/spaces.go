@@ -260,9 +260,10 @@ func (h *Handler) InviteMember(w http.ResponseWriter, r *http.Request) {
 	link := h.baseURL + "/invitations/" + token
 	if h.mailer.Enabled() {
 		loc := h.locale(r)
-		err := h.mailer.Send(r.Context(), email,
+		err := h.sendMail(r.Context(), email,
 			loc.TD("space.invite_subject", map[string]any{"Space": sp.Name}),
 			loc.TD("space.invite_body", map[string]any{"Space": sp.Name, "Link": link}),
+			loc.T("invitation.accept"), link,
 		)
 		if err != nil {
 			h.log.ErrorContext(r.Context(), "send invitation", "error", err)

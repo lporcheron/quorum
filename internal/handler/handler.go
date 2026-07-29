@@ -3,6 +3,7 @@
 package handler
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/mail"
+	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/web/templates"
@@ -38,19 +40,31 @@ type Handler struct {
 	providers []*auth.Provider
 	sessions  *scs.SessionManager
 	mailer    mail.Mailer
+	notify    *notify.Notifier
 	baseURL   string
 }
 
 // New wires a Handler; all dependencies are explicit.
 func New(log *slog.Logger, db *sql.DB, tr *i18n.Translator, polls *poll.Service,
 	spaces *space.Service, authsvc *auth.Service, providers []*auth.Provider,
-	sessions *scs.SessionManager, mailer mail.Mailer, baseURL string,
+	sessions *scs.SessionManager, mailer mail.Mailer, notifier *notify.Notifier, baseURL string,
 ) *Handler {
 	return &Handler{
 		log: log, db: db, tr: tr, polls: polls, spaces: spaces,
 		auth: authsvc, providers: providers, sessions: sessions, mailer: mailer,
-		baseURL: strings.TrimSuffix(baseURL, "/"),
+		notify: notifier, baseURL: strings.TrimSuffix(baseURL, "/"),
 	}
+}
+
+// sendMail sends one synchronous email with the shared HTML shell.
+// Only capability-carrying mail (magic links, invitations) goes
+// through here; notifications ride the job queue.
+func (h *Handler) sendMail(ctx context.Context, to, subject, body, ctaLabel, ctaURL string) error {
+	html, err := templates.RenderEmail(ctx, subject, body, ctaLabel, ctaURL)
+	if err != nil {
+		return err
+	}
+	return h.mailer.Send(ctx, mail.Message{To: to, Subject: subject, Text: body, HTML: html})
 }
 
 // atoiInRange parses a bounded integer form field.
@@ -138,6 +152,10 @@ func errStatus(err error) (int, string) {
 		return http.StatusConflict, "error.comments_disabled"
 	case errors.Is(err, poll.ErrBodyRequired):
 		return http.StatusUnprocessableEntity, "error.body_required"
+	case errors.Is(err, poll.ErrNotFinalizable):
+		return http.StatusConflict, "error.not_finalizable"
+	case errors.Is(err, poll.ErrNotFinalized):
+		return http.StatusConflict, "error.not_finalized"
 	}
 	return http.StatusInternalServerError, "error.internal"
 }

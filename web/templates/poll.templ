@@ -1,5 +1,7 @@
 package templates
 
+import "github.com/lporcheron/quorum/internal/poll"
+
 // PollPage is the public poll page: header, grid, comments.
 templ PollPage(p PollPageProps) {
 	@layout(p.Loc, p.Poll.Title+" — Quorum", p.User) {
@@ -12,6 +14,20 @@ templ PollPage(p PollPageProps) {
 					<button class="btn btn-sm" type="button" data-copy="edit-url" data-copied={ p.Loc.T("admin.copied") }>{ p.Loc.T("admin.copy") }</button>
 				</div>
 			</div>
+		}
+		if p.Poll.Status == poll.StatusFinalized && p.FinalizedLabel != "" {
+			<div class="banner mt-6">
+				<p>
+					<span class="font-semibold">{ p.Loc.T("poll.finalized_banner") }</span>
+					<span class="ml-1 font-mono">{ p.FinalizedLabel }</span>
+				</p>
+				<p class="mt-2">
+					<a class="btn btn-sm" href={ templ.URL(p.pollPath("/calendar.ics")) }>{ p.Loc.T("poll.ics") }</a>
+				</p>
+			</div>
+		}
+		if p.Poll.Status == poll.StatusCancelled {
+			<p class="error mt-6">{ p.Loc.T("poll.cancelled_banner") }</p>
 		}
 		<div class="mt-8">
 			<h1 class="font-display text-4xl font-semibold tracking-tight">{ p.Poll.Title }</h1>

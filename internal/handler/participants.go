@@ -43,11 +43,12 @@ func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	if u := h.currentUser(r); u != nil {
 		userID = u.ID
 	}
-	_, editToken, err := h.polls.Join(r.Context(), p, r.PostForm.Get("name"), r.PostForm.Get("email"), userID, parseVotes(r.PostForm))
+	pa, editToken, err := h.polls.Join(r.Context(), p, r.PostForm.Get("name"), r.PostForm.Get("email"), userID, parseVotes(r.PostForm))
 	if err != nil {
 		h.domainError(w, r, err)
 		return
 	}
+	h.notify.VoteCast(r.Context(), p, pa.Name)
 	redirect(w, r, "/polls/"+p.PublicID+"/p/"+editToken+"?joined=1")
 }
 

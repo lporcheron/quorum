@@ -1,0 +1,19 @@
+package templates
+
+// email is the single transactional email shell: sober, table-free,
+// inline styles only, matching the paper/ink palette.
+templ email(title, body, ctaLabel, ctaURL string) {
+	<div style="margin:0;padding:24px;background:#f3f4f1;color:#141b2d;font-family:Helvetica,Arial,sans-serif;">
+		<div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #d8dad5;padding:24px;">
+			<p style="font-size:17px;font-weight:bold;margin:0 0 12px;">{ title }</p>
+			<p style="font-size:14px;line-height:1.55;margin:0 0 16px;white-space:pre-line;">{ body }</p>
+			if ctaURL != "" {
+				<p style="margin:0 0 8px;">
+					<a href={ templ.URL(ctaURL) } style="display:inline-block;background:#141b2d;color:#f3f4f1;padding:9px 16px;text-decoration:none;font-size:14px;font-weight:bold;">{ ctaLabel }</a>
+				</p>
+				<p style="font-size:12px;color:#6b7180;margin:0;word-break:break-all;">{ ctaURL }</p>
+			}
+			<p style="font-size:11px;color:#a8ada6;margin:24px 0 0;">Quorum</p>
+		</div>
+	</div>
+}
