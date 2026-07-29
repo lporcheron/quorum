@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/poll"
 )
@@ -11,6 +12,7 @@ import (
 // HomeProps feeds the landing/creation page.
 type HomeProps struct {
 	Loc       *i18n.Locale
+	User      *auth.User
 	Timezones []string
 	Error     string // localized message after a failed submission
 	// Submitted values echoed back on error so text fields survive.
@@ -20,6 +22,7 @@ type HomeProps struct {
 // PollPageProps feeds the public poll page and its grid partial.
 type PollPageProps struct {
 	Loc       *i18n.Locale
+	User      *auth.User
 	Poll      poll.Poll
 	View      poll.View
 	TZ        *time.Location
@@ -110,22 +113,26 @@ func voteLabelKey(v poll.VoteValue) string {
 	return "vote.noanswer"
 }
 
-// AdminProps feeds the admin page.
+// AdminProps feeds the admin page, reached either through the
+// capability URL or, once the poll is claimed, the session-authorized
+// /manage path.
 type AdminProps struct {
-	Loc        *i18n.Locale
-	Poll       poll.Poll
-	View       poll.View
-	AdminToken string
-	AdminURL   string
-	PublicURL  string
-	New        bool // just created or link just regenerated: show the save-this banner
-	Saved      bool
+	Loc  *i18n.Locale
+	User *auth.User
+	Poll poll.Poll
+	View poll.View
+	// BasePath is where the admin forms post: the token URL or /manage.
+	BasePath  string
+	AdminURL  string // absolute admin URL; empty in /manage mode
+	PublicURL string
+	New       bool // just created or link just regenerated: show the save-this banner
+	Saved     bool
 }
 
 func (a AdminProps) lang() string { return a.Loc.Lang }
 
 func (a AdminProps) adminPath(suffix string) string {
-	return "/polls/" + a.Poll.PublicID + "/admin/" + a.AdminToken + suffix
+	return a.BasePath + suffix
 }
 
 // answers counts non-missing votes for an option.
@@ -141,6 +148,7 @@ func (a AdminProps) answers(optionID int64) int {
 // ErrorProps feeds the error page.
 type ErrorProps struct {
 	Loc     *i18n.Locale
+	User    *auth.User
 	Message string
 }
 
@@ -175,9 +183,14 @@ func ringDash(t poll.Tally, participants int) string {
 	return fmt.Sprintf("%.1f %.1f", frac*circumference, circumference)
 }
 
+// meName prefills the vote form: the participant being edited, else
+// the signed-in account.
 func meName(p PollPageProps) string {
 	if p.Me != nil {
 		return p.Me.Name
+	}
+	if p.User != nil {
+		return p.User.Name
 	}
 	return ""
 }
@@ -185,6 +198,9 @@ func meName(p PollPageProps) string {
 func meEmail(p PollPageProps) string {
 	if p.Me != nil {
 		return p.Me.Email
+	}
+	if p.User != nil {
+		return p.User.Email
 	}
 	return ""
 }

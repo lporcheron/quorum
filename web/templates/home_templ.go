@@ -581,7 +581,7 @@ func Home(p HomeProps) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout(p.Loc.Lang, p.Loc.T("home.title")).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layout(p.Loc, p.Loc.T("home.title"), p.User).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -14,6 +14,7 @@ import (
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 	h.render(w, r, http.StatusOK, templates.Home(templates.HomeProps{
 		Loc:       h.locale(r),
+		User:      h.currentUser(r),
 		Timezones: poll.CommonTimezones,
 	}))
 }
@@ -64,6 +65,7 @@ func (h *Handler) rerenderCreate(w http.ResponseWriter, r *http.Request, err err
 	loc := h.locale(r)
 	h.render(w, r, status, templates.Home(templates.HomeProps{
 		Loc:         loc,
+		User:        h.currentUser(r),
 		Timezones:   poll.CommonTimezones,
 		Error:       loc.T(msgID),
 		Title:       r.PostForm.Get("title"),
@@ -126,6 +128,7 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 	tzName, tz := h.viewerTZ(r, p)
 	return templates.PollPageProps{
 		Loc:       h.locale(r),
+		User:      h.currentUser(r),
 		Poll:      p,
 		View:      v,
 		TZ:        tz,

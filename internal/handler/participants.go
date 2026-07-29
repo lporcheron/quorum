@@ -39,7 +39,11 @@ func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	if !h.parseForm(w, r) {
 		return
 	}
-	_, editToken, err := h.polls.Join(r.Context(), p, r.PostForm.Get("name"), r.PostForm.Get("email"), parseVotes(r.PostForm))
+	var userID int64
+	if u := h.currentUser(r); u != nil {
+		userID = u.ID
+	}
+	_, editToken, err := h.polls.Join(r.Context(), p, r.PostForm.Get("name"), r.PostForm.Get("email"), userID, parseVotes(r.PostForm))
 	if err != nil {
 		h.domainError(w, r, err)
 		return

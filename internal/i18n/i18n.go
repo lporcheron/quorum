@@ -85,6 +85,15 @@ func (l *Locale) T(id string) string {
 	return msg
 }
 
+// TD returns the translation for id with template data.
+func (l *Locale) TD(id string, data map[string]any) string {
+	msg, err := l.localizer.Localize(&goi18n.LocalizeConfig{MessageID: id, TemplateData: data})
+	if err != nil {
+		return id
+	}
+	return msg
+}
+
 // TN returns the plural-aware translation for id with a count. The
 // message may use {{.Count}}.
 func (l *Locale) TN(id string, n int) string {

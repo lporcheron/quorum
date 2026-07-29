@@ -2,7 +2,7 @@ package templates
 
 // PollPage is the public poll page: header, grid, comments.
 templ PollPage(p PollPageProps) {
-	@layout(p.Loc.Lang, p.Poll.Title+" — Quorum") {
+	@layout(p.Loc, p.Poll.Title+" — Quorum", p.User) {
 		if p.JustJoined && p.EditURL != "" {
 			<div class="banner mt-6">
 				<p class="font-semibold">{ p.Loc.T("vote.edit_banner_title") }</p>

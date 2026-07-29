@@ -114,6 +114,19 @@
 		font-size: var(--text-sm);
 	}
 
+	.usermenu { position: relative; }
+	.usermenu-panel {
+		position: absolute;
+		right: 0;
+		top: 100%;
+		margin-top: --spacing(1);
+		min-width: --spacing(44);
+		background: white;
+		border: 1px solid --alpha(var(--color-ink) / 25%);
+		padding: --spacing(1) 0;
+		z-index: 10;
+	}
+
 	.panel { border: 1px solid --alpha(var(--color-ink) / 20%); background: white; padding: --spacing(4); }
 	.panel-danger { border-color: #a0303055; }
 	.panel-title { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); }

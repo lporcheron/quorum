@@ -6,7 +6,7 @@ import "fmt"
 // calendar is progressive enhancement; the noscript fallback posts the
 // same field names from static rows.
 templ Home(p HomeProps) {
-	@layout(p.Loc.Lang, p.Loc.T("home.title")) {
+	@layout(p.Loc, p.Loc.T("home.title"), p.User) {
 		<div class="mx-auto max-w-2xl">
 			<div class="pt-16 pb-10">
 				<h1 class="font-display text-5xl font-semibold tracking-tight">{ p.Loc.T("home.title") }</h1>

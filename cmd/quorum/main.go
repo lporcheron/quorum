@@ -14,9 +14,11 @@ import (
 	// The binary must not depend on the system tz database.
 	_ "time/tzdata"
 
+	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/server"
 	"github.com/lporcheron/quorum/internal/store"
@@ -64,7 +66,16 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		return err
 	}
 
-	polls := poll.NewService(store.New(db), nil)
-	h := handler.New(log, db, tr, polls, cfg.BaseURL)
-	return server.New(cfg, log, h).Run(ctx)
+	st := store.New(db)
+	polls := poll.NewService(st, nil)
+	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
+	providers := auth.NewProviders(cfg, cfg.BaseURL)
+	sessions := auth.NewSessionManager(db, cfg.BaseURL)
+	mailer := mail.New(cfg.SMTP)
+	if !mailer.Enabled() {
+		log.Info("smtp not configured; email features are disabled")
+	}
+
+	h := handler.New(log, db, tr, polls, authsvc, providers, sessions, mailer, cfg.BaseURL)
+	return server.New(cfg, log, h, sessions).Run(ctx)
 }

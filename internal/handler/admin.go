@@ -3,29 +3,48 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/web/templates"
 )
 
-// adminContext authorizes an admin route via the capability token.
+// adminContext authorizes an organizer route and returns the base path
+// its forms post to. Two doors: the capability token
+// (/polls/{id}/admin/{token}) or, for claimed polls, the signed-in
+// owner (/polls/{id}/manage).
 func (h *Handler) adminContext(w http.ResponseWriter, r *http.Request) (poll.Poll, string, bool) {
-	token := r.PathValue("adminToken")
-	p, err := h.polls.Admin(r.Context(), r.PathValue("pollID"), token)
+	pollID := r.PathValue("pollID")
+	if token := r.PathValue("adminToken"); token != "" {
+		p, err := h.polls.Admin(r.Context(), pollID, token)
+		if err != nil {
+			h.domainError(w, r, err)
+			return poll.Poll{}, "", false
+		}
+		return p, "/polls/" + pollID + "/admin/" + token, true
+	}
+
+	base := "/polls/" + pollID + "/manage"
+	user := h.currentUser(r)
+	if user == nil {
+		redirect(w, r, "/login?next="+base)
+		return poll.Poll{}, "", false
+	}
+	p, err := h.polls.ByPublicID(r.Context(), pollID)
 	if err != nil {
 		h.domainError(w, r, err)
 		return poll.Poll{}, "", false
 	}
-	return p, token, true
-}
-
-func adminPath(p poll.Poll, token, suffix string) string {
-	return "/polls/" + p.PublicID + "/admin/" + token + suffix
+	if p.CreatedByUserID != user.ID {
+		h.renderError(w, r, http.StatusForbidden, "error.forbidden")
+		return poll.Poll{}, "", false
+	}
+	return p, base, true
 }
 
 // ShowPollAdmin renders the organizer's control panel.
 func (h *Handler) ShowPollAdmin(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -35,21 +54,26 @@ func (h *Handler) ShowPollAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	grid.IsAdmin = true
+	adminURL := ""
+	if strings.Contains(base, "/admin/") {
+		adminURL = h.baseURL + base
+	}
 	h.render(w, r, http.StatusOK, templates.AdminPage(templates.AdminProps{
-		Loc:        grid.Loc,
-		Poll:       p,
-		View:       grid.View,
-		AdminToken: token,
-		AdminURL:   h.baseURL + adminPath(p, token, ""),
-		PublicURL:  h.baseURL + "/polls/" + p.PublicID,
-		New:        r.URL.Query().Get("new") == "1",
-		Saved:      r.URL.Query().Get("saved") == "1",
+		Loc:       grid.Loc,
+		User:      h.currentUser(r),
+		Poll:      p,
+		View:      grid.View,
+		BasePath:  base,
+		AdminURL:  adminURL,
+		PublicURL: h.baseURL + "/polls/" + p.PublicID,
+		New:       r.URL.Query().Get("new") == "1" && adminURL != "",
+		Saved:     r.URL.Query().Get("saved") == "1",
 	}, grid))
 }
 
 // UpdatePoll saves the details form.
 func (h *Handler) UpdatePoll(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -69,12 +93,12 @@ func (h *Handler) UpdatePoll(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, "?saved=1"))
+	redirect(w, r, base+"?saved=1")
 }
 
 // AddOptions appends options from the admin mini-form.
 func (h *Handler) AddOptions(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -89,7 +113,7 @@ func (h *Handler) AddOptions(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, "?saved=1"))
+	redirect(w, r, base+"?saved=1")
 }
 
 // pathID parses a numeric path segment.
@@ -104,7 +128,7 @@ func (h *Handler) pathID(w http.ResponseWriter, r *http.Request, name string) (i
 
 // DeleteOption removes one option and its votes.
 func (h *Handler) DeleteOption(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -116,12 +140,12 @@ func (h *Handler) DeleteOption(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, ""))
+	redirect(w, r, base)
 }
 
 // SetPollStatus pauses or resumes voting.
 func (h *Handler) SetPollStatus(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -132,12 +156,12 @@ func (h *Handler) SetPollStatus(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, ""))
+	redirect(w, r, base)
 }
 
 // AdminDeleteParticipant removes a voter.
 func (h *Handler) AdminDeleteParticipant(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -149,12 +173,12 @@ func (h *Handler) AdminDeleteParticipant(w http.ResponseWriter, r *http.Request)
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, ""))
+	redirect(w, r, base)
 }
 
 // AdminDeleteComment removes any comment.
 func (h *Handler) AdminDeleteComment(w http.ResponseWriter, r *http.Request) {
-	p, token, ok := h.adminContext(w, r)
+	p, base, ok := h.adminContext(w, r)
 	if !ok {
 		return
 	}
@@ -166,7 +190,7 @@ func (h *Handler) AdminDeleteComment(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, token, ""))
+	redirect(w, r, base)
 }
 
 // RegenerateAdminToken rotates the admin link and lands on the new URL.
@@ -180,7 +204,7 @@ func (h *Handler) RegenerateAdminToken(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, adminPath(p, fresh, "?new=1"))
+	redirect(w, r, "/polls/"+p.PublicID+"/admin/"+fresh+"?new=1")
 }
 
 // DeletePoll removes the poll entirely.
@@ -194,4 +218,24 @@ func (h *Handler) DeletePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	redirect(w, r, "/")
+}
+
+// ClaimPoll attaches a guest poll to the signed-in account. Reached
+// through the capability URL: claiming is exactly the handover from
+// link-based to account-based ownership.
+func (h *Handler) ClaimPoll(w http.ResponseWriter, r *http.Request) {
+	p, base, ok := h.adminContext(w, r)
+	if !ok {
+		return
+	}
+	user := h.currentUser(r)
+	if user == nil {
+		redirect(w, r, "/login?next="+base)
+		return
+	}
+	if err := h.polls.Claim(r.Context(), p, user.ID, user.PersonalSpaceID); err != nil {
+		h.domainError(w, r, err)
+		return
+	}
+	redirect(w, r, base)
 }

@@ -1,0 +1,65 @@
+package templates
+
+import (
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/poll"
+)
+
+// DashboardProps feeds the signed-in home.
+type DashboardProps struct {
+	Loc    *i18n.Locale
+	User   *auth.User
+	Live   []poll.Poll // polls I run, still open
+	Closed []poll.Poll // polls I run, paused/finalized/cancelled
+	Voted  []poll.Poll // polls I voted in (run by others)
+}
+
+templ DashboardPage(p DashboardProps) {
+	@layout(p.Loc, p.Loc.T("dashboard.heading")+" — Quorum", p.User) {
+		<div class="mt-10 flex flex-wrap items-baseline justify-between gap-3">
+			<h1 class="font-display text-3xl font-semibold">{ p.Loc.T("dashboard.heading") }</h1>
+			<a class="btn btn-primary" href="/">{ p.Loc.T("dashboard.new_poll") }</a>
+		</div>
+
+		<section class="mt-8">
+			<h2 class="panel-title">{ p.Loc.T("dashboard.mine") }</h2>
+			if len(p.Live) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("dashboard.empty_mine") }</p>
+			} else {
+				@pollList(p.Loc, p.Live, true)
+			}
+		</section>
+
+		if len(p.Closed) > 0 {
+			<section class="mt-8">
+				<h2 class="panel-title">{ p.Loc.T("dashboard.closed") }</h2>
+				@pollList(p.Loc, p.Closed, true)
+			</section>
+		}
+
+		<section class="mt-8">
+			<h2 class="panel-title">{ p.Loc.T("dashboard.voted") }</h2>
+			if len(p.Voted) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("dashboard.empty_voted") }</p>
+			} else {
+				@pollList(p.Loc, p.Voted, false)
+			}
+		</section>
+	}
+}
+
+templ pollList(loc *i18n.Locale, polls []poll.Poll, manage bool) {
+	<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+		for _, pl := range polls {
+			<li class="flex items-center justify-between gap-3 py-2 text-sm">
+				if manage {
+					<a class="underline" href={ templ.URL("/polls/" + pl.PublicID + "/manage") }>{ pl.Title }</a>
+				} else {
+					<a class="underline" href={ templ.URL("/polls/" + pl.PublicID) }>{ pl.Title }</a>
+				}
+				<span class="font-mono text-xs text-ink/60">{ loc.T("dashboard.status_" + string(pl.Status)) }</span>
+			</li>
+		}
+	</ul>
+}

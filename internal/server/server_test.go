@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
@@ -16,7 +18,7 @@ import (
 	"github.com/lporcheron/quorum/internal/store"
 )
 
-func newTestServer(t *testing.T) *httptest.Server {
+func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	t.Helper()
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -38,11 +40,44 @@ func newTestServer(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
-	polls := poll.NewService(store.New(db), nil)
-	srv := New(cfg, log, handler.New(log, db, tr, polls, cfg.BaseURL))
+	st := store.New(db)
+	polls := poll.NewService(st, nil)
+	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
+	sessions := auth.NewSessionManager(db, cfg.BaseURL)
+	mailer := &testMailer{}
+	h := handler.New(log, db, tr, polls, authsvc, nil, sessions, mailer, cfg.BaseURL)
+	srv := New(cfg, log, h, sessions)
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
-	return ts
+	return ts, mailer
+}
+
+// testMailer records outgoing messages so tests can fish the magic
+// link out of the body.
+type testMailer struct {
+	mu   sync.Mutex
+	to   []string
+	body []string
+}
+
+func (m *testMailer) Enabled() bool { return true }
+
+func (m *testMailer) Send(_ context.Context, to, _ string, body string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.to = append(m.to, to)
+	m.body = append(m.body, body)
+	return nil
+}
+
+func (m *testMailer) last(t *testing.T) (string, string) {
+	t.Helper()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if len(m.to) == 0 {
+		t.Fatal("no mail sent")
+	}
+	return m.to[len(m.to)-1], m.body[len(m.body)-1]
 }
 
 func get(t *testing.T, ts *httptest.Server, path string, header http.Header) (*http.Response, string) {
@@ -69,7 +104,7 @@ func get(t *testing.T, ts *httptest.Server, path string, header http.Header) (*h
 }
 
 func TestHealthz(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, body := get(t, ts, "/healthz", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", resp.StatusCode)
@@ -80,7 +115,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestHomeLocalized(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 
 	resp, body := get(t, ts, "/", nil)
 	if resp.StatusCode != http.StatusOK {
@@ -97,7 +132,7 @@ func TestHomeLocalized(t *testing.T) {
 }
 
 func TestSecurityHeadersAndRequestID(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, _ := get(t, ts, "/", nil)
 
 	for header, want := range map[string]string{
@@ -118,7 +153,7 @@ func TestSecurityHeadersAndRequestID(t *testing.T) {
 }
 
 func TestUnknownPathIs404(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, _ := get(t, ts, "/polls/nope", nil)
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("status = %d, want 404", resp.StatusCode)
@@ -126,7 +161,7 @@ func TestUnknownPathIs404(t *testing.T) {
 }
 
 func TestStaticServed(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, _ := get(t, ts, "/static/css/app.css", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (run `make css` if app.css is missing)", resp.StatusCode)

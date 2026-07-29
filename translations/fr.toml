@@ -317,3 +317,125 @@ other = "Le formulaire n'a pas pu être lu. Revenez en arrière et réessayez."
 
 [error.internal]
 other = "Quelque chose a cassé de notre côté. Réessayez dans un instant."
+
+# ---- Auth ----
+
+[nav.login]
+other = "Se connecter"
+
+[nav.logout]
+other = "Se déconnecter"
+
+[nav.dashboard]
+other = "Mes sondages"
+
+[login.heading]
+other = "Se connecter"
+
+[login.blurb]
+other = "Un compte regroupe vos sondages et permet à votre équipe de les gérer avec vous."
+
+[login.continue_with]
+other = "Continuer avec"
+
+[login.email_heading]
+other = "Ou recevez un lien de connexion par email"
+
+[login.email_label]
+other = "Votre adresse email"
+
+[login.email_submit]
+other = "M'envoyer un lien de connexion"
+
+[login.email_sent_title]
+other = "Vérifiez votre boîte mail."
+
+[login.email_sent_body]
+other = "Si cette adresse peut se connecter ici, un lien est en route. Il fonctionne une fois, pendant 15 minutes."
+
+[login.email_disabled]
+other = "Cette instance n'a pas de serveur email configuré : les liens de connexion sont indisponibles. Utilisez l'un des boutons ci-dessus."
+
+[login.no_methods]
+other = "Aucune méthode de connexion n'est configurée sur cette instance."
+
+[login.magic_subject]
+other = "Votre lien de connexion — Quorum"
+
+[login.magic_body]
+other = "Ouvrez ce lien pour vous connecter à Quorum :\n\n{{.Link}}\n\nIl est valable 15 minutes et fonctionne une seule fois. Si vous n'avez rien demandé, ignorez cet email."
+
+# ---- Dashboard ----
+
+[dashboard.heading]
+other = "Mes sondages"
+
+[dashboard.mine]
+other = "Sondages que je pilote"
+
+[dashboard.closed]
+other = "En pause ou clos"
+
+[dashboard.voted]
+other = "Sondages où j'ai voté"
+
+[dashboard.empty_mine]
+other = "Vous ne pilotez encore aucun sondage."
+
+[dashboard.empty_voted]
+other = "Vous n'avez encore voté nulle part."
+
+[dashboard.new_poll]
+other = "Créer un sondage"
+
+[dashboard.status_live]
+other = "en cours"
+
+[dashboard.status_paused]
+other = "en pause"
+
+[dashboard.status_finalized]
+other = "finalisé"
+
+[dashboard.status_cancelled]
+other = "annulé"
+
+# ---- Claim ----
+
+[claim.heading]
+other = "Rattacher ce sondage à votre compte"
+
+[claim.body]
+other = "Un sondage rattaché apparaît dans votre tableau de bord et reste gérable même si vous perdez ce lien."
+
+[claim.submit]
+other = "Rattacher à mon compte"
+
+[claim.login_hint]
+other = "Connectez-vous pour rattacher ce sondage à un compte."
+
+[claim.owned]
+other = "Ce sondage est rattaché à votre compte."
+
+# ---- Auth errors ----
+
+[error.registrations_closed]
+other = "Les inscriptions sont fermées sur cette instance."
+
+[error.email_not_allowed]
+other = "Cette adresse email n'est pas autorisée sur cette instance."
+
+[error.email_unverified]
+other = "Votre fournisseur d'identité n'a pas certifié d'adresse email vérifiée : la connexion a été refusée."
+
+[error.invalid_login_token]
+other = "Ce lien de connexion est invalide ou expiré. Demandez-en un nouveau."
+
+[error.login_required]
+other = "Connectez-vous pour ouvrir cette page."
+
+[error.oauth_failed]
+other = "La tentative de connexion a échoué. Réessayez."
+
+[error.mail_disabled]
+other = "L'email est désactivé sur cette instance."

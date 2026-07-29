@@ -78,7 +78,7 @@ func optionIDs(t *testing.T, body string) []string {
 }
 
 func TestCreateVoteAndTallyFlow(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	adminPath := createPoll(t, ts, nil)
 	public := pollPath(adminPath)
 
@@ -137,7 +137,7 @@ func TestCreateVoteAndTallyFlow(t *testing.T) {
 }
 
 func TestTimezoneSwitch(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	adminPath := createPoll(t, ts, nil)
 	public := pollPath(adminPath)
 
@@ -167,7 +167,7 @@ func TestTimezoneSwitch(t *testing.T) {
 }
 
 func TestAdminManagement(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	adminPath := createPoll(t, ts, nil)
 	public := pollPath(adminPath)
 
@@ -238,7 +238,7 @@ func TestAdminManagement(t *testing.T) {
 }
 
 func TestCommentsFlow(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	adminPath := createPoll(t, ts, nil)
 	public := pollPath(adminPath)
 
@@ -267,7 +267,7 @@ func TestCommentsFlow(t *testing.T) {
 }
 
 func TestHiddenParticipants(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	adminPath := createPoll(t, ts, url.Values{"hide_participants": {"1"}})
 	public := pollPath(adminPath)
 
@@ -292,7 +292,7 @@ func TestHiddenParticipants(t *testing.T) {
 }
 
 func TestAllDayPoll(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, body := postForm(t, ts, "/polls", url.Values{
 		"title":       {"Offsite"},
 		"kind":        {"allday"},
@@ -312,7 +312,7 @@ func TestAllDayPoll(t *testing.T) {
 }
 
 func TestCreateValidationRerendersForm(t *testing.T) {
-	ts := newTestServer(t)
+	ts, _ := newTestServer(t)
 	resp, body := postForm(t, ts, "/polls", url.Values{
 		"title": {"No dates"},
 		"kind":  {"timed"},

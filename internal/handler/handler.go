@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	"github.com/alexedwards/scs/v2"
 
+	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/web/templates"
 )
@@ -23,16 +26,40 @@ const maxFormBytes = 64 << 10
 
 // Handler bundles the dependencies shared by all HTTP handlers.
 type Handler struct {
-	log     *slog.Logger
-	db      *sql.DB
-	tr      *i18n.Translator
-	polls   *poll.Service
-	baseURL string
+	log       *slog.Logger
+	db        *sql.DB
+	tr        *i18n.Translator
+	polls     *poll.Service
+	auth      *auth.Service
+	providers []*auth.Provider
+	sessions  *scs.SessionManager
+	mailer    mail.Mailer
+	baseURL   string
 }
 
 // New wires a Handler; all dependencies are explicit.
-func New(log *slog.Logger, db *sql.DB, tr *i18n.Translator, polls *poll.Service, baseURL string) *Handler {
-	return &Handler{log: log, db: db, tr: tr, polls: polls, baseURL: strings.TrimSuffix(baseURL, "/")}
+func New(log *slog.Logger, db *sql.DB, tr *i18n.Translator, polls *poll.Service,
+	authsvc *auth.Service, providers []*auth.Provider, sessions *scs.SessionManager,
+	mailer mail.Mailer, baseURL string,
+) *Handler {
+	return &Handler{
+		log: log, db: db, tr: tr, polls: polls,
+		auth: authsvc, providers: providers, sessions: sessions, mailer: mailer,
+		baseURL: strings.TrimSuffix(baseURL, "/"),
+	}
+}
+
+// currentUser returns the signed-in user, or nil.
+func (h *Handler) currentUser(r *http.Request) *auth.User {
+	id := h.sessions.GetInt64(r.Context(), auth.SessionUserKey)
+	if id == 0 {
+		return nil
+	}
+	u, err := h.auth.UserByID(r.Context(), id)
+	if err != nil {
+		return nil
+	}
+	return &u
 }
 
 func (h *Handler) locale(r *http.Request) *i18n.Locale {
@@ -59,7 +86,18 @@ func (h *Handler) parseForm(w http.ResponseWriter, r *http.Request) bool {
 
 func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int, msgID string) {
 	loc := h.locale(r)
-	h.render(w, r, status, templates.ErrorPage(templates.ErrorProps{Loc: loc, Message: loc.T(msgID)}))
+	h.render(w, r, status, templates.ErrorPage(templates.ErrorProps{
+		Loc: loc, User: h.currentUser(r), Message: loc.T(msgID),
+	}))
+}
+
+// defaults gathers the profile hints for a first sign-in.
+func (h *Handler) defaults(r *http.Request) auth.Defaults {
+	d := auth.Defaults{Locale: h.locale(r).Lang}
+	if c, err := r.Cookie(tzCookie); err == nil && poll.ValidTimezone(c.Value) {
+		d.Timezone = c.Value
+	}
+	return d
 }
 
 // errStatus maps a domain error to an HTTP status and a message id.

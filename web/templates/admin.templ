@@ -5,8 +5,8 @@ import "github.com/lporcheron/quorum/internal/poll"
 // AdminPage is the organizer's control panel, reached only through the
 // capability URL.
 templ AdminPage(a AdminProps, grid PollPageProps) {
-	@layout(a.Loc.Lang, a.Poll.Title+" — Quorum") {
-		if a.New {
+	@layout(a.Loc, a.Poll.Title+" — Quorum", a.User) {
+		if a.New && a.AdminURL != "" {
 			<div class="banner banner-strong mt-6" data-admin-link data-title={ a.Poll.Title }>
 				<p class="font-semibold">{ a.Loc.T("admin.new_banner_title") }</p>
 				<p class="mt-1 text-sm">{ a.Loc.T("admin.new_banner_body") }</p>
@@ -15,7 +15,7 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 					<button class="btn btn-sm" type="button" data-copy="admin-url" data-copied={ a.Loc.T("admin.copied") }>{ a.Loc.T("admin.copy") }</button>
 				</div>
 			</div>
-		} else {
+		} else if a.AdminURL != "" {
 			<div hidden data-admin-link data-title={ a.Poll.Title } data-url={ a.AdminURL }></div>
 		}
 		if a.Saved {
@@ -25,6 +25,24 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 			<h1 class="font-display text-3xl font-semibold tracking-tight">{ a.Poll.Title }</h1>
 			<span class="text-sm text-ink/60">{ a.Loc.T("admin.heading") }</span>
 		</div>
+
+		if !a.Poll.Claimed() {
+			<section class="panel mt-6">
+				<h2 class="panel-title">{ a.Loc.T("claim.heading") }</h2>
+				<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("claim.body") }</p>
+				if a.User != nil {
+					<form method="post" action={ templ.URL(a.adminPath("/claim")) } class="mt-2">
+						<button class="btn btn-sm" type="submit">{ a.Loc.T("claim.submit") }</button>
+					</form>
+				} else {
+					<p class="mt-2 text-sm">
+						<a class="underline" href={ templ.URL("/login?next=" + a.BasePath) }>{ a.Loc.T("claim.login_hint") }</a>
+					</p>
+				}
+			</section>
+		} else if a.User != nil && a.Poll.CreatedByUserID == a.User.ID {
+			<p class="notice mt-6">{ a.Loc.T("claim.owned") }</p>
+		}
 
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ a.Loc.T("admin.share_heading") }</h2>

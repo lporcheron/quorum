@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alexedwards/scs/v2"
+
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/web"
@@ -17,14 +19,15 @@ import (
 
 // Server owns the http.Server lifecycle.
 type Server struct {
-	cfg config.Config
-	log *slog.Logger
-	h   *handler.Handler
+	cfg      config.Config
+	log      *slog.Logger
+	h        *handler.Handler
+	sessions *scs.SessionManager
 }
 
 // New wires a Server; all dependencies are explicit.
-func New(cfg config.Config, log *slog.Logger, h *handler.Handler) *Server {
-	return &Server{cfg: cfg, log: log, h: h}
+func New(cfg config.Config, log *slog.Logger, h *handler.Handler, sessions *scs.SessionManager) *Server {
+	return &Server{cfg: cfg, log: log, h: h, sessions: sessions}
 }
 
 // Handler builds the full routing table with the middleware chain.
@@ -58,12 +61,35 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/comments/{commentID}/delete", s.h.AdminDeleteComment)
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/regenerate", s.h.RegenerateAdminToken)
 	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/delete", s.h.DeletePoll)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/claim", s.h.ClaimPoll)
+
+	// Session-authorized mirror of the organizer routes, for claimed
+	// polls reached from the dashboard (no token in the URL).
+	mux.HandleFunc("GET /polls/{pollID}/manage", s.h.ShowPollAdmin)
+	mux.HandleFunc("POST /polls/{pollID}/manage", s.h.UpdatePoll)
+	mux.HandleFunc("POST /polls/{pollID}/manage/options", s.h.AddOptions)
+	mux.HandleFunc("POST /polls/{pollID}/manage/options/{optionID}/delete", s.h.DeleteOption)
+	mux.HandleFunc("POST /polls/{pollID}/manage/status", s.h.SetPollStatus)
+	mux.HandleFunc("POST /polls/{pollID}/manage/participants/{participantID}/delete", s.h.AdminDeleteParticipant)
+	mux.HandleFunc("POST /polls/{pollID}/manage/comments/{commentID}/delete", s.h.AdminDeleteComment)
+	mux.HandleFunc("POST /polls/{pollID}/manage/regenerate", s.h.RegenerateAdminToken)
+	mux.HandleFunc("POST /polls/{pollID}/manage/delete", s.h.DeletePoll)
+
+	// Sign-in and account.
+	mux.HandleFunc("GET /login", s.h.Login)
+	mux.HandleFunc("GET /auth/{provider}/start", s.h.OAuthStart)
+	mux.HandleFunc("GET /auth/{provider}/callback", s.h.OAuthCallback)
+	mux.HandleFunc("POST /auth/email", s.h.RequestMagicLink)
+	mux.HandleFunc("GET /auth/email/callback", s.h.MagicLinkCallback)
+	mux.HandleFunc("POST /auth/logout", s.h.Logout)
+	mux.HandleFunc("GET /dashboard", s.h.Dashboard)
 
 	return chain(mux,
 		recoverPanic(s.log),
 		requestID,
 		accessLog(s.log),
 		securityHeaders,
+		s.sessions.LoadAndSave,
 	)
 }
 

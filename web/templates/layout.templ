@@ -1,8 +1,13 @@
 package templates
 
-templ layout(lang, title string) {
+import (
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+)
+
+templ layout(loc *i18n.Locale, title string, user *auth.User) {
 	<!DOCTYPE html>
-	<html lang={ lang }>
+	<html lang={ loc.Lang }>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -15,6 +20,22 @@ templ layout(lang, title string) {
 			<header class="border-b border-ink/15">
 				<div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
 					<a href="/" class="font-display text-lg font-semibold tracking-tight">Quorum</a>
+					<nav class="flex items-center gap-4 text-sm">
+						if user != nil {
+							<a href="/dashboard" class="underline">{ loc.T("nav.dashboard") }</a>
+							<details class="usermenu">
+								<summary class="cursor-pointer list-none font-semibold">{ user.Name }</summary>
+								<div class="usermenu-panel">
+									<p class="truncate px-3 py-1 font-mono text-xs text-ink/60">{ user.Email }</p>
+									<form method="post" action="/auth/logout">
+										<button class="block w-full px-3 py-1.5 text-left hover:bg-ink/5" type="submit">{ loc.T("nav.logout") }</button>
+									</form>
+								</div>
+							</details>
+						} else {
+							<a href="/login" class="underline">{ loc.T("nav.login") }</a>
+						}
+					</nav>
 				</div>
 			</header>
 			<main class="mx-auto max-w-5xl px-4 pb-24">
@@ -25,7 +46,7 @@ templ layout(lang, title string) {
 }
 
 templ ErrorPage(p ErrorProps) {
-	@layout(p.Loc.Lang, p.Loc.T("error.heading")) {
+	@layout(p.Loc, p.Loc.T("error.heading"), p.User) {
 		<div class="mx-auto max-w-xl py-24">
 			<h1 class="font-display text-3xl font-semibold">{ p.Loc.T("error.heading") }</h1>
 			<p class="mt-4 text-lg">{ p.Message }</p>

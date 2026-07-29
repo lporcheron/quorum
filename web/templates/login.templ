@@ -1,0 +1,60 @@
+package templates
+
+import (
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+)
+
+// LoginProps feeds the sign-in page.
+type LoginProps struct {
+	Loc         *i18n.Locale
+	User        *auth.User
+	Providers   []*auth.Provider
+	MailEnabled bool
+	Next        string // local path to land on after sign-in
+	Sent        bool   // magic link request accepted
+	Error       string // localized message
+}
+
+templ LoginPage(p LoginProps) {
+	@layout(p.Loc, p.Loc.T("login.heading")+" — Quorum", p.User) {
+		<div class="mx-auto max-w-md py-16">
+			<h1 class="font-display text-3xl font-semibold">{ p.Loc.T("login.heading") }</h1>
+			<p class="mt-2 text-sm text-ink/70">{ p.Loc.T("login.blurb") }</p>
+			if p.Error != "" {
+				<p class="error mt-4" role="alert">{ p.Error }</p>
+			}
+			if p.Sent {
+				<div class="banner mt-6">
+					<p class="font-semibold">{ p.Loc.T("login.email_sent_title") }</p>
+					<p class="mt-1 text-sm">{ p.Loc.T("login.email_sent_body") }</p>
+				</div>
+			}
+			if len(p.Providers) == 0 && !p.MailEnabled {
+				<p class="notice mt-6">{ p.Loc.T("login.no_methods") }</p>
+			}
+			if len(p.Providers) > 0 {
+				<div class="mt-6 space-y-2">
+					for _, prov := range p.Providers {
+						<a class="btn block text-center" href={ templ.URL("/auth/" + prov.Key + "/start?next=" + p.Next) }>
+							{ p.Loc.T("login.continue_with") } { prov.Label }
+						</a>
+					}
+				</div>
+			}
+			<h2 class="mt-8 font-display text-lg font-semibold">{ p.Loc.T("login.email_heading") }</h2>
+			if p.MailEnabled {
+				<form method="post" action="/auth/email" class="mt-3 space-y-3">
+					<input type="hidden" name="next" value={ p.Next }/>
+					<label class="block">
+						<span class="lbl">{ p.Loc.T("login.email_label") }</span>
+						<input class="field w-full" type="email" name="email" required/>
+					</label>
+					<button class="btn btn-primary" type="submit">{ p.Loc.T("login.email_submit") }</button>
+				</form>
+			} else {
+				<p class="mt-3 text-sm text-ink/60">{ p.Loc.T("login.email_disabled") }</p>
+			}
+		</div>
+	}
+}
