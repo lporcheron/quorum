@@ -75,9 +75,14 @@ type Poll struct {
 	RequireVoterEmail bool
 	AllowComments     bool
 	CreatedAt         time.Time
+	// CreatedByUserID is 0 while the poll is unclaimed (guest-created).
+	CreatedByUserID int64
 
 	adminTokenHash string
 }
+
+// Claimed reports whether an account owns this poll.
+func (p Poll) Claimed() bool { return p.CreatedByUserID != 0 }
 
 // Open reports whether the poll currently accepts votes.
 func (p Poll) Open() bool { return p.Status == StatusLive }
@@ -157,6 +162,7 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 		RequireVoterEmail: r.RequireVoterEmail != 0,
 		AllowComments:     r.AllowComments != 0,
 		CreatedAt:         createdAt,
+		CreatedByUserID:   r.CreatedByUserID.Int64,
 		adminTokenHash:    r.AdminTokenHash,
 	}, nil
 }

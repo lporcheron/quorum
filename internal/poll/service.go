@@ -313,8 +313,9 @@ func checkVoter(p Poll, name, email string) (string, string, error) {
 }
 
 // Join records a first-time voter and returns their personal edit
-// token — shown once, stored hashed.
-func (s *Service) Join(ctx context.Context, p Poll, name, email string, votes map[int64]VoteValue) (Participant, string, error) {
+// token — shown once, stored hashed. userID links the participant to a
+// signed-in account (0 for guests).
+func (s *Service) Join(ctx context.Context, p Poll, name, email string, userID int64, votes map[int64]VoteValue) (Participant, string, error) {
 	name, email, err := checkVoter(p, name, email)
 	if err != nil {
 		return Participant{}, "", err
@@ -334,6 +335,7 @@ func (s *Service) Join(ctx context.Context, p Poll, name, email string, votes ma
 			PollID:        p.ID,
 			Name:          name,
 			Email:         nullString(email),
+			UserID:        nullInt64(userID),
 			EditTokenHash: ids.HashToken(editToken),
 			CreatedAt:     store.FormatTime(now),
 			UpdatedAt:     store.FormatTime(now),
@@ -570,6 +572,61 @@ func (s *Service) RemoveOwnComment(ctx context.Context, p Poll, participant Part
 		return ErrForbidden
 	}
 	return s.RemoveComment(ctx, p, commentID)
+}
+
+// Claim attaches a guest poll to an account and its personal space.
+// Fails once claimed: ownership never silently moves.
+func (s *Service) Claim(ctx context.Context, p Poll, userID, spaceID int64) error {
+	n, err := s.store.ClaimPoll(ctx, sqlite.ClaimPollParams{
+		ID:        p.ID,
+		UserID:    nullInt64(userID),
+		SpaceID:   nullInt64(spaceID),
+		UpdatedAt: store.FormatTime(s.now()),
+	})
+	if err != nil {
+		return fmt.Errorf("claim poll: %w", err)
+	}
+	if n != 1 {
+		return ErrForbidden
+	}
+	return nil
+}
+
+// ListByCreator returns the polls owned by a user, newest first.
+func (s *Service) ListByCreator(ctx context.Context, userID int64) ([]Poll, error) {
+	rows, err := s.store.ListPollsByCreator(ctx, nullInt64(userID))
+	if err != nil {
+		return nil, fmt.Errorf("list polls by creator: %w", err)
+	}
+	return pollsFromRows(rows)
+}
+
+// ListVotedBy returns the polls where the user voted, newest first.
+func (s *Service) ListVotedBy(ctx context.Context, userID int64) ([]Poll, error) {
+	rows, err := s.store.ListPollsVotedByUser(ctx, nullInt64(userID))
+	if err != nil {
+		return nil, fmt.Errorf("list voted polls: %w", err)
+	}
+	return pollsFromRows(rows)
+}
+
+func pollsFromRows(rows []sqlite.Poll) ([]Poll, error) {
+	out := make([]Poll, 0, len(rows))
+	for _, r := range rows {
+		p, err := pollFromRow(r)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, nil
+}
+
+func nullInt64(n int64) sql.NullInt64 {
+	if n == 0 {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Int64: n, Valid: true}
 }
 
 func boolInt(b bool) int64 {

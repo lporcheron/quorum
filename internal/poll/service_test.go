@@ -131,11 +131,11 @@ func TestJoinVoteEditFlow(t *testing.T) {
 	v, _ := s.View(ctx, p)
 	opt1, opt2 := v.Options[0].ID, v.Options[1].ID
 
-	alice, aliceToken, err := s.Join(ctx, p, "Alice", "alice@example.com", map[int64]VoteValue{opt1: VoteYes, opt2: VoteNo})
+	alice, aliceToken, err := s.Join(ctx, p, "Alice", "alice@example.com", 0, map[int64]VoteValue{opt1: VoteYes, opt2: VoteNo})
 	if err != nil {
 		t.Fatalf("Join: %v", err)
 	}
-	_, _, err = s.Join(ctx, p, "Bob", "", map[int64]VoteValue{opt1: VoteIfNeedBe, opt2: VoteYes, 99999: VoteYes})
+	_, _, err = s.Join(ctx, p, "Bob", "", 0, map[int64]VoteValue{opt1: VoteIfNeedBe, opt2: VoteYes, 99999: VoteYes})
 	if err != nil {
 		t.Fatalf("Join bob: %v", err)
 	}
@@ -186,7 +186,7 @@ func TestJoinValidation(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 
-	if _, _, err := s.Join(ctx, p, "  ", "", nil); !errors.Is(err, ErrNameRequired) {
+	if _, _, err := s.Join(ctx, p, "  ", "", 0, nil); !errors.Is(err, ErrNameRequired) {
 		t.Errorf("blank name: %v", err)
 	}
 
@@ -197,10 +197,10 @@ func TestJoinValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if _, _, err := s.Join(ctx, strict, "Carol", "", nil); !errors.Is(err, ErrEmailRequired) {
+	if _, _, err := s.Join(ctx, strict, "Carol", "", 0, nil); !errors.Is(err, ErrEmailRequired) {
 		t.Errorf("missing required email: %v", err)
 	}
-	if _, _, err := s.Join(ctx, strict, "Carol", "not-an-email", nil); !errors.Is(err, ErrEmailRequired) {
+	if _, _, err := s.Join(ctx, strict, "Carol", "not-an-email", 0, nil); !errors.Is(err, ErrEmailRequired) {
 		t.Errorf("malformed required email: %v", err)
 	}
 
@@ -208,7 +208,7 @@ func TestJoinValidation(t *testing.T) {
 		t.Fatalf("SetPaused: %v", err)
 	}
 	paused, _ := s.ByPublicID(ctx, p.PublicID)
-	if _, _, err := s.Join(ctx, paused, "Dave", "", nil); !errors.Is(err, ErrPollClosed) {
+	if _, _, err := s.Join(ctx, paused, "Dave", "", 0, nil); !errors.Is(err, ErrPollClosed) {
 		t.Errorf("paused poll accepted a vote: %v", err)
 	}
 }
@@ -219,7 +219,7 @@ func TestOptionManagement(t *testing.T) {
 	v, _ := s.View(ctx, p)
 
 	// Add an option later; existing participants get "no answer" on it.
-	if _, _, err := s.Join(ctx, p, "Alice", "", map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
+	if _, _, err := s.Join(ctx, p, "Alice", "", 0, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
 		t.Fatalf("Join: %v", err)
 	}
 	err := s.AddOptions(ctx, p, []TimedSlot{{Date: Date{2026, time.September, 14}, Hour: 19, Duration: 2 * time.Hour}}, nil)
@@ -257,7 +257,7 @@ func TestComments(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 
-	alice, _, err := s.Join(ctx, p, "Alice", "", nil)
+	alice, _, err := s.Join(ctx, p, "Alice", "", 0, nil)
 	if err != nil {
 		t.Fatalf("Join: %v", err)
 	}
@@ -303,7 +303,7 @@ func TestDeletePollCascades(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 	v, _ := s.View(ctx, p)
-	if _, _, err := s.Join(ctx, p, "Alice", "", map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
+	if _, _, err := s.Join(ctx, p, "Alice", "", 0, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
 		t.Fatalf("Join: %v", err)
 	}
 	if err := s.Delete(ctx, p); err != nil {
