@@ -69,6 +69,7 @@ type Poll struct {
 	DeletesAt         sql.NullString
 	CreatedAt         string
 	UpdatedAt         string
+	RetentionDays     sql.NullInt64
 }
 
 type PollOption struct {
@@ -87,12 +88,25 @@ type Session struct {
 }
 
 type Space struct {
-	ID          int64
-	PublicID    string
-	Slug        string
-	Name        string
-	OwnerUserID int64
-	CreatedAt   string
+	ID              int64
+	PublicID        string
+	Slug            string
+	Name            string
+	OwnerUserID     int64
+	CreatedAt       string
+	DefaultTimezone sql.NullString
+	RetentionDays   sql.NullInt64
+}
+
+type SpaceInvitation struct {
+	ID              int64
+	SpaceID         int64
+	Email           string
+	Role            string
+	TokenHash       string
+	InvitedByUserID int64
+	ExpiresAt       string
+	CreatedAt       string
 }
 
 type SpaceMember struct {

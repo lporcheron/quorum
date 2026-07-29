@@ -44,7 +44,7 @@ func (q *Queries) CreateIdentity(ctx context.Context, arg CreateIdentityParams) 
 const createSpace = `-- name: CreateSpace :one
 INSERT INTO spaces (public_id, slug, name, owner_user_id, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5)
-RETURNING id, public_id, slug, name, owner_user_id, created_at
+RETURNING id, public_id, slug, name, owner_user_id, created_at, default_timezone, retention_days
 `
 
 type CreateSpaceParams struct {
@@ -71,6 +71,8 @@ func (q *Queries) CreateSpace(ctx context.Context, arg CreateSpaceParams) (Space
 		&i.Name,
 		&i.OwnerUserID,
 		&i.CreatedAt,
+		&i.DefaultTimezone,
+		&i.RetentionDays,
 	)
 	return i, err
 }

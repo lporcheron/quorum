@@ -1,12 +1,14 @@
 -- name: CreatePoll :one
 INSERT INTO polls (
-    public_id, admin_token_hash, title, description, location, video_url,
+    public_id, space_id, created_by_user_id, admin_token_hash,
+    title, description, location, video_url,
     kind, timezone, hide_participants, require_voter_email, allow_comments,
-    deletes_at, created_at, updated_at
+    retention_days, deletes_at, created_at, updated_at
 ) VALUES (
-    @public_id, @admin_token_hash, @title, @description, @location, @video_url,
+    @public_id, @space_id, @created_by_user_id, @admin_token_hash,
+    @title, @description, @location, @video_url,
     @kind, @timezone, @hide_participants, @require_voter_email, @allow_comments,
-    @deletes_at, @created_at, @updated_at
+    @retention_days, @deletes_at, @created_at, @updated_at
 )
 RETURNING *;
 
