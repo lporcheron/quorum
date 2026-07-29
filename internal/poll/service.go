@@ -554,6 +554,43 @@ func (s *Service) FinalizedOption(ctx context.Context, p Poll) (Option, error) {
 	return optionFromRow(row)
 }
 
+// Expired lists polls past their retention horizon, oldest first.
+func (s *Service) Expired(ctx context.Context, limit int) ([]Poll, error) {
+	rows, err := s.store.ListExpiredPolls(ctx, sqlite.ListExpiredPollsParams{
+		Now:     sql.NullString{String: store.FormatTime(s.now()), Valid: true},
+		MaxRows: int64(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list expired polls: %w", err)
+	}
+	return pollsFromRows(rows)
+}
+
+// NeedingReminder lists claimed polls expiring within the window whose
+// organizer has not been warned yet.
+func (s *Service) NeedingReminder(ctx context.Context, within time.Duration, limit int) ([]Poll, error) {
+	rows, err := s.store.ListPollsNeedingReminder(ctx, sqlite.ListPollsNeedingReminderParams{
+		Soon:    sql.NullString{String: store.FormatTime(s.now().Add(within)), Valid: true},
+		MaxRows: int64(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list polls needing reminder: %w", err)
+	}
+	return pollsFromRows(rows)
+}
+
+// MarkReminded records that the expiry warning went out.
+func (s *Service) MarkReminded(ctx context.Context, p Poll) error {
+	err := s.store.MarkPollReminded(ctx, sqlite.MarkPollRemindedParams{
+		ID:         p.ID,
+		RemindedAt: sql.NullString{String: store.FormatTime(s.now()), Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("mark poll reminded: %w", err)
+	}
+	return nil
+}
+
 // Delete removes the poll and everything under it.
 func (s *Service) Delete(ctx context.Context, p Poll) error {
 	if err := s.store.DeletePoll(ctx, p.ID); err != nil {
