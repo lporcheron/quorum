@@ -66,11 +66,21 @@ type Config struct {
 
 	// RegistrationsOpen gates new account creation
 	// (QUORUM_REGISTRATIONS_OPEN, default true). Existing users always
-	// sign in.
+	// sign in. The admin page can override it at runtime.
 	RegistrationsOpen bool
 	// EmailAllowedDomains restricts sign-up emails when non-empty
 	// (QUORUM_EMAIL_ALLOWED_DOMAINS, comma-separated).
 	EmailAllowedDomains []string
+	// AdminEmails grants the instance admin page
+	// (QUORUM_ADMIN_EMAILS, comma-separated account emails).
+	AdminEmails []string
+	// MetricsEnabled serves Prometheus metrics on /metrics
+	// (QUORUM_METRICS, default false).
+	MetricsEnabled bool
+	// TrustProxy uses X-Forwarded-For for rate limiting
+	// (QUORUM_TRUST_PROXY, default false; enable only behind a reverse
+	// proxy that sets it).
+	TrustProxy bool
 }
 
 // Load builds a Config from the given environment lookup function
@@ -164,6 +174,28 @@ func Load(getenv func(string) string) (Config, error) {
 			if d = strings.ToLower(strings.TrimSpace(d)); d != "" {
 				cfg.EmailAllowedDomains = append(cfg.EmailAllowedDomains, d)
 			}
+		}
+	}
+	if v := getenv("QUORUM_ADMIN_EMAILS"); v != "" {
+		for _, e := range strings.Split(v, ",") {
+			if e = strings.ToLower(strings.TrimSpace(e)); e != "" {
+				cfg.AdminEmails = append(cfg.AdminEmails, e)
+			}
+		}
+	}
+	for _, key := range []struct {
+		env    string
+		target *bool
+	}{
+		{"QUORUM_METRICS", &cfg.MetricsEnabled},
+		{"QUORUM_TRUST_PROXY", &cfg.TrustProxy},
+	} {
+		if v := getenv(key.env); v != "" {
+			b, err := strconv.ParseBool(v)
+			if err != nil {
+				return Config{}, fmt.Errorf("%s must be a boolean, got %q", key.env, v)
+			}
+			*key.target = b
 		}
 	}
 
