@@ -80,6 +80,7 @@ type Poll struct {
 	CreatedAt         string
 	UpdatedAt         string
 	RetentionDays     sql.NullInt64
+	ReminderSentAt    sql.NullString
 }
 
 type PollOption struct {
@@ -95,6 +96,11 @@ type Session struct {
 	Token  string
 	Data   []byte
 	Expiry float64
+}
+
+type Setting struct {
+	Key   string
+	Value string
 }
 
 type Space struct {
