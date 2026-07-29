@@ -1,0 +1,12 @@
+# Queries are written in a portable subset (named parameters, RETURNING,
+# ON CONFLICT) so the same files can be compiled for PostgreSQL later
+# (see PLAN.md, decision D1).
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "migrations"
+    queries: "internal/store/queries"
+    gen:
+      go:
+        package: "sqlite"
+        out: "internal/store/sqlite"
