@@ -6,3 +6,314 @@ other = "Proposez des dates. Partagez un lien. Comptez les voix."
 
 [home.blurb]
 other = "Vos invités votent oui, si nécessaire ou non — sans créer de compte. Vous arrêtez la date gagnante et tout le monde la reçoit dans son calendrier."
+
+[home.recent]
+other = "Vos sondages récents sur cet appareil"
+
+# ---- Poll creation ----
+
+[create.heading]
+other = "Créer un sondage"
+
+[create.title_label]
+other = "Titre"
+
+[create.title_placeholder]
+other = "Dîner d'équipe"
+
+[create.description_label]
+other = "Description"
+
+[create.location_label]
+other = "Lieu"
+
+[create.video_label]
+other = "Lien de visio"
+
+[create.more]
+other = "Détails et réglages"
+
+[create.kind_label]
+other = "Que proposez-vous ?"
+
+[create.kind_timed]
+other = "Des créneaux horaires"
+
+[create.kind_allday]
+other = "Des journées entières"
+
+[create.timezone_label]
+other = "Fuseau horaire"
+
+[create.dates_label]
+other = "Dates proposées"
+
+[create.calendar_hint]
+other = "Choisissez une ou plusieurs dates dans le calendrier."
+
+[create.slots_label]
+other = "Créneaux"
+
+[create.add_slot]
+other = "Ajouter un créneau"
+
+[create.remove]
+other = "Retirer"
+
+[create.copy_times]
+other = "Appliquer ces horaires à tous les jours choisis"
+
+[create.date_label]
+other = "Date"
+
+[create.start_label]
+other = "Début"
+
+[create.duration_label]
+other = "Durée"
+
+[create.hide_participants]
+other = "Masquer les participants entre eux"
+
+[create.require_email]
+other = "Exiger l'email des votants"
+
+[create.allow_comments]
+other = "Autoriser les commentaires"
+
+[create.submit]
+other = "Créer le sondage"
+
+[create.nojs_hint]
+other = "Ajoutez jusqu'à cinq options ci-dessous. Vous pourrez en ajouter d'autres depuis la page d'administration."
+
+# ---- Poll page ----
+
+[poll.paused_notice]
+other = "Le vote est en pause. L'organisateur peut le rouvrir."
+
+[poll.participants]
+one = "{{.Count}} participant"
+other = "{{.Count}} participants"
+
+[poll.no_votes]
+other = "Personne n'a encore voté. Lancez-vous."
+
+[poll.hidden_participants]
+other = "L'organisateur garde la liste des participants privée. Les totaux restent publics."
+
+[poll.winner]
+other = "Option en tête"
+
+[poll.tz_label]
+other = "Heures affichées en"
+
+[poll.tz_apply]
+other = "Appliquer"
+
+[poll.video_join]
+other = "Lien de visio"
+
+# ---- Voting ----
+
+[vote.yes]
+other = "Oui"
+
+[vote.ifneedbe]
+other = "Si nécessaire"
+
+[vote.no]
+other = "Non"
+
+[vote.noanswer]
+other = "Sans réponse"
+
+[vote.your_row]
+other = "Vos disponibilités"
+
+[vote.name_label]
+other = "Votre nom"
+
+[vote.email_label]
+other = "Email"
+
+[vote.email_optional]
+other = "Email (facultatif)"
+
+[vote.submit]
+other = "Voter"
+
+[vote.update]
+other = "Mettre à jour mon vote"
+
+[vote.leave]
+other = "Me retirer de ce sondage"
+
+[vote.edit_banner_title]
+other = "Votre vote est enregistré."
+
+[vote.edit_banner_body]
+other = "Cette page est votre lien personnel. Gardez-le pour modifier votre vote plus tard :"
+
+[vote.editing_as]
+other = "Vous modifiez le vote de"
+
+# ---- Comments ----
+
+[comments.heading]
+other = "Commentaires"
+
+[comments.empty]
+other = "Rien pour l'instant."
+
+[comments.name_label]
+other = "Votre nom"
+
+[comments.body_label]
+other = "Votre commentaire"
+
+[comments.submit]
+other = "Publier le commentaire"
+
+[comments.delete]
+other = "Supprimer"
+
+# ---- Admin ----
+
+[admin.heading]
+other = "Piloter ce sondage"
+
+[admin.new_banner_title]
+other = "Votre sondage est en ligne."
+
+[admin.new_banner_body]
+other = "Cette page est votre lien d'administration. Il n'est affiché qu'ici — enregistrez-le maintenant. Quiconque le détient contrôle le sondage."
+
+[admin.share_heading]
+other = "Partager avec vos invités"
+
+[admin.share_body]
+other = "Vos invités n'ont besoin que de ce lien :"
+
+[admin.copy]
+other = "Copier"
+
+[admin.copied]
+other = "Copié"
+
+[admin.view_public]
+other = "Ouvrir la page publique"
+
+[admin.details_heading]
+other = "Détails"
+
+[admin.save]
+other = "Enregistrer les modifications"
+
+[admin.saved]
+other = "Modifications enregistrées."
+
+[admin.options_heading]
+other = "Options"
+
+[admin.option_votes]
+one = "{{.Count}} réponse"
+other = "{{.Count}} réponses"
+
+[admin.delete_option]
+other = "Supprimer"
+
+[admin.add_options_heading]
+other = "Ajouter des options"
+
+[admin.add_options_submit]
+other = "Ajouter ces options"
+
+[admin.participants_heading]
+other = "Participants"
+
+[admin.no_participants]
+other = "Personne n'a encore voté."
+
+[admin.remove_participant]
+other = "Retirer"
+
+[admin.comments_heading]
+other = "Commentaires"
+
+[admin.pause]
+other = "Mettre le vote en pause"
+
+[admin.resume]
+other = "Rouvrir le vote"
+
+[admin.paused_state]
+other = "Le vote est en pause."
+
+[admin.danger_heading]
+other = "Zone à risque"
+
+[admin.regenerate]
+other = "Régénérer le lien d'administration"
+
+[admin.regenerate_help]
+other = "Le lien actuel cesse de fonctionner immédiatement."
+
+[admin.delete_poll]
+other = "Supprimer ce sondage"
+
+[admin.delete_help]
+other = "Supprime le sondage, tous les votes et tous les commentaires. Sans retour en arrière."
+
+[admin.confirm]
+other = "Vraiment ? Cette action est définitive."
+
+# ---- Errors ----
+
+[error.heading]
+other = "Ça n'a pas fonctionné"
+
+[error.back_home]
+other = "Retour à l'accueil"
+
+[error.back]
+other = "Revenir en arrière"
+
+[error.not_found]
+other = "Ce sondage n'existe pas. Vérifiez le lien reçu."
+
+[error.forbidden]
+other = "Ce lien n'est pas valide. Si le lien d'administration a été régénéré, utilisez le plus récent."
+
+[error.title_required]
+other = "Donnez un titre au sondage."
+
+[error.no_options]
+other = "Proposez au moins une date."
+
+[error.bad_timezone]
+other = "Choisissez un fuseau horaire valide."
+
+[error.duplicate_option]
+other = "Certaines de ces options existent déjà dans le sondage."
+
+[error.name_required]
+other = "Indiquez votre nom."
+
+[error.email_required]
+other = "Ce sondage demande une adresse email valide."
+
+[error.poll_closed]
+other = "Le vote est fermé sur ce sondage."
+
+[error.comments_disabled]
+other = "Les commentaires sont désactivés sur ce sondage."
+
+[error.body_required]
+other = "Écrivez quelque chose avant de publier."
+
+[error.bad_request]
+other = "Le formulaire n'a pas pu être lu. Revenez en arrière et réessayez."
+
+[error.internal]
+other = "Quelque chose a cassé de notre côté. Réessayez dans un instant."

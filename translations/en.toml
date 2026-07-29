@@ -6,3 +6,314 @@ other = "Propose dates. Share one link. Count the votes."
 
 [home.blurb]
 other = "Your guests vote yes, if need be, or no — no account required. You pick the winning date and everyone gets it in their calendar."
+
+[home.recent]
+other = "Your recent polls on this device"
+
+# ---- Poll creation ----
+
+[create.heading]
+other = "Create a poll"
+
+[create.title_label]
+other = "Title"
+
+[create.title_placeholder]
+other = "Team dinner"
+
+[create.description_label]
+other = "Description"
+
+[create.location_label]
+other = "Location"
+
+[create.video_label]
+other = "Video call link"
+
+[create.more]
+other = "Details and settings"
+
+[create.kind_label]
+other = "What are you proposing?"
+
+[create.kind_timed]
+other = "Time slots"
+
+[create.kind_allday]
+other = "Whole days"
+
+[create.timezone_label]
+other = "Timezone"
+
+[create.dates_label]
+other = "Proposed dates"
+
+[create.calendar_hint]
+other = "Pick one or more dates in the calendar."
+
+[create.slots_label]
+other = "Time slots"
+
+[create.add_slot]
+other = "Add a slot"
+
+[create.remove]
+other = "Remove"
+
+[create.copy_times]
+other = "Apply these times to every selected day"
+
+[create.date_label]
+other = "Date"
+
+[create.start_label]
+other = "Start"
+
+[create.duration_label]
+other = "Duration"
+
+[create.hide_participants]
+other = "Hide participants from each other"
+
+[create.require_email]
+other = "Require voters to leave an email address"
+
+[create.allow_comments]
+other = "Allow comments"
+
+[create.submit]
+other = "Create the poll"
+
+[create.nojs_hint]
+other = "Add up to five options below. You can add more from the admin page."
+
+# ---- Poll page ----
+
+[poll.paused_notice]
+other = "Voting is paused. The organizer can reopen it."
+
+[poll.participants]
+one = "{{.Count}} participant"
+other = "{{.Count}} participants"
+
+[poll.no_votes]
+other = "No votes yet. Be the first."
+
+[poll.hidden_participants]
+other = "The organizer keeps the participant list private. Totals stay public."
+
+[poll.winner]
+other = "Leading option"
+
+[poll.tz_label]
+other = "Times shown in"
+
+[poll.tz_apply]
+other = "Apply"
+
+[poll.video_join]
+other = "Video call link"
+
+# ---- Voting ----
+
+[vote.yes]
+other = "Yes"
+
+[vote.ifneedbe]
+other = "If need be"
+
+[vote.no]
+other = "No"
+
+[vote.noanswer]
+other = "No answer"
+
+[vote.your_row]
+other = "Your availability"
+
+[vote.name_label]
+other = "Your name"
+
+[vote.email_label]
+other = "Email"
+
+[vote.email_optional]
+other = "Email (optional)"
+
+[vote.submit]
+other = "Cast my vote"
+
+[vote.update]
+other = "Update my vote"
+
+[vote.leave]
+other = "Remove me from this poll"
+
+[vote.edit_banner_title]
+other = "Your vote is in."
+
+[vote.edit_banner_body]
+other = "This page is your personal link. Keep it to change your vote later:"
+
+[vote.editing_as]
+other = "Editing your vote as"
+
+# ---- Comments ----
+
+[comments.heading]
+other = "Comments"
+
+[comments.empty]
+other = "Nothing here yet."
+
+[comments.name_label]
+other = "Your name"
+
+[comments.body_label]
+other = "Your comment"
+
+[comments.submit]
+other = "Post the comment"
+
+[comments.delete]
+other = "Delete"
+
+# ---- Admin ----
+
+[admin.heading]
+other = "Run this poll"
+
+[admin.new_banner_title]
+other = "Your poll is live."
+
+[admin.new_banner_body]
+other = "This page is your admin link. It is shown only here — save it now. Anyone who has it controls the poll."
+
+[admin.share_heading]
+other = "Share with your guests"
+
+[admin.share_body]
+other = "Guests only need this link:"
+
+[admin.copy]
+other = "Copy"
+
+[admin.copied]
+other = "Copied"
+
+[admin.view_public]
+other = "Open the public page"
+
+[admin.details_heading]
+other = "Details"
+
+[admin.save]
+other = "Save changes"
+
+[admin.saved]
+other = "Changes saved."
+
+[admin.options_heading]
+other = "Options"
+
+[admin.option_votes]
+one = "{{.Count}} answer"
+other = "{{.Count}} answers"
+
+[admin.delete_option]
+other = "Delete"
+
+[admin.add_options_heading]
+other = "Add options"
+
+[admin.add_options_submit]
+other = "Add these options"
+
+[admin.participants_heading]
+other = "Participants"
+
+[admin.no_participants]
+other = "Nobody voted yet."
+
+[admin.remove_participant]
+other = "Remove"
+
+[admin.comments_heading]
+other = "Comments"
+
+[admin.pause]
+other = "Pause voting"
+
+[admin.resume]
+other = "Resume voting"
+
+[admin.paused_state]
+other = "Voting is paused."
+
+[admin.danger_heading]
+other = "Danger zone"
+
+[admin.regenerate]
+other = "Regenerate the admin link"
+
+[admin.regenerate_help]
+other = "The current link stops working immediately."
+
+[admin.delete_poll]
+other = "Delete this poll"
+
+[admin.delete_help]
+other = "Removes the poll, all votes and all comments. No undo."
+
+[admin.confirm]
+other = "Are you sure? This cannot be undone."
+
+# ---- Errors ----
+
+[error.heading]
+other = "That didn't work"
+
+[error.back_home]
+other = "Back to the home page"
+
+[error.back]
+other = "Go back"
+
+[error.not_found]
+other = "This poll does not exist. Check the link you received."
+
+[error.forbidden]
+other = "This link is not valid. If the admin link was regenerated, use the newest one."
+
+[error.title_required]
+other = "Give the poll a title."
+
+[error.no_options]
+other = "Propose at least one date."
+
+[error.bad_timezone]
+other = "Pick a valid timezone."
+
+[error.duplicate_option]
+other = "Some of these options already exist in the poll."
+
+[error.name_required]
+other = "Enter your name."
+
+[error.email_required]
+other = "This poll requires a valid email address."
+
+[error.poll_closed]
+other = "Voting is closed on this poll."
+
+[error.comments_disabled]
+other = "Comments are disabled on this poll."
+
+[error.body_required]
+other = "Write something before posting."
+
+[error.bad_request]
+other = "The form could not be read. Go back and try again."
+
+[error.internal]
+other = "Something broke on our side. Try again in a moment."

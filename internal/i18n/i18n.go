@@ -84,3 +84,17 @@ func (l *Locale) T(id string) string {
 	}
 	return msg
 }
+
+// TN returns the plural-aware translation for id with a count. The
+// message may use {{.Count}}.
+func (l *Locale) TN(id string, n int) string {
+	msg, err := l.localizer.Localize(&goi18n.LocalizeConfig{
+		MessageID:    id,
+		PluralCount:  n,
+		TemplateData: map[string]any{"Count": n},
+	})
+	if err != nil {
+		return id
+	}
+	return msg
+}
