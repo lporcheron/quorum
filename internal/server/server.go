@@ -14,6 +14,7 @@ import (
 
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
+	"github.com/lporcheron/quorum/internal/metrics"
 	"github.com/lporcheron/quorum/web"
 )
 
@@ -23,11 +24,12 @@ type Server struct {
 	log      *slog.Logger
 	h        *handler.Handler
 	sessions *scs.SessionManager
+	metrics  *metrics.Metrics
 }
 
 // New wires a Server; all dependencies are explicit.
-func New(cfg config.Config, log *slog.Logger, h *handler.Handler, sessions *scs.SessionManager) *Server {
-	return &Server{cfg: cfg, log: log, h: h, sessions: sessions}
+func New(cfg config.Config, log *slog.Logger, h *handler.Handler, sessions *scs.SessionManager, m *metrics.Metrics) *Server {
+	return &Server{cfg: cfg, log: log, h: h, sessions: sessions, metrics: m}
 }
 
 // Handler builds the full routing table with the middleware chain.
@@ -104,11 +106,22 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /auth/email/callback", s.h.MagicLinkCallback)
 	mux.HandleFunc("POST /auth/logout", s.h.Logout)
 	mux.HandleFunc("GET /dashboard", s.h.Dashboard)
+	mux.HandleFunc("POST /lang", s.h.SetLanguage)
+
+	// Instance control (gated on QUORUM_ADMIN_EMAILS).
+	mux.HandleFunc("GET /admin", s.h.ShowInstanceAdmin)
+	mux.HandleFunc("POST /admin/settings", s.h.UpdateInstanceSettings)
+	mux.HandleFunc("POST /admin/jobs/{jobID}/retry", s.h.RetryDeadJob)
+	mux.HandleFunc("POST /admin/jobs/{jobID}/delete", s.h.DeleteDeadJob)
+
+	if s.metrics.Enabled() {
+		mux.Handle("GET /metrics", s.metrics)
+	}
 
 	return chain(mux,
 		recoverPanic(s.log),
 		requestID,
-		accessLog(s.log),
+		accessLog(s.log, s.metrics),
 		securityHeaders,
 		s.sessions.LoadAndSave,
 	)

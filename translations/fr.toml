@@ -644,3 +644,44 @@ other = "« {{.Title}} » expire bientôt"
 
 [email.reminder.body]
 other = "Votre sondage « {{.Title}} » est resté sans activité et sera supprimé le {{.Date}}. Un vote ou un commentaire prolonge sa durée de vie."
+
+# ---- M5 ----
+
+[footer.language]
+other = "Langue"
+
+[error.rate_limited]
+other = "Trop de requêtes depuis votre adresse. Patientez un peu et réessayez."
+
+[instadmin.heading]
+other = "Contrôle de l'instance"
+
+[instadmin.settings]
+other = "Réglages"
+
+[instadmin.instance_name]
+other = "Nom de l'instance"
+
+[instadmin.registrations_open]
+other = "Inscriptions ouvertes"
+
+[instadmin.jobs]
+other = "File de jobs"
+
+[instadmin.jobs_pending]
+one = "{{.Count}} job en attente"
+other = "{{.Count}} jobs en attente"
+
+[instadmin.no_dead_jobs]
+other = "Aucun job mort. La file est saine."
+
+[instadmin.attempts]
+one = "{{.Count}} tentative"
+other = "{{.Count}} tentatives"
+
+[instadmin.retry]
+other = "Relancer"
+
+[instadmin.users]
+one = "{{.Count}} utilisateur"
+other = "{{.Count}} utilisateurs"

@@ -31,6 +31,9 @@ func parseVotes(form map[string][]string) map[int64]poll.VoteValue {
 // CreateParticipant records a first-time guest vote and redirects to
 // the personal edit page, where the edit link is shown once.
 func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
+	if !h.allow(w, r, h.limitVote) {
+		return
+	}
 	p, err := h.polls.ByPublicID(r.Context(), r.PathValue("pollID"))
 	if err != nil {
 		h.domainError(w, r, err)

@@ -136,6 +136,9 @@ func (h *Handler) authError(w http.ResponseWriter, r *http.Request, err error) {
 // RequestMagicLink emails a sign-in link. The response is the same
 // whether or not the address has an account.
 func (h *Handler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
+	if !h.allow(w, r, h.limitEmail) {
+		return
+	}
 	if !h.mailer.Enabled() {
 		h.renderError(w, r, http.StatusConflict, "error.mail_disabled")
 		return

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,7 +22,10 @@ import (
 	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/ratelimit"
+	"github.com/lporcheron/quorum/internal/setting"
 	"github.com/lporcheron/quorum/internal/space"
+	"github.com/lporcheron/quorum/internal/store"
 	"github.com/lporcheron/quorum/web/templates"
 )
 
@@ -29,31 +33,89 @@ import (
 // is a poll creation with dozens of options, well under this.
 const maxFormBytes = 64 << 10
 
-// Handler bundles the dependencies shared by all HTTP handlers.
-type Handler struct {
-	log       *slog.Logger
-	db        *sql.DB
-	tr        *i18n.Translator
-	polls     *poll.Service
-	spaces    *space.Service
-	auth      *auth.Service
-	providers []*auth.Provider
-	sessions  *scs.SessionManager
-	mailer    mail.Mailer
-	notify    *notify.Notifier
-	baseURL   string
+// Deps carries everything the handlers need; New freezes it.
+type Deps struct {
+	Log         *slog.Logger
+	DB          *sql.DB
+	Store       *store.Store
+	Translator  *i18n.Translator
+	Polls       *poll.Service
+	Spaces      *space.Service
+	Auth        *auth.Service
+	Providers   []*auth.Provider
+	Sessions    *scs.SessionManager
+	Mailer      mail.Mailer
+	Notifier    *notify.Notifier
+	Settings    *setting.Service
+	BaseURL     string
+	AdminEmails []string
+	TrustProxy  bool
 }
 
-// New wires a Handler; all dependencies are explicit.
-func New(log *slog.Logger, db *sql.DB, tr *i18n.Translator, polls *poll.Service,
-	spaces *space.Service, authsvc *auth.Service, providers []*auth.Provider,
-	sessions *scs.SessionManager, mailer mail.Mailer, notifier *notify.Notifier, baseURL string,
-) *Handler {
-	return &Handler{
-		log: log, db: db, tr: tr, polls: polls, spaces: spaces,
-		auth: authsvc, providers: providers, sessions: sessions, mailer: mailer,
-		notify: notifier, baseURL: strings.TrimSuffix(baseURL, "/"),
+// Handler bundles the dependencies shared by all HTTP handlers.
+type Handler struct {
+	log         *slog.Logger
+	db          *sql.DB
+	st          *store.Store
+	tr          *i18n.Translator
+	polls       *poll.Service
+	spaces      *space.Service
+	auth        *auth.Service
+	providers   []*auth.Provider
+	sessions    *scs.SessionManager
+	mailer      mail.Mailer
+	notify      *notify.Notifier
+	settings    *setting.Service
+	baseURL     string
+	adminEmails map[string]bool
+	trustProxy  bool
+
+	// Per-IP fixed-window budgets on the abuse-prone endpoints.
+	limitCreate *ratelimit.Limiter
+	limitVote   *ratelimit.Limiter
+	limitEmail  *ratelimit.Limiter
+}
+
+// New wires a Handler.
+func New(d Deps) *Handler {
+	admins := make(map[string]bool, len(d.AdminEmails))
+	for _, e := range d.AdminEmails {
+		admins[strings.ToLower(e)] = true
 	}
+	return &Handler{
+		log: d.Log, db: d.DB, st: d.Store, tr: d.Translator, polls: d.Polls,
+		spaces: d.Spaces, auth: d.Auth, providers: d.Providers,
+		sessions: d.Sessions, mailer: d.Mailer, notify: d.Notifier,
+		settings: d.Settings, baseURL: strings.TrimSuffix(d.BaseURL, "/"),
+		adminEmails: admins, trustProxy: d.TrustProxy,
+		limitCreate: ratelimit.New(30, time.Hour, nil),
+		limitVote:   ratelimit.New(120, time.Hour, nil),
+		limitEmail:  ratelimit.New(5, time.Hour, nil),
+	}
+}
+
+// clientIP identifies the caller for rate limiting.
+func (h *Handler) clientIP(r *http.Request) string {
+	if h.trustProxy {
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			first, _, _ := strings.Cut(xff, ",")
+			return strings.TrimSpace(first)
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// allow consumes one rate-limit slot or answers 429.
+func (h *Handler) allow(w http.ResponseWriter, r *http.Request, l *ratelimit.Limiter) bool {
+	if l.Allow(h.clientIP(r)) {
+		return true
+	}
+	h.renderError(w, r, http.StatusTooManyRequests, "error.rate_limited")
+	return false
 }
 
 // sendMail sends one synchronous email with the shared HTML shell.
@@ -89,16 +151,49 @@ func (h *Handler) currentUser(r *http.Request) *auth.User {
 	return &u
 }
 
+const langCookie = "quorum_lang"
+
+// locale resolves the UI language: explicit cookie choice first, then
+// the Accept-Language header.
 func (h *Handler) locale(r *http.Request) *i18n.Locale {
+	if c, err := r.Cookie(langCookie); err == nil && c.Value != "" {
+		return h.tr.Locale(c.Value)
+	}
 	return h.tr.Locale(r.Header.Get("Accept-Language"))
 }
 
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := c.Render(r.Context(), w); err != nil {
+	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI())
+	if err := c.Render(ctx, w); err != nil {
 		h.log.ErrorContext(r.Context(), "render", "error", err, "path", r.URL.Path)
 	}
+}
+
+// SetLanguage stores the manual language choice and returns whence the
+// visitor came.
+func (h *Handler) SetLanguage(w http.ResponseWriter, r *http.Request) {
+	if !h.parseForm(w, r) {
+		return
+	}
+	lang := r.PostForm.Get("lang")
+	if lang != "en" && lang != "fr" {
+		h.renderError(w, r, http.StatusBadRequest, "error.bad_request")
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     langCookie,
+		Value:    lang,
+		Path:     "/",
+		MaxAge:   365 * 24 * 3600,
+		SameSite: http.SameSiteLaxMode,
+	})
+	dest := next(r)
+	if dest == "" {
+		dest = "/"
+	}
+	redirect(w, r, dest)
 }
 
 // parseForm reads the body with a hard size cap.

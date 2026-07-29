@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/lporcheron/quorum/internal/metrics"
 )
 
 type ctxKey int
@@ -54,12 +56,14 @@ func requestID(next http.Handler) http.Handler {
 	})
 }
 
-func accessLog(log *slog.Logger) func(http.Handler) http.Handler {
+func accessLog(log *slog.Logger, m *metrics.Metrics) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			sw := &statusWriter{ResponseWriter: w}
 			next.ServeHTTP(sw, r)
+			dur := time.Since(start)
+			m.Observe(sw.status, dur)
 			id, _ := r.Context().Value(requestIDKey).(string)
 			log.LogAttrs(r.Context(), slog.LevelInfo, "request",
 				slog.String("id", id),
@@ -67,7 +71,7 @@ func accessLog(log *slog.Logger) func(http.Handler) http.Handler {
 				slog.String("path", r.URL.Path),
 				slog.Int("status", sw.status),
 				slog.Int("bytes", sw.bytes),
-				slog.Duration("duration", time.Since(start)),
+				slog.Duration("duration", dur),
 			)
 		})
 	}

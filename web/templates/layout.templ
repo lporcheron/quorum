@@ -16,10 +16,10 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 			<script src="/static/js/htmx.min.js" defer></script>
 			<script src="/static/js/quorum.js" defer></script>
 		</head>
-		<body class="min-h-screen bg-paper font-sans text-ink antialiased">
+		<body class="flex min-h-screen flex-col bg-paper font-sans text-ink antialiased">
 			<header class="border-b border-ink/15">
 				<div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
-					<a href="/" class="font-display text-lg font-semibold tracking-tight">Quorum</a>
+					<a href="/" class="font-display text-lg font-semibold tracking-tight">{ instanceName(ctx) }</a>
 					<nav class="flex items-center gap-4 text-sm">
 						if user != nil {
 							<a href="/dashboard" class="underline">{ loc.T("nav.dashboard") }</a>
@@ -38,9 +38,20 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 					</nav>
 				</div>
 			</header>
-			<main class="mx-auto max-w-5xl px-4 pb-24">
+			<main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-24">
 				{ children... }
 			</main>
+			<footer class="border-t border-ink/15">
+				<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-ink/60">
+					<span>{ instanceName(ctx) } · Quorum</span>
+					<form method="post" action="/lang" class="flex items-center gap-3">
+						<input type="hidden" name="next" value={ currentPath(ctx) }/>
+						<span class="sr-only">{ loc.T("footer.language") }</span>
+						<button class="btn-link" name="lang" value="en" type="submit" lang="en">English</button>
+						<button class="btn-link" name="lang" value="fr" type="submit" lang="fr">Français</button>
+					</form>
+				</div>
+			</footer>
 		</body>
 	</html>
 }

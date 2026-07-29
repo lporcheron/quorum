@@ -21,6 +21,9 @@ func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
 
 // CreatePoll handles the creation form and redirects to the admin URL.
 func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
+	if !h.allow(w, r, h.limitCreate) {
+		return
+	}
 	if !h.parseForm(w, r) {
 		return
 	}

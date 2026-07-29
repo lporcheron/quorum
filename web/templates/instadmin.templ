@@ -1,0 +1,102 @@
+package templates
+
+import (
+	"fmt"
+
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+)
+
+// InstanceUser is one row of the users table.
+type InstanceUser struct {
+	Name      string
+	Email     string
+	CreatedAt string
+}
+
+// DeadJob is one exhausted queue entry.
+type DeadJob struct {
+	ID        int64
+	Type      string
+	Attempts  int64
+	LastError string
+}
+
+// InstanceAdminProps feeds the instance control page.
+type InstanceAdminProps struct {
+	Loc               *i18n.Locale
+	User              *auth.User
+	InstanceName      string
+	RegistrationsOpen bool
+	Users             []InstanceUser
+	PendingJobs       int64
+	DeadJobs          []DeadJob
+	Saved             bool
+}
+
+templ InstanceAdminPage(p InstanceAdminProps) {
+	@layout(p.Loc, p.Loc.T("instadmin.heading")+" — Quorum", p.User) {
+		<h1 class="mt-10 font-display text-3xl font-semibold">{ p.Loc.T("instadmin.heading") }</h1>
+		if p.Saved {
+			<p class="notice mt-4">{ p.Loc.T("admin.saved") }</p>
+		}
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ p.Loc.T("instadmin.settings") }</h2>
+			<form method="post" action="/admin/settings" class="mt-3 space-y-4">
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("instadmin.instance_name") }</span>
+					<input class="field" type="text" name="instance_name" maxlength="60" value={ p.InstanceName }/>
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" name="registrations_open" value="1" checked?={ p.RegistrationsOpen }/>
+					{ p.Loc.T("instadmin.registrations_open") }
+				</label>
+				<button class="btn" type="submit">{ p.Loc.T("admin.save") }</button>
+			</form>
+		</section>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ p.Loc.T("instadmin.jobs") }</h2>
+			<p class="mt-2 font-mono text-sm">{ p.Loc.TN("instadmin.jobs_pending", int(p.PendingJobs)) }</p>
+			if len(p.DeadJobs) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("instadmin.no_dead_jobs") }</p>
+			} else {
+				<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+					for _, j := range p.DeadJobs {
+						<li class="py-2 text-sm">
+							<div class="flex flex-wrap items-center gap-3">
+								<span class="font-mono text-xs">#{ fmt.Sprintf("%d", j.ID) } { j.Type }</span>
+								<span class="font-mono text-xs text-ink/60">{ p.Loc.TN("instadmin.attempts", int(j.Attempts)) }</span>
+								<form method="post" action={ templ.URL(fmt.Sprintf("/admin/jobs/%d/retry", j.ID)) }>
+									<button class="btn-link text-xs" type="submit">{ p.Loc.T("instadmin.retry") }</button>
+								</form>
+								<form method="post" action={ templ.URL(fmt.Sprintf("/admin/jobs/%d/delete", j.ID)) }>
+									<button class="btn-link text-xs" type="submit">{ p.Loc.T("comments.delete") }</button>
+								</form>
+							</div>
+							if j.LastError != "" {
+								<p class="mt-1 font-mono text-xs text-ink/60">{ j.LastError }</p>
+							}
+						</li>
+					}
+				</ul>
+			}
+		</section>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ p.Loc.TN("instadmin.users", len(p.Users)) }</h2>
+			<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+				for _, u := range p.Users {
+					<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+						<span>
+							{ u.Name }
+							<span class="ml-2 font-mono text-xs text-ink/50">{ u.Email }</span>
+						</span>
+						<span class="font-mono text-xs text-ink/60">{ u.CreatedAt }</span>
+					</li>
+				}
+			</ul>
+		</section>
+	}
+}

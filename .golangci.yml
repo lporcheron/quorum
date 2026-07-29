@@ -12,6 +12,8 @@ linters:
         - (io.Closer).Close
         - (net/http.ResponseWriter).Write
         - (*database/sql.DB).Close
+        - fmt.Fprintf
+        - fmt.Fprint
   exclusions:
     generated: lax
 

@@ -17,8 +17,10 @@ import (
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/job"
 	"github.com/lporcheron/quorum/internal/mail"
+	"github.com/lporcheron/quorum/internal/metrics"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/setting"
 	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/internal/store"
 )
@@ -46,21 +48,27 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 		t.Fatalf("config.Load: %v", err)
 	}
 	st := store.New(db)
+	settings := setting.NewService(st, "Quorum", cfg.RegistrationsOpen)
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
-	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
+	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL)
 	mailer := &testMailer{}
 	queue := job.NewQueue(st, nil)
 	notifier := notify.New(log, queue, mailer, polls, authsvc, tr, cfg.BaseURL, "quorum@example.com", nil)
-	h := handler.New(log, db, tr, polls, spaces, authsvc, nil, sessions, mailer, notifier, cfg.BaseURL)
+	h := handler.New(handler.Deps{
+		Log: log, DB: db, Store: st, Translator: tr,
+		Polls: polls, Spaces: spaces, Auth: authsvc,
+		Sessions: sessions, Mailer: mailer, Notifier: notifier, Settings: settings,
+		BaseURL: cfg.BaseURL, AdminEmails: []string{"root@example.com"},
+	})
 
 	// Run the worker for real: notification tests wait on the mailer.
 	workerCtx, stopWorker := context.WithCancel(ctx)
 	t.Cleanup(stopWorker)
 	go job.NewWorker(queue, log, notifier.Handlers()).Run(workerCtx) //nolint:errcheck // test worker
 
-	srv := New(cfg, log, h, sessions)
+	srv := New(cfg, log, h, sessions, metrics.New(true, st, "test"))
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
 	return ts, mailer
@@ -80,6 +88,12 @@ func (m *testMailer) Send(_ context.Context, msg mail.Message) error {
 	defer m.mu.Unlock()
 	m.msgs = append(m.msgs, msg)
 	return nil
+}
+
+func (m *testMailer) count() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.msgs)
 }
 
 func (m *testMailer) last(t *testing.T) (string, string) {

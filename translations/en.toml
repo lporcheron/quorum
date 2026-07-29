@@ -644,3 +644,44 @@ other = "“{{.Title}}” expires soon"
 
 [email.reminder.body]
 other = "Your poll “{{.Title}}” has seen no activity for a while and will be deleted on {{.Date}}. Any vote or comment extends it."
+
+# ---- M5 ----
+
+[footer.language]
+other = "Language"
+
+[error.rate_limited]
+other = "Too many requests from your address. Wait a bit and try again."
+
+[instadmin.heading]
+other = "Instance control"
+
+[instadmin.settings]
+other = "Settings"
+
+[instadmin.instance_name]
+other = "Instance name"
+
+[instadmin.registrations_open]
+other = "Open registrations"
+
+[instadmin.jobs]
+other = "Job queue"
+
+[instadmin.jobs_pending]
+one = "{{.Count}} pending job"
+other = "{{.Count}} pending jobs"
+
+[instadmin.no_dead_jobs]
+other = "No dead job. The queue is healthy."
+
+[instadmin.attempts]
+one = "{{.Count}} attempt"
+other = "{{.Count}} attempts"
+
+[instadmin.retry]
+other = "Retry"
+
+[instadmin.users]
+one = "{{.Count}} user"
+other = "{{.Count}} users"

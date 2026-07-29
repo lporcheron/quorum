@@ -11,6 +11,7 @@
 @theme {
 	--color-ink: #141b2d;
 	--color-paper: #f3f4f1;
+	--color-card: #ffffff;
 	--color-yes: #3f7d62;
 	--color-ifneedbe: #c8892b;
 	--color-no: #a8ada6;
@@ -45,6 +46,25 @@
 }
 
 @layer base {
+	:root {
+		color-scheme: light dark;
+	}
+
+	/* Dark mode follows the system: ink and paper swap roles, surfaces
+	 * deepen, the state colors brighten a notch for contrast. The
+	 * winning blue keeps its exclusivity. */
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--color-ink: #e6e7e2;
+			--color-paper: #14161b;
+			--color-card: #1d2026;
+			--color-yes: #5aa686;
+			--color-ifneedbe: #d9a04c;
+			--color-no: #676c66;
+			--color-winner: #7b95ff;
+		}
+	}
+
 	:focus-visible {
 		outline: 2px solid var(--color-ink);
 		outline-offset: 2px;
@@ -80,7 +100,7 @@
 
 	.field {
 		border: 1px solid --alpha(var(--color-ink) / 35%);
-		background: white;
+		background: var(--color-card);
 		padding: --spacing(1.5) --spacing(2);
 		font-size: var(--text-sm);
 	}
@@ -97,7 +117,7 @@
 	.banner {
 		border: 1px solid --alpha(var(--color-ink) / 30%);
 		border-left: 3px solid var(--color-yes);
-		background: white;
+		background: var(--color-card);
 		padding: --spacing(3) --spacing(4);
 	}
 	.banner-strong { border-left-color: var(--color-ifneedbe); }
@@ -121,13 +141,13 @@
 		top: 100%;
 		margin-top: --spacing(1);
 		min-width: --spacing(44);
-		background: white;
+		background: var(--color-card);
 		border: 1px solid --alpha(var(--color-ink) / 25%);
 		padding: --spacing(1) 0;
 		z-index: 10;
 	}
 
-	.panel { border: 1px solid --alpha(var(--color-ink) / 20%); background: white; padding: --spacing(4); }
+	.panel { border: 1px solid --alpha(var(--color-ink) / 20%); background: var(--color-card); padding: --spacing(4); }
 	.panel-danger { border-color: #a0303055; }
 	.panel-title { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); }
 
@@ -156,7 +176,7 @@
 
 	/* ---- results matrix (desktop) ---- */
 
-	.qmatrix { border: 1px solid --alpha(var(--color-ink) / 25%); background: white; }
+	.qmatrix { border: 1px solid --alpha(var(--color-ink) / 25%); background: var(--color-card); }
 	.qcell {
 		padding: --spacing(1.5) --spacing(2);
 		border-bottom: 1px solid --alpha(var(--color-ink) / 12%);
@@ -225,7 +245,7 @@
 		border: 1px solid --alpha(var(--color-ink) / 35%);
 		width: --spacing(7); height: --spacing(7);
 		cursor: pointer;
-		background: white;
+		background: var(--color-card);
 	}
 	.cal-grid {
 		display: grid;
@@ -246,7 +266,7 @@
 	.cal-day {
 		height: --spacing(10);
 		border: 1px solid --alpha(var(--color-ink) / 20%);
-		background: white;
+		background: var(--color-card);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		cursor: pointer;
