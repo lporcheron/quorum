@@ -36,3 +36,16 @@ UPDATE polls SET deletes_at = @deletes_at WHERE id = @id;
 
 -- name: DeletePoll :exec
 DELETE FROM polls WHERE id = @id;
+
+-- name: ClaimPoll :execrows
+UPDATE polls SET created_by_user_id = @user_id, space_id = @space_id, updated_at = @updated_at
+WHERE id = @id AND created_by_user_id IS NULL;
+
+-- name: ListPollsByCreator :many
+SELECT * FROM polls WHERE created_by_user_id = @user_id ORDER BY created_at DESC;
+
+-- name: ListPollsVotedByUser :many
+SELECT polls.* FROM polls
+JOIN participants ON participants.poll_id = polls.id
+WHERE participants.user_id = @user_id
+ORDER BY polls.created_at DESC;

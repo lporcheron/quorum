@@ -10,6 +10,31 @@ import (
 	"database/sql"
 )
 
+const claimPoll = `-- name: ClaimPoll :execrows
+UPDATE polls SET created_by_user_id = ?1, space_id = ?2, updated_at = ?3
+WHERE id = ?4 AND created_by_user_id IS NULL
+`
+
+type ClaimPollParams struct {
+	UserID    sql.NullInt64
+	SpaceID   sql.NullInt64
+	UpdatedAt string
+	ID        int64
+}
+
+func (q *Queries) ClaimPoll(ctx context.Context, arg ClaimPollParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, claimPoll,
+		arg.UserID,
+		arg.SpaceID,
+		arg.UpdatedAt,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const createPoll = `-- name: CreatePoll :one
 INSERT INTO polls (
     public_id, admin_token_hash, title, description, location, video_url,
@@ -134,6 +159,103 @@ func (q *Queries) GetPollByPublicID(ctx context.Context, publicID string) (Poll,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listPollsByCreator = `-- name: ListPollsByCreator :many
+SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at FROM polls WHERE created_by_user_id = ?1 ORDER BY created_at DESC
+`
+
+func (q *Queries) ListPollsByCreator(ctx context.Context, userID sql.NullInt64) ([]Poll, error) {
+	rows, err := q.db.QueryContext(ctx, listPollsByCreator, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Poll
+	for rows.Next() {
+		var i Poll
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.SpaceID,
+			&i.CreatedByUserID,
+			&i.AdminTokenHash,
+			&i.Title,
+			&i.Description,
+			&i.Location,
+			&i.VideoUrl,
+			&i.Kind,
+			&i.Timezone,
+			&i.Status,
+			&i.HideParticipants,
+			&i.RequireVoterEmail,
+			&i.AllowComments,
+			&i.FinalizedOptionID,
+			&i.DeletesAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPollsVotedByUser = `-- name: ListPollsVotedByUser :many
+SELECT polls.id, polls.public_id, polls.space_id, polls.created_by_user_id, polls.admin_token_hash, polls.title, polls.description, polls.location, polls.video_url, polls.kind, polls.timezone, polls.status, polls.hide_participants, polls.require_voter_email, polls.allow_comments, polls.finalized_option_id, polls.deletes_at, polls.created_at, polls.updated_at FROM polls
+JOIN participants ON participants.poll_id = polls.id
+WHERE participants.user_id = ?1
+ORDER BY polls.created_at DESC
+`
+
+func (q *Queries) ListPollsVotedByUser(ctx context.Context, userID sql.NullInt64) ([]Poll, error) {
+	rows, err := q.db.QueryContext(ctx, listPollsVotedByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Poll
+	for rows.Next() {
+		var i Poll
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.SpaceID,
+			&i.CreatedByUserID,
+			&i.AdminTokenHash,
+			&i.Title,
+			&i.Description,
+			&i.Location,
+			&i.VideoUrl,
+			&i.Kind,
+			&i.Timezone,
+			&i.Status,
+			&i.HideParticipants,
+			&i.RequireVoterEmail,
+			&i.AllowComments,
+			&i.FinalizedOptionID,
+			&i.DeletesAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updatePollAdminTokenHash = `-- name: UpdatePollAdminTokenHash :exec

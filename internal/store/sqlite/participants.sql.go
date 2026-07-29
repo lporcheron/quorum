@@ -22,8 +22,8 @@ func (q *Queries) CountPollParticipants(ctx context.Context, pollID int64) (int6
 }
 
 const createParticipant = `-- name: CreateParticipant :one
-INSERT INTO participants (public_id, poll_id, name, email, edit_token_hash, created_at, updated_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+INSERT INTO participants (public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
 RETURNING id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at
 `
 
@@ -32,6 +32,7 @@ type CreateParticipantParams struct {
 	PollID        int64
 	Name          string
 	Email         sql.NullString
+	UserID        sql.NullInt64
 	EditTokenHash string
 	CreatedAt     string
 	UpdatedAt     string
@@ -43,6 +44,7 @@ func (q *Queries) CreateParticipant(ctx context.Context, arg CreateParticipantPa
 		arg.PollID,
 		arg.Name,
 		arg.Email,
+		arg.UserID,
 		arg.EditTokenHash,
 		arg.CreatedAt,
 		arg.UpdatedAt,

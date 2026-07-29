@@ -27,6 +27,16 @@ type Identity struct {
 	CreatedAt string
 }
 
+type LoginToken struct {
+	ID         int64
+	Email      string
+	TokenHash  string
+	Redirect   string
+	ExpiresAt  string
+	ConsumedAt sql.NullString
+	CreatedAt  string
+}
+
 type Participant struct {
 	ID            int64
 	PublicID      string
@@ -70,6 +80,12 @@ type PollOption struct {
 	Position        int64
 }
 
+type Session struct {
+	Token  string
+	Data   []byte
+	Expiry float64
+}
+
 type Space struct {
 	ID          int64
 	PublicID    string
@@ -87,14 +103,15 @@ type SpaceMember struct {
 }
 
 type User struct {
-	ID        int64
-	PublicID  string
-	Email     string
-	Name      string
-	AvatarUrl sql.NullString
-	Locale    string
-	Timezone  string
-	CreatedAt string
+	ID              int64
+	PublicID        string
+	Email           string
+	Name            string
+	AvatarUrl       sql.NullString
+	Locale          string
+	Timezone        string
+	CreatedAt       string
+	PersonalSpaceID sql.NullInt64
 }
 
 type Vote struct {

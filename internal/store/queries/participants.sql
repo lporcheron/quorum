@@ -1,6 +1,6 @@
 -- name: CreateParticipant :one
-INSERT INTO participants (public_id, poll_id, name, email, edit_token_hash, created_at, updated_at)
-VALUES (@public_id, @poll_id, @name, @email, @edit_token_hash, @created_at, @updated_at)
+INSERT INTO participants (public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at)
+VALUES (@public_id, @poll_id, @name, @email, @user_id, @edit_token_hash, @created_at, @updated_at)
 RETURNING *;
 
 -- name: GetParticipantByEditTokenHash :one
