@@ -1,0 +1,75 @@
+package templates
+
+// PollPage is the public poll page: header, grid, comments.
+templ PollPage(p PollPageProps) {
+	@layout(p.Loc.Lang, p.Poll.Title+" — Quorum") {
+		if p.JustJoined && p.EditURL != "" {
+			<div class="banner mt-6">
+				<p class="font-semibold">{ p.Loc.T("vote.edit_banner_title") }</p>
+				<p class="mt-1 text-sm">{ p.Loc.T("vote.edit_banner_body") }</p>
+				<div class="mt-2 flex gap-2">
+					<input class="field flex-1 font-mono text-xs" type="text" readonly value={ p.EditURL } id="edit-url"/>
+					<button class="btn btn-sm" type="button" data-copy="edit-url" data-copied={ p.Loc.T("admin.copied") }>{ p.Loc.T("admin.copy") }</button>
+				</div>
+			</div>
+		}
+		<div class="mt-8">
+			<h1 class="font-display text-4xl font-semibold tracking-tight">{ p.Poll.Title }</h1>
+			if p.Poll.Description != "" {
+				<p class="mt-2 max-w-prose whitespace-pre-line text-ink/80">{ p.Poll.Description }</p>
+			}
+			<div class="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink/70">
+				if p.Poll.Location != "" {
+					<span>📍 { p.Poll.Location }</span>
+				}
+				if p.Poll.VideoURL != "" {
+					<a class="underline" href={ templ.URL(p.Poll.VideoURL) } rel="noopener">{ p.Loc.T("poll.video_join") }</a>
+				}
+			</div>
+		</div>
+		@Grid(p)
+		@commentsSection(p)
+	}
+}
+
+templ commentsSection(p PollPageProps) {
+	if p.Poll.AllowComments {
+		<section class="mt-12 max-w-2xl">
+			<h2 class="font-display text-lg font-semibold">{ p.Loc.T("comments.heading") }</h2>
+			if len(p.View.Comments) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("comments.empty") }</p>
+			}
+			<ul class="mt-3 space-y-3">
+				for _, c := range p.View.Comments {
+					<li class="border-l-2 border-ink/20 pl-3">
+						<p class="text-sm">
+							<span class="font-semibold">{ c.AuthorName }</span>
+							<span class="ml-2 font-mono text-xs text-ink/50">{ Stamp(p.lang(), c.CreatedAt, p.TZ) }</span>
+						</p>
+						<p class="mt-0.5 whitespace-pre-line text-sm">{ c.Body }</p>
+						if p.Me != nil && c.ParticipantID == p.Me.ID {
+							<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/comments/" + itoa(c.ID) + "/delete")) }>
+								<button class="btn-link text-xs" type="submit">{ p.Loc.T("comments.delete") }</button>
+							</form>
+						}
+					</li>
+				}
+			</ul>
+			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2">
+				if p.Me != nil {
+					<input type="hidden" name="ptoken" value={ p.EditToken }/>
+				} else {
+					<label class="block">
+						<span class="lbl">{ p.Loc.T("comments.name_label") }</span>
+						<input class="field" type="text" name="author_name" required/>
+					</label>
+				}
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("comments.body_label") }</span>
+					<textarea class="field w-full" name="body" rows="2" required></textarea>
+				</label>
+				<button class="btn" type="submit">{ p.Loc.T("comments.submit") }</button>
+			</form>
+		</section>
+	}
+}

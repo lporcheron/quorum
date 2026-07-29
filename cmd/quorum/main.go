@@ -17,6 +17,7 @@ import (
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/server"
 	"github.com/lporcheron/quorum/internal/store"
 )
@@ -63,6 +64,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		return err
 	}
 
-	h := handler.New(log, db, tr)
+	polls := poll.NewService(store.New(db), nil)
+	h := handler.New(log, db, tr, polls, cfg.BaseURL)
 	return server.New(cfg, log, h).Run(ctx)
 }

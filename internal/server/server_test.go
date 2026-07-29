@@ -12,6 +12,7 @@ import (
 	"github.com/lporcheron/quorum/internal/config"
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/store"
 )
 
@@ -37,7 +38,8 @@ func newTestServer(t *testing.T) *httptest.Server {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
-	srv := New(cfg, log, handler.New(log, db, tr))
+	polls := poll.NewService(store.New(db), nil)
+	srv := New(cfg, log, handler.New(log, db, tr, polls, cfg.BaseURL))
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
 	return ts

@@ -34,6 +34,31 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.h.Healthz)
 	mux.Handle("GET /static/", cacheStatic(http.FileServerFS(web.StaticFS)))
 
+	// Poll lifecycle. Mutations are POST only: plain HTML forms are the
+	// no-JS fallback for the critical paths.
+	mux.HandleFunc("POST /polls", s.h.CreatePoll)
+	mux.HandleFunc("GET /polls/{pollID}", s.h.ShowPoll)
+	mux.HandleFunc("GET /polls/{pollID}/grid", s.h.PollGrid)
+	mux.HandleFunc("POST /polls/{pollID}/participants", s.h.CreateParticipant)
+	mux.HandleFunc("POST /polls/{pollID}/comments", s.h.CreateComment)
+
+	// Participant capability URLs.
+	mux.HandleFunc("GET /polls/{pollID}/p/{editToken}", s.h.ShowPollAsParticipant)
+	mux.HandleFunc("POST /polls/{pollID}/p/{editToken}/votes", s.h.UpdateVotes)
+	mux.HandleFunc("POST /polls/{pollID}/p/{editToken}/delete", s.h.DeleteParticipantSelf)
+	mux.HandleFunc("POST /polls/{pollID}/p/{editToken}/comments/{commentID}/delete", s.h.DeleteOwnComment)
+
+	// Organizer capability URLs.
+	mux.HandleFunc("GET /polls/{pollID}/admin/{adminToken}", s.h.ShowPollAdmin)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}", s.h.UpdatePoll)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/options", s.h.AddOptions)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/options/{optionID}/delete", s.h.DeleteOption)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/status", s.h.SetPollStatus)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/participants/{participantID}/delete", s.h.AdminDeleteParticipant)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/comments/{commentID}/delete", s.h.AdminDeleteComment)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/regenerate", s.h.RegenerateAdminToken)
+	mux.HandleFunc("POST /polls/{pollID}/admin/{adminToken}/delete", s.h.DeletePoll)
+
 	return chain(mux,
 		recoverPanic(s.log),
 		requestID,

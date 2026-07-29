@@ -94,8 +94,10 @@ func recoverPanic(log *slog.Logger) func(http.Handler) http.Handler {
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
+		// style-src allows inline styles: the grid's column template is
+		// computed per poll. Scripts stay 'self' only.
 		h.Set("Content-Security-Policy",
-			"default-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'")
+			"default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")

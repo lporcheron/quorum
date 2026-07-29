@@ -1,0 +1,184 @@
+package templates
+
+import "github.com/lporcheron/quorum/internal/poll"
+
+// AdminPage is the organizer's control panel, reached only through the
+// capability URL.
+templ AdminPage(a AdminProps, grid PollPageProps) {
+	@layout(a.Loc.Lang, a.Poll.Title+" — Quorum") {
+		if a.New {
+			<div class="banner banner-strong mt-6" data-admin-link data-title={ a.Poll.Title }>
+				<p class="font-semibold">{ a.Loc.T("admin.new_banner_title") }</p>
+				<p class="mt-1 text-sm">{ a.Loc.T("admin.new_banner_body") }</p>
+				<div class="mt-2 flex gap-2">
+					<input class="field flex-1 font-mono text-xs" type="text" readonly value={ a.AdminURL } id="admin-url"/>
+					<button class="btn btn-sm" type="button" data-copy="admin-url" data-copied={ a.Loc.T("admin.copied") }>{ a.Loc.T("admin.copy") }</button>
+				</div>
+			</div>
+		} else {
+			<div hidden data-admin-link data-title={ a.Poll.Title } data-url={ a.AdminURL }></div>
+		}
+		if a.Saved {
+			<p class="notice mt-6">{ a.Loc.T("admin.saved") }</p>
+		}
+		<div class="mt-8 flex flex-wrap items-baseline justify-between gap-2">
+			<h1 class="font-display text-3xl font-semibold tracking-tight">{ a.Poll.Title }</h1>
+			<span class="text-sm text-ink/60">{ a.Loc.T("admin.heading") }</span>
+		</div>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ a.Loc.T("admin.share_heading") }</h2>
+			<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("admin.share_body") }</p>
+			<div class="mt-2 flex gap-2">
+				<input class="field flex-1 font-mono text-xs" type="text" readonly value={ a.PublicURL } id="public-url"/>
+				<button class="btn btn-sm" type="button" data-copy="public-url" data-copied={ a.Loc.T("admin.copied") }>{ a.Loc.T("admin.copy") }</button>
+				<a class="btn btn-sm" href={ templ.URL("/polls/" + a.Poll.PublicID) }>{ a.Loc.T("admin.view_public") }</a>
+			</div>
+		</section>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">
+				if a.Poll.Status == poll.StatusPaused {
+					{ a.Loc.T("admin.paused_state") }
+				} else {
+					{ a.Loc.T("admin.options_heading") }
+				}
+			</h2>
+			<form method="post" action={ templ.URL(a.adminPath("/status")) } class="mt-2">
+				if a.Poll.Status == poll.StatusPaused {
+					<input type="hidden" name="action" value="resume"/>
+					<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.resume") }</button>
+				} else {
+					<input type="hidden" name="action" value="pause"/>
+					<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.pause") }</button>
+				}
+			</form>
+			<ul class="mt-3 divide-y divide-ink/10 border-y border-ink/15">
+				for _, o := range a.View.Options {
+					<li class="flex items-center justify-between gap-3 py-2 text-sm">
+						<span>{ OptionLabel(a.lang(), o, a.Poll.TZ()) }</span>
+						<span class="ml-auto font-mono text-xs tabular-nums text-ink/60">{ a.Loc.TN("admin.option_votes", a.answers(o.ID)) }</span>
+						<form method="post" action={ templ.URL(a.adminPath("/options/" + itoa(o.ID) + "/delete")) }>
+							<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.delete_option") }</button>
+						</form>
+					</li>
+				}
+			</ul>
+			<details class="mt-3">
+				<summary class="cursor-pointer text-sm font-semibold">{ a.Loc.T("admin.add_options_heading") }</summary>
+				<form method="post" action={ templ.URL(a.adminPath("/options")) } class="mt-2 space-y-2">
+					for range 3 {
+						<div class="flex flex-wrap gap-2">
+							<label class="block">
+								<span class="lbl">{ a.Loc.T("create.date_label") }</span>
+								<input class="field" type="date" name="option_date"/>
+							</label>
+							if a.Poll.Kind == poll.KindTimed {
+								<label class="block">
+									<span class="lbl">{ a.Loc.T("create.start_label") }</span>
+									<input class="field" type="time" name="option_start"/>
+								</label>
+								<label class="block">
+									<span class="lbl">{ a.Loc.T("create.duration_label") }</span>
+									@durationSelect("option_duration")
+								</label>
+							}
+						</div>
+					}
+					<button class="btn btn-sm" type="submit">{ a.Loc.T("admin.add_options_submit") }</button>
+				</form>
+			</details>
+		</section>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ a.Loc.T("admin.participants_heading") }</h2>
+			if len(a.View.Participants) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ a.Loc.T("admin.no_participants") }</p>
+			} else {
+				<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+					for _, pa := range a.View.Participants {
+						<li class="flex items-center justify-between gap-3 py-2 text-sm">
+							<span>
+								{ pa.Name }
+								if pa.Email != "" {
+									<span class="ml-2 font-mono text-xs text-ink/50">{ pa.Email }</span>
+								}
+							</span>
+							<form method="post" action={ templ.URL(a.adminPath("/participants/" + itoa(pa.ID) + "/delete")) }>
+								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.remove_participant") }</button>
+							</form>
+						</li>
+					}
+				</ul>
+			}
+			@matrix(grid)
+		</section>
+
+		if a.Poll.AllowComments && len(a.View.Comments) > 0 {
+			<section class="panel mt-6">
+				<h2 class="panel-title">{ a.Loc.T("admin.comments_heading") }</h2>
+				<ul class="mt-2 space-y-3">
+					for _, c := range a.View.Comments {
+						<li class="border-l-2 border-ink/20 pl-3 text-sm">
+							<span class="font-semibold">{ c.AuthorName }</span>
+							<span class="ml-2 font-mono text-xs text-ink/50">{ Stamp(a.lang(), c.CreatedAt, a.Poll.TZ()) }</span>
+							<p class="mt-0.5 whitespace-pre-line">{ c.Body }</p>
+							<form method="post" action={ templ.URL(a.adminPath("/comments/" + itoa(c.ID) + "/delete")) }>
+								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("comments.delete") }</button>
+							</form>
+						</li>
+					}
+				</ul>
+			</section>
+		}
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ a.Loc.T("admin.details_heading") }</h2>
+			<form method="post" action={ templ.URL(a.adminPath("")) } class="mt-3 space-y-4">
+				<label class="block">
+					<span class="lbl">{ a.Loc.T("create.title_label") }</span>
+					<input class="field w-full" type="text" name="title" required maxlength="200" value={ a.Poll.Title }/>
+				</label>
+				<label class="block">
+					<span class="lbl">{ a.Loc.T("create.description_label") }</span>
+					<textarea class="field w-full" name="description" rows="3" maxlength="2000">{ a.Poll.Description }</textarea>
+				</label>
+				<label class="block">
+					<span class="lbl">{ a.Loc.T("create.location_label") }</span>
+					<input class="field w-full" type="text" name="location" maxlength="200" value={ a.Poll.Location }/>
+				</label>
+				<label class="block">
+					<span class="lbl">{ a.Loc.T("create.video_label") }</span>
+					<input class="field w-full" type="url" name="video_url" maxlength="500" value={ a.Poll.VideoURL }/>
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" name="hide_participants" value="1" checked?={ a.Poll.HideParticipants }/>
+					{ a.Loc.T("create.hide_participants") }
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" name="require_voter_email" value="1" checked?={ a.Poll.RequireVoterEmail }/>
+					{ a.Loc.T("create.require_email") }
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" name="allow_comments" value="1" checked?={ a.Poll.AllowComments }/>
+					{ a.Loc.T("create.allow_comments") }
+				</label>
+				<button class="btn" type="submit">{ a.Loc.T("admin.save") }</button>
+			</form>
+		</section>
+
+		<section class="panel panel-danger mt-6">
+			<h2 class="panel-title">{ a.Loc.T("admin.danger_heading") }</h2>
+			<div class="mt-3 space-y-4 text-sm">
+				<form method="post" action={ templ.URL(a.adminPath("/regenerate")) }>
+					<button class="btn btn-sm" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.regenerate") }</button>
+					<span class="ml-2 text-ink/60">{ a.Loc.T("admin.regenerate_help") }</span>
+				</form>
+				<form method="post" action={ templ.URL(a.adminPath("/delete")) }>
+					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.delete_poll") }</button>
+					<span class="ml-2 text-ink/60">{ a.Loc.T("admin.delete_help") }</span>
+				</form>
+			</div>
+		</section>
+	}
+}
