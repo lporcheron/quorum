@@ -5,8 +5,10 @@ package handler
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/web/templates"
 )
 
@@ -30,6 +33,7 @@ type Handler struct {
 	db        *sql.DB
 	tr        *i18n.Translator
 	polls     *poll.Service
+	spaces    *space.Service
 	auth      *auth.Service
 	providers []*auth.Provider
 	sessions  *scs.SessionManager
@@ -39,14 +43,23 @@ type Handler struct {
 
 // New wires a Handler; all dependencies are explicit.
 func New(log *slog.Logger, db *sql.DB, tr *i18n.Translator, polls *poll.Service,
-	authsvc *auth.Service, providers []*auth.Provider, sessions *scs.SessionManager,
-	mailer mail.Mailer, baseURL string,
+	spaces *space.Service, authsvc *auth.Service, providers []*auth.Provider,
+	sessions *scs.SessionManager, mailer mail.Mailer, baseURL string,
 ) *Handler {
 	return &Handler{
-		log: log, db: db, tr: tr, polls: polls,
+		log: log, db: db, tr: tr, polls: polls, spaces: spaces,
 		auth: authsvc, providers: providers, sessions: sessions, mailer: mailer,
 		baseURL: strings.TrimSuffix(baseURL, "/"),
 	}
+}
+
+// atoiInRange parses a bounded integer form field.
+func atoiInRange(s string, min, max int) (int, error) {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || n < min || n > max {
+		return 0, fmt.Errorf("value %q out of range [%d, %d]", s, min, max)
+	}
+	return n, nil
 }
 
 // currentUser returns the signed-in user, or nil.

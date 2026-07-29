@@ -46,9 +46,27 @@ func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		Slots:             slots,
 		Dates:             dates,
 	}
+	// A signed-in creator's poll lands in their current space directly,
+	// inheriting the space's retention.
+	if user := h.currentUser(r); user != nil {
+		sp, _, err := h.currentSpace(r, user)
+		if err != nil {
+			h.spaceError(w, r, err)
+			return
+		}
+		in.SpaceID = sp.ID
+		in.CreatedByUserID = user.ID
+		in.RetentionDays = sp.RetentionDays
+	}
 	p, adminToken, err := h.polls.Create(r.Context(), in)
 	if err != nil {
 		h.rerenderCreate(w, r, err)
+		return
+	}
+	// A signed-in creator's poll is already in their dashboard; the
+	// capability link (and its save-this warning) is for guests.
+	if in.CreatedByUserID != 0 {
+		redirect(w, r, "/polls/"+p.PublicID+"/manage")
 		return
 	}
 	redirect(w, r, "/polls/"+p.PublicID+"/admin/"+adminToken+"?new=1")

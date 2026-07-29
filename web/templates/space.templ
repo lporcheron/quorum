@@ -1,0 +1,173 @@
+package templates
+
+import (
+	"fmt"
+
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/space"
+)
+
+// SpaceSettingsProps feeds the space control page (admin+).
+type SpaceSettingsProps struct {
+	Loc         *i18n.Locale
+	User        *auth.User
+	Space       space.Space
+	Role        space.Role // the viewer's role
+	Members     []space.Member
+	Invitations []space.Invitation
+	Timezones   []string
+	InviteLink  string // shown once when SMTP is off
+	InviteSent  bool
+	Saved       bool
+}
+
+func (p SpaceSettingsProps) path(suffix string) string {
+	return "/spaces/" + p.Space.Slug + suffix
+}
+
+templ SpaceSettingsPage(p SpaceSettingsProps) {
+	@layout(p.Loc, p.Space.Name+" — Quorum", p.User) {
+		<div class="mt-10 flex flex-wrap items-baseline justify-between gap-2">
+			<h1 class="font-display text-3xl font-semibold">{ p.Space.Name }</h1>
+			<span class="text-sm text-ink/60">{ p.Loc.T("space.settings_heading") }</span>
+		</div>
+		if p.Saved {
+			<p class="notice mt-4">{ p.Loc.T("admin.saved") }</p>
+		}
+		if p.InviteSent {
+			<p class="notice mt-4">{ p.Loc.T("space.invite_sent") }</p>
+		}
+		if p.InviteLink != "" {
+			<div class="banner banner-strong mt-4">
+				<p class="text-sm">{ p.Loc.T("space.invite_link") }</p>
+				<div class="mt-2 flex gap-2">
+					<input class="field flex-1 font-mono text-xs" type="text" readonly value={ p.InviteLink } id="invite-url"/>
+					<button class="btn btn-sm" type="button" data-copy="invite-url" data-copied={ p.Loc.T("admin.copied") }>{ p.Loc.T("admin.copy") }</button>
+				</div>
+			</div>
+		}
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ p.Loc.T("space.members_heading") }</h2>
+			<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+				for _, m := range p.Members {
+					<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+						<span>
+							{ m.Name }
+							<span class="ml-2 font-mono text-xs text-ink/50">{ m.Email }</span>
+						</span>
+						<span class="flex flex-wrap items-center gap-3">
+							<span class="font-mono text-xs text-ink/60">{ p.Loc.T("space.role_" + string(m.Role)) }</span>
+							if m.Role != space.RoleOwner {
+								if p.Role == space.RoleOwner {
+									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/role")) }>
+										if m.Role == space.RoleMember {
+											<input type="hidden" name="role" value="admin"/>
+											<button class="btn-link text-xs" type="submit">{ p.Loc.T("space.promote") }</button>
+										} else {
+											<input type="hidden" name="role" value="member"/>
+											<button class="btn-link text-xs" type="submit">{ p.Loc.T("space.demote") }</button>
+										}
+									</form>
+									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/transfer")) }>
+										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("space.transfer_help") }>{ p.Loc.T("space.transfer") }</button>
+									</form>
+								}
+								if p.Role == space.RoleOwner || m.Role == space.RoleMember {
+									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/remove")) }>
+										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("admin.confirm") }>{ p.Loc.T("space.remove") }</button>
+									</form>
+								}
+							}
+						</span>
+					</li>
+				}
+			</ul>
+
+			if len(p.Invitations) > 0 {
+				<h3 class="mt-4 text-sm font-semibold">{ p.Loc.T("space.invitations_heading") }</h3>
+				<ul class="mt-1 divide-y divide-ink/10 border-y border-ink/15">
+					for _, inv := range p.Invitations {
+						<li class="flex items-center justify-between gap-3 py-2 text-sm">
+							<span class="font-mono text-xs">{ inv.Email }</span>
+							<span class="flex items-center gap-3">
+								<span class="font-mono text-xs text-ink/60">{ p.Loc.T("space.role_" + string(inv.Role)) }</span>
+								<form method="post" action={ templ.URL(p.path("/invitations/" + fmt.Sprintf("%d", inv.ID) + "/cancel")) }>
+									<button class="btn-link text-xs" type="submit">{ p.Loc.T("space.cancel_invite") }</button>
+								</form>
+							</span>
+						</li>
+					}
+				</ul>
+			}
+
+			<form method="post" action={ templ.URL(p.path("/invitations")) } class="mt-4 flex flex-wrap items-end gap-2">
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("space.invite_email") }</span>
+					<input class="field" type="email" name="email" required/>
+				</label>
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("space.invite_role") }</span>
+					<select class="field" name="role">
+						<option value="member" selected>{ p.Loc.T("space.role_member") }</option>
+						<option value="admin">{ p.Loc.T("space.role_admin") }</option>
+					</select>
+				</label>
+				<button class="btn" type="submit">{ p.Loc.T("space.invite_submit") }</button>
+			</form>
+		</section>
+
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ p.Loc.T("space.settings_heading") }</h2>
+			<form method="post" action={ templ.URL(p.path("/settings")) } class="mt-3 space-y-4">
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("space.name_label") }</span>
+					<input class="field w-full" type="text" name="name" required maxlength="100" value={ p.Space.Name }/>
+				</label>
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("space.default_tz_label") }</span>
+					<select class="field" name="default_timezone">
+						<option value="" selected?={ p.Space.DefaultTimezone == "" }>{ p.Loc.T("space.default_tz_none") }</option>
+						for _, tz := range p.Timezones {
+							<option value={ tz } selected?={ tz == p.Space.DefaultTimezone }>{ tz }</option>
+						}
+					</select>
+				</label>
+				<label class="block">
+					<span class="lbl">{ p.Loc.T("space.retention_label") }</span>
+					<input class="field" type="number" name="retention_days" min="0" max="3650" value={ fmt.Sprintf("%d", p.Space.RetentionDays) }/>
+					<span class="mt-1 block text-xs text-ink/60">{ p.Loc.T("space.retention_help") }</span>
+				</label>
+				<button class="btn" type="submit">{ p.Loc.T("admin.save") }</button>
+			</form>
+		</section>
+	}
+}
+
+// InvitationProps feeds the invitation accept page.
+type InvitationProps struct {
+	Loc       *i18n.Locale
+	User      *auth.User
+	SpaceName string
+	Role      space.Role
+	Token     string
+}
+
+templ InvitationPage(p InvitationProps) {
+	@layout(p.Loc, p.Loc.TD("invitation.heading", map[string]any{"Space": p.SpaceName})+" — Quorum", p.User) {
+		<div class="mx-auto max-w-md py-24">
+			<h1 class="font-display text-3xl font-semibold">{ p.Loc.TD("invitation.heading", map[string]any{"Space": p.SpaceName}) }</h1>
+			<p class="mt-3 text-ink/80">{ p.Loc.TD("invitation.body", map[string]any{"Role": p.Loc.T("space.role_" + string(p.Role))}) }</p>
+			if p.User != nil {
+				<form method="post" action={ templ.URL("/invitations/" + p.Token) } class="mt-6">
+					<button class="btn btn-primary" type="submit">{ p.Loc.T("invitation.accept") }</button>
+				</form>
+			} else {
+				<p class="mt-6">
+					<a class="btn btn-primary" href={ templ.URL("/login?next=/invitations/" + p.Token) }>{ p.Loc.T("invitation.login_hint") }</a>
+				</p>
+			}
+		</div>
+	}
+}

@@ -439,3 +439,134 @@ other = "La tentative de connexion a échoué. Réessayez."
 
 [error.mail_disabled]
 other = "L'email est désactivé sur cette instance."
+
+# ---- Spaces ----
+
+[space.switcher_label]
+other = "Espace"
+
+[space.switch]
+other = "Changer"
+
+[space.new_heading]
+other = "Nouvel espace"
+
+[space.name_label]
+other = "Nom"
+
+[space.create_submit]
+other = "Créer l'espace"
+
+[space.settings_link]
+other = "Réglages de l'espace"
+
+[space.settings_heading]
+other = "Réglages de l'espace"
+
+[space.default_tz_label]
+other = "Fuseau horaire par défaut"
+
+[space.default_tz_none]
+other = "Aucune préférence"
+
+[space.retention_label]
+other = "Rétention des sondages (jours)"
+
+[space.retention_help]
+other = "Les nouveaux sondages sont supprimés après ce nombre de jours sans activité. 0 utilise le défaut de l'instance (180)."
+
+[space.members_heading]
+other = "Membres"
+
+[space.role_owner]
+other = "propriétaire"
+
+[space.role_admin]
+other = "admin"
+
+[space.role_member]
+other = "membre"
+
+[space.remove]
+other = "Retirer"
+
+[space.promote]
+other = "Passer admin"
+
+[space.demote]
+other = "Passer membre"
+
+[space.transfer]
+other = "Rendre propriétaire"
+
+[space.transfer_help]
+other = "Transfère la propriété ; vous devenez admin."
+
+[space.invite_heading]
+other = "Inviter quelqu'un"
+
+[space.invite_email]
+other = "Email"
+
+[space.invite_role]
+other = "Rôle"
+
+[space.invite_submit]
+other = "Envoyer l'invitation"
+
+[space.invite_sent]
+other = "Invitation envoyée."
+
+[space.invite_link]
+other = "L'email est désactivé sur cette instance. Transmettez ce lien vous-même — il fonctionne une fois, pendant 7 jours :"
+
+[space.invitations_heading]
+other = "Invitations en attente"
+
+[space.cancel_invite]
+other = "Annuler"
+
+[space.invite_subject]
+other = "Vous êtes invité dans {{.Space}} — Quorum"
+
+[space.invite_body]
+other = "Vous êtes invité à rejoindre l'espace {{.Space}} sur Quorum.\n\nOuvrez ce lien pour accepter :\n\n{{.Link}}\n\nIl est valable 7 jours et fonctionne une seule fois."
+
+[invitation.heading]
+other = "Rejoindre {{.Space}}"
+
+[invitation.body]
+other = "Vous êtes invité à rejoindre cet espace comme {{.Role}}."
+
+[invitation.accept]
+other = "Rejoindre cet espace"
+
+[invitation.login_hint]
+other = "Connectez-vous pour accepter cette invitation."
+
+[dashboard.space_polls]
+other = "Sondages de cet espace"
+
+[dashboard.empty_space]
+other = "Aucun sondage dans cet espace pour l'instant."
+
+[dashboard.by]
+other = "par"
+
+[dashboard.manage]
+other = "Gérer"
+
+[error.already_member]
+other = "Cette personne est déjà membre de l'espace."
+
+[error.invalid_invitation]
+other = "Cette invitation est invalide, expirée ou déjà utilisée."
+
+[error.owner_immovable]
+other = "Le propriétaire ne peut être ni retiré ni rétrogradé. Transférez d'abord la propriété."
+
+[error.not_a_member]
+other = "Cette personne n'est pas membre de l'espace."
+
+[error.bad_retention]
+other = "La rétention doit être comprise entre 0 et 3650 jours."

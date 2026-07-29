@@ -75,6 +75,20 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /polls/{pollID}/manage/regenerate", s.h.RegenerateAdminToken)
 	mux.HandleFunc("POST /polls/{pollID}/manage/delete", s.h.DeletePoll)
 
+	// Spaces.
+	mux.HandleFunc("POST /spaces", s.h.CreateSpace)
+	mux.HandleFunc("POST /spaces/switch", s.h.SwitchSpace)
+	mux.HandleFunc("GET /spaces/{slug}/settings", s.h.ShowSpaceSettings)
+	mux.HandleFunc("POST /spaces/{slug}/settings", s.h.UpdateSpaceSettings)
+	mux.HandleFunc("POST /spaces/{slug}/invitations", s.h.InviteMember)
+	mux.HandleFunc("POST /spaces/{slug}/invitations/{invitationID}/cancel", s.h.CancelInvitation)
+	mux.HandleFunc("POST /spaces/{slug}/members/{userID}/remove", s.h.RemoveMember)
+	mux.HandleFunc("POST /spaces/{slug}/members/{userID}/role", s.h.ChangeMemberRole)
+	mux.HandleFunc("POST /spaces/{slug}/members/{userID}/transfer", s.h.TransferOwnership)
+	mux.HandleFunc("POST /spaces/{slug}/leave", s.h.LeaveSpace)
+	mux.HandleFunc("GET /invitations/{token}", s.h.ShowInvitation)
+	mux.HandleFunc("POST /invitations/{token}", s.h.AcceptInvitation)
+
 	// Sign-in and account.
 	mux.HandleFunc("GET /login", s.h.Login)
 	mux.HandleFunc("GET /auth/{provider}/start", s.h.OAuthStart)

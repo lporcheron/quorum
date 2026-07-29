@@ -15,6 +15,7 @@ import (
 	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/internal/store"
 )
 
@@ -42,10 +43,11 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	}
 	st := store.New(db)
 	polls := poll.NewService(st, nil)
+	spaces := space.NewService(st, nil)
 	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL)
 	mailer := &testMailer{}
-	h := handler.New(log, db, tr, polls, authsvc, nil, sessions, mailer, cfg.BaseURL)
+	h := handler.New(log, db, tr, polls, spaces, authsvc, nil, sessions, mailer, cfg.BaseURL)
 	srv := New(cfg, log, h, sessions)
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)

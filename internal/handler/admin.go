@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/web/templates"
 )
 
@@ -35,11 +36,24 @@ func (h *Handler) adminContext(w http.ResponseWriter, r *http.Request) (poll.Pol
 		h.domainError(w, r, err)
 		return poll.Poll{}, "", false
 	}
-	if p.CreatedByUserID != user.ID {
+	if !h.canManage(r, p, user.ID) {
 		h.renderError(w, r, http.StatusForbidden, "error.forbidden")
 		return poll.Poll{}, "", false
 	}
 	return p, base, true
+}
+
+// canManage: the creator manages their poll; space admins and the
+// owner manage every poll of their space (members only their own).
+func (h *Handler) canManage(r *http.Request, p poll.Poll, userID int64) bool {
+	if p.CreatedByUserID == userID {
+		return true
+	}
+	if p.SpaceID == 0 {
+		return false
+	}
+	role, err := h.spaces.Membership(r.Context(), p.SpaceID, userID)
+	return err == nil && role.AtLeast(space.RoleAdmin)
 }
 
 // ShowPollAdmin renders the organizer's control panel.

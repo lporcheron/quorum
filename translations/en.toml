@@ -439,3 +439,134 @@ other = "The sign-in attempt failed. Try again."
 
 [error.mail_disabled]
 other = "Email is disabled on this instance."
+
+# ---- Spaces ----
+
+[space.switcher_label]
+other = "Space"
+
+[space.switch]
+other = "Switch"
+
+[space.new_heading]
+other = "New space"
+
+[space.name_label]
+other = "Name"
+
+[space.create_submit]
+other = "Create the space"
+
+[space.settings_link]
+other = "Space settings"
+
+[space.settings_heading]
+other = "Space settings"
+
+[space.default_tz_label]
+other = "Default timezone"
+
+[space.default_tz_none]
+other = "No preference"
+
+[space.retention_label]
+other = "Poll retention (days)"
+
+[space.retention_help]
+other = "New polls are deleted after this many days without activity. 0 uses the instance default (180)."
+
+[space.members_heading]
+other = "Members"
+
+[space.role_owner]
+other = "owner"
+
+[space.role_admin]
+other = "admin"
+
+[space.role_member]
+other = "member"
+
+[space.remove]
+other = "Remove"
+
+[space.promote]
+other = "Make admin"
+
+[space.demote]
+other = "Make member"
+
+[space.transfer]
+other = "Make owner"
+
+[space.transfer_help]
+other = "Transfers ownership; you become an admin."
+
+[space.invite_heading]
+other = "Invite someone"
+
+[space.invite_email]
+other = "Email"
+
+[space.invite_role]
+other = "Role"
+
+[space.invite_submit]
+other = "Send the invitation"
+
+[space.invite_sent]
+other = "Invitation sent."
+
+[space.invite_link]
+other = "Email is disabled on this instance. Send this link yourself — it works once, for 7 days:"
+
+[space.invitations_heading]
+other = "Pending invitations"
+
+[space.cancel_invite]
+other = "Cancel"
+
+[space.invite_subject]
+other = "You are invited to {{.Space}} — Quorum"
+
+[space.invite_body]
+other = "You have been invited to join the space {{.Space}} on Quorum.\n\nOpen this link to accept:\n\n{{.Link}}\n\nIt is valid for 7 days and works once."
+
+[invitation.heading]
+other = "Join {{.Space}}"
+
+[invitation.body]
+other = "You have been invited to join this space as {{.Role}}."
+
+[invitation.accept]
+other = "Join this space"
+
+[invitation.login_hint]
+other = "Sign in to accept this invitation."
+
+[dashboard.space_polls]
+other = "Polls in this space"
+
+[dashboard.empty_space]
+other = "No poll in this space yet."
+
+[dashboard.by]
+other = "by"
+
+[dashboard.manage]
+other = "Manage"
+
+[error.already_member]
+other = "This person is already a member of the space."
+
+[error.invalid_invitation]
+other = "This invitation is invalid, expired or already used."
+
+[error.owner_immovable]
+other = "The owner cannot be removed or demoted. Transfer ownership first."
+
+[error.not_a_member]
+other = "This person is not a member of the space."
+
+[error.bad_retention]
+other = "Retention must be between 0 and 3650 days."

@@ -21,6 +21,7 @@ import (
 	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/server"
+	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/internal/store"
 )
 
@@ -68,6 +69,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 
 	st := store.New(db)
 	polls := poll.NewService(st, nil)
+	spaces := space.NewService(st, nil)
 	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
 	providers := auth.NewProviders(cfg, cfg.BaseURL)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL)
@@ -76,6 +78,6 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		log.Info("smtp not configured; email features are disabled")
 	}
 
-	h := handler.New(log, db, tr, polls, authsvc, providers, sessions, mailer, cfg.BaseURL)
+	h := handler.New(log, db, tr, polls, spaces, authsvc, providers, sessions, mailer, cfg.BaseURL)
 	return server.New(cfg, log, h, sessions).Run(ctx)
 }

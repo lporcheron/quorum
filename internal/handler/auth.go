@@ -177,36 +177,3 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	redirect(w, r, "/")
 }
-
-// Dashboard lists the user's polls and votes.
-func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	user := h.currentUser(r)
-	if user == nil {
-		redirect(w, r, "/login?next=/dashboard")
-		return
-	}
-	mine, err := h.polls.ListByCreator(r.Context(), user.ID)
-	if err != nil {
-		h.domainError(w, r, err)
-		return
-	}
-	voted, err := h.polls.ListVotedBy(r.Context(), user.ID)
-	if err != nil {
-		h.domainError(w, r, err)
-		return
-	}
-	props := templates.DashboardProps{Loc: h.locale(r), User: user}
-	for _, p := range mine {
-		if p.Open() {
-			props.Live = append(props.Live, p)
-		} else {
-			props.Closed = append(props.Closed, p)
-		}
-	}
-	for _, p := range voted {
-		if p.CreatedByUserID != user.ID {
-			props.Voted = append(props.Voted, p)
-		}
-	}
-	h.render(w, r, http.StatusOK, templates.DashboardPage(props))
-}
