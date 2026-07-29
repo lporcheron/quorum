@@ -1,6 +1,45 @@
 package i18n
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/BurntSushi/toml"
+
+	"github.com/lporcheron/quorum/translations"
+)
+
+// TestCatalogParity guarantees "i18n complet": every message exists in
+// both languages, so no page ever mixes them.
+func TestCatalogParity(t *testing.T) {
+	keys := func(name string) map[string]bool {
+		t.Helper()
+		raw, err := translations.FS.ReadFile(name)
+		if err != nil {
+			t.Fatalf("read %s: %v", name, err)
+		}
+		var doc map[string]any
+		if err := toml.Unmarshal(raw, &doc); err != nil {
+			t.Fatalf("parse %s: %v", name, err)
+		}
+		out := make(map[string]bool, len(doc))
+		for k := range doc {
+			out[k] = true
+		}
+		return out
+	}
+
+	en, fr := keys("en.toml"), keys("fr.toml")
+	for k := range en {
+		if !fr[k] {
+			t.Errorf("key %q missing from fr.toml", k)
+		}
+	}
+	for k := range fr {
+		if !en[k] {
+			t.Errorf("key %q missing from en.toml", k)
+		}
+	}
+}
 
 func TestLocaleResolution(t *testing.T) {
 	tr, err := New()
