@@ -42,16 +42,21 @@ type User struct {
 
 // Service owns accounts, identities and login tokens.
 type Service struct {
-	store             *store.Store
-	now               func() time.Time
-	registrationsOpen bool
+	store *store.Store
+	now   func() time.Time
+	// registrationsOpen is consulted per attempt: the admin page can
+	// flip it at runtime.
+	registrationsOpen func(context.Context) bool
 	allowedDomains    []string
 }
 
 // NewService wires the auth service; now is injectable for tests.
-func NewService(st *store.Store, now func() time.Time, registrationsOpen bool, allowedDomains []string) *Service {
+func NewService(st *store.Store, now func() time.Time, registrationsOpen func(context.Context) bool, allowedDomains []string) *Service {
 	if now == nil {
 		now = time.Now
+	}
+	if registrationsOpen == nil {
+		registrationsOpen = func(context.Context) bool { return true }
 	}
 	return &Service{store: st, now: now, registrationsOpen: registrationsOpen, allowedDomains: allowedDomains}
 }
@@ -121,7 +126,7 @@ func (s *Service) Complete(ctx context.Context, login Login, d Defaults) (User, 
 
 // register creates the account, its identity, and the personal space.
 func (s *Service) register(ctx context.Context, login Login, d Defaults) (User, error) {
-	if !s.registrationsOpen {
+	if !s.registrationsOpen(ctx) {
 		return User{}, ErrRegistrationsClosed
 	}
 	if !s.domainAllowed(login.Email) {
@@ -228,7 +233,7 @@ func (s *Service) RequestMagicLink(ctx context.Context, email, redirect string, 
 		return ErrEmailNotAllowed
 	}
 	if _, err := s.store.GetUserByEmail(ctx, email); errors.Is(err, sql.ErrNoRows) {
-		if !s.registrationsOpen || !s.domainAllowed(email) {
+		if !s.registrationsOpen(ctx) || !s.domainAllowed(email) {
 			return nil
 		}
 	} else if err != nil {

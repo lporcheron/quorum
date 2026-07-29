@@ -14,6 +14,10 @@ import (
 var testNow = time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
 
 func newTestService(t *testing.T, open bool, domains []string) (context.Context, *Service) {
+	return newTestServiceVar(t, &open, domains)
+}
+
+func newTestServiceVar(t *testing.T, open *bool, domains []string) (context.Context, *Service) {
 	t.Helper()
 	ctx := context.Background()
 	db, err := store.Open(ctx, ":memory:")
@@ -24,7 +28,7 @@ func newTestService(t *testing.T, open bool, domains []string) (context.Context,
 	if err := store.Migrate(ctx, db, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
-	return ctx, NewService(store.New(db), func() time.Time { return testNow }, open, domains)
+	return ctx, NewService(store.New(db), func() time.Time { return testNow }, func(context.Context) bool { return *open }, domains)
 }
 
 func google(sub, email string) Login {
@@ -108,11 +112,12 @@ func TestRegistrationGates(t *testing.T) {
 	}
 
 	// Closed registrations never lock out existing users.
-	ctx2, closed := newTestService(t, true, nil)
+	openFlag := true
+	ctx2, closed := newTestServiceVar(t, &openFlag, nil)
 	if _, err := closed.Complete(ctx2, google("g-5", "old@example.com"), Defaults{}); err != nil {
 		t.Fatalf("seed user: %v", err)
 	}
-	closed.registrationsOpen = false
+	openFlag = false
 	if _, err := closed.Complete(ctx2, google("g-5", "old@example.com"), Defaults{}); err != nil {
 		t.Errorf("existing user locked out: %v", err)
 	}

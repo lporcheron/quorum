@@ -20,9 +20,12 @@ import (
 	"github.com/lporcheron/quorum/internal/i18n"
 	"github.com/lporcheron/quorum/internal/job"
 	"github.com/lporcheron/quorum/internal/mail"
+	"github.com/lporcheron/quorum/internal/maintenance"
+	"github.com/lporcheron/quorum/internal/metrics"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/server"
+	"github.com/lporcheron/quorum/internal/setting"
 	"github.com/lporcheron/quorum/internal/space"
 	"github.com/lporcheron/quorum/internal/store"
 )
@@ -70,9 +73,10 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	}
 
 	st := store.New(db)
+	settings := setting.NewService(st, "Quorum", cfg.RegistrationsOpen)
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
-	authsvc := auth.NewService(st, nil, cfg.RegistrationsOpen, cfg.EmailAllowedDomains)
+	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
 	providers := auth.NewProviders(cfg, cfg.BaseURL)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL)
 	mailer := mail.New(cfg.SMTP)
@@ -83,16 +87,26 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	queue := job.NewQueue(st, nil)
 	notifier := notify.New(log, queue, mailer, polls, authsvc, tr, cfg.BaseURL, cfg.SMTP.From, nil)
 	worker := job.NewWorker(queue, log, notifier.Handlers())
-	workerDone := make(chan struct{})
-	go func() {
-		defer close(workerDone)
-		if err := worker.Run(ctx); err != nil {
-			log.Error("job worker stopped", "error", err)
-		}
-	}()
+	housekeeping := maintenance.New(log, polls, notifier, st, nil)
+	background := make(chan struct{}, 2)
+	for _, run := range []func(context.Context) error{worker.Run, housekeeping.Run} {
+		go func() {
+			defer func() { background <- struct{}{} }()
+			if err := run(ctx); err != nil {
+				log.Error("background loop stopped", "error", err)
+			}
+		}()
+	}
 
-	h := handler.New(log, db, tr, polls, spaces, authsvc, providers, sessions, mailer, notifier, cfg.BaseURL)
-	err = server.New(cfg, log, h, sessions).Run(ctx)
-	<-workerDone
+	h := handler.New(handler.Deps{
+		Log: log, DB: db, Store: st, Translator: tr,
+		Polls: polls, Spaces: spaces, Auth: authsvc, Providers: providers,
+		Sessions: sessions, Mailer: mailer, Notifier: notifier, Settings: settings,
+		BaseURL: cfg.BaseURL, AdminEmails: cfg.AdminEmails, TrustProxy: cfg.TrustProxy,
+	})
+	m := metrics.New(cfg.MetricsEnabled, st, version)
+	err = server.New(cfg, log, h, sessions, m).Run(ctx)
+	<-background
+	<-background
 	return err
 }
