@@ -46,6 +46,7 @@ func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		HideParticipants:  r.PostForm.Get("hide_participants") == "1",
 		RequireVoterEmail: r.PostForm.Get("require_voter_email") == "1",
 		AllowComments:     r.PostForm.Get("allow_comments") == "1",
+		NotifyOrganizer:   r.PostForm.Get("notify_organizer") == "1",
 		Slots:             slots,
 		Dates:             dates,
 	}

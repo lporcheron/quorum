@@ -62,6 +62,7 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 							if m.Role != space.RoleOwner {
 								if p.Role == space.RoleOwner {
 									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/role")) }>
+										@csrfField()
 										if m.Role == space.RoleMember {
 											<input type="hidden" name="role" value="admin"/>
 											<button class="btn-link text-xs" type="submit">{ p.Loc.T("space.promote") }</button>
@@ -71,11 +72,13 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 										}
 									</form>
 									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/transfer")) }>
+										@csrfField()
 										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("space.transfer_help") }>{ p.Loc.T("space.transfer") }</button>
 									</form>
 								}
 								if p.Role == space.RoleOwner || m.Role == space.RoleMember {
 									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/remove")) }>
+										@csrfField()
 										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("admin.confirm") }>{ p.Loc.T("space.remove") }</button>
 									</form>
 								}
@@ -94,6 +97,7 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 							<span class="flex items-center gap-3">
 								<span class="font-mono text-xs text-ink/60">{ p.Loc.T("space.role_" + string(inv.Role)) }</span>
 								<form method="post" action={ templ.URL(p.path("/invitations/" + fmt.Sprintf("%d", inv.ID) + "/cancel")) }>
+									@csrfField()
 									<button class="btn-link text-xs" type="submit">{ p.Loc.T("space.cancel_invite") }</button>
 								</form>
 							</span>
@@ -103,6 +107,7 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 			}
 
 			<form method="post" action={ templ.URL(p.path("/invitations")) } class="mt-4 flex flex-wrap items-end gap-2">
+				@csrfField()
 				<label class="block">
 					<span class="lbl">{ p.Loc.T("space.invite_email") }</span>
 					<input class="field" type="email" name="email" required/>
@@ -121,6 +126,7 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ p.Loc.T("space.settings_heading") }</h2>
 			<form method="post" action={ templ.URL(p.path("/settings")) } class="mt-3 space-y-4">
+				@csrfField()
 				<label class="block">
 					<span class="lbl">{ p.Loc.T("space.name_label") }</span>
 					<input class="field w-full" type="text" name="name" required maxlength="100" value={ p.Space.Name }/>
@@ -161,6 +167,7 @@ templ InvitationPage(p InvitationProps) {
 			<p class="mt-3 text-ink/80">{ p.Loc.TD("invitation.body", map[string]any{"Role": p.Loc.T("space.role_" + string(p.Role))}) }</p>
 			if p.User != nil {
 				<form method="post" action={ templ.URL("/invitations/" + p.Token) } class="mt-6">
+					@csrfField()
 					<button class="btn btn-primary" type="submit">{ p.Loc.T("invitation.accept") }</button>
 				</form>
 			} else {

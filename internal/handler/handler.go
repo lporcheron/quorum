@@ -4,6 +4,7 @@ package handler
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/internal/ids"
 	"github.com/lporcheron/quorum/internal/mail"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
@@ -162,10 +164,44 @@ func (h *Handler) locale(r *http.Request) *i18n.Locale {
 	return h.tr.Locale(r.Header.Get("Accept-Language"))
 }
 
+const sessCSRFKey = "csrf"
+
+// csrfToken returns the session's CSRF token, minted lazily and only
+// for signed-in visitors — anonymous page views must not create
+// session rows.
+func (h *Handler) csrfToken(r *http.Request) string {
+	tok := h.sessions.GetString(r.Context(), sessCSRFKey)
+	if tok == "" && h.currentUser(r) != nil {
+		tok = ids.Token()
+		h.sessions.Put(r.Context(), sessCSRFKey, tok)
+	}
+	return tok
+}
+
+// CSRF wraps a session-authenticated mutation with a synchronizer
+// token check. Capability-token routes stay unwrapped: their secret
+// URL already defeats cross-site forgery.
+func (h *Handler) CSRF(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !h.parseForm(w, r) {
+			return
+		}
+		want := h.sessions.GetString(r.Context(), sessCSRFKey)
+		got := r.PostForm.Get("csrf")
+		if want == "" || subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
+			h.renderError(w, r, http.StatusForbidden, "error.csrf")
+			return
+		}
+		next(w, r)
+	}
+}
+
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {
+	// Chrome (and the lazily-minted CSRF token) must be resolved before
+	// WriteHeader: scs commits the session with the response headers.
+	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI(), h.csrfToken(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI())
 	if err := c.Render(ctx, w); err != nil {
 		h.log.ErrorContext(r.Context(), "render", "error", err, "path", r.URL.Path)
 	}

@@ -7,13 +7,21 @@ type chromeKey int
 const (
 	ctxInstanceName chromeKey = iota
 	ctxCurrentPath
+	ctxCSRF
 )
 
 // WithChrome attaches the per-request page chrome (instance name,
-// current path for the language switcher) to the render context.
-func WithChrome(ctx context.Context, instanceName, path string) context.Context {
+// current path for the language switcher, CSRF token) to the render
+// context.
+func WithChrome(ctx context.Context, instanceName, path, csrf string) context.Context {
 	ctx = context.WithValue(ctx, ctxInstanceName, instanceName)
-	return context.WithValue(ctx, ctxCurrentPath, path)
+	ctx = context.WithValue(ctx, ctxCurrentPath, path)
+	return context.WithValue(ctx, ctxCSRF, csrf)
+}
+
+func csrfValue(ctx context.Context) string {
+	v, _ := ctx.Value(ctxCSRF).(string)
+	return v
 }
 
 func instanceName(ctx context.Context) string {

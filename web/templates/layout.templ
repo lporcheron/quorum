@@ -5,6 +5,12 @@ import (
 	"github.com/lporcheron/quorum/internal/i18n"
 )
 
+// csrfField embeds the session's synchronizer token in a form. Empty
+// (and unchecked) on capability-token and anonymous flows.
+templ csrfField() {
+	<input type="hidden" name="csrf" value={ csrfValue(ctx) }/>
+}
+
 templ layout(loc *i18n.Locale, title string, user *auth.User) {
 	<!DOCTYPE html>
 	<html lang={ loc.Lang }>
@@ -29,7 +35,9 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 								<summary class="cursor-pointer list-none font-semibold">{ user.Name }</summary>
 								<div class="usermenu-panel">
 									<p class="truncate px-3 py-1 font-mono text-xs text-ink/60">{ user.Email }</p>
+									<a href="/account" class="block px-3 py-1.5 hover:bg-ink/5">{ loc.T("nav.account") }</a>
 									<form method="post" action="/auth/logout">
+										@csrfField()
 										<button class="block w-full px-3 py-1.5 text-left hover:bg-ink/5" type="submit">{ loc.T("nav.logout") }</button>
 									</form>
 								</div>

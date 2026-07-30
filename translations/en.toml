@@ -685,3 +685,29 @@ other = "Retry"
 [instadmin.users]
 one = "{{.Count}} user"
 other = "{{.Count}} users"
+
+# ---- Account & CSRF ----
+
+[nav.account]
+other = "My account"
+
+[account.heading]
+other = "My account"
+
+[account.delete_submit]
+other = "Delete my account"
+
+[account.delete_help]
+other = "Deletes your account, your polls, your votes and your comments. Polls you created inside shared spaces stay with their space. If you own a space with other members, transfer it first. No undo."
+
+[account.delete_confirm]
+other = "Delete your account and all your data? This cannot be undone."
+
+[create.notify_organizer]
+other = "Email me on new votes and comments"
+
+[error.csrf]
+other = "The form has expired. Go back, reload the page and try again."
+
+[error.owns_shared_space]
+other = "You still own a space with other members. Transfer its ownership first, then delete your account."

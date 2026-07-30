@@ -44,6 +44,7 @@ templ InstanceAdminPage(p InstanceAdminProps) {
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ p.Loc.T("instadmin.settings") }</h2>
 			<form method="post" action="/admin/settings" class="mt-3 space-y-4">
+				@csrfField()
 				<label class="block">
 					<span class="lbl">{ p.Loc.T("instadmin.instance_name") }</span>
 					<input class="field" type="text" name="instance_name" maxlength="60" value={ p.InstanceName }/>
@@ -69,9 +70,11 @@ templ InstanceAdminPage(p InstanceAdminProps) {
 								<span class="font-mono text-xs">#{ fmt.Sprintf("%d", j.ID) } { j.Type }</span>
 								<span class="font-mono text-xs text-ink/60">{ p.Loc.TN("instadmin.attempts", int(j.Attempts)) }</span>
 								<form method="post" action={ templ.URL(fmt.Sprintf("/admin/jobs/%d/retry", j.ID)) }>
+									@csrfField()
 									<button class="btn-link text-xs" type="submit">{ p.Loc.T("instadmin.retry") }</button>
 								</form>
 								<form method="post" action={ templ.URL(fmt.Sprintf("/admin/jobs/%d/delete", j.ID)) }>
+									@csrfField()
 									<button class="btn-link text-xs" type="submit">{ p.Loc.T("comments.delete") }</button>
 								</form>
 							</div>

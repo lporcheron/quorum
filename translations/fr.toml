@@ -685,3 +685,29 @@ other = "Relancer"
 [instadmin.users]
 one = "{{.Count}} utilisateur"
 other = "{{.Count}} utilisateurs"
+
+# ---- Account & CSRF ----
+
+[nav.account]
+other = "Mon compte"
+
+[account.heading]
+other = "Mon compte"
+
+[account.delete_submit]
+other = "Supprimer mon compte"
+
+[account.delete_help]
+other = "Supprime votre compte, vos sondages, vos votes et vos commentaires. Les sondages créés dans des espaces partagés restent à leur espace. Si vous possédez un espace avec d'autres membres, transférez-le d'abord. Sans retour en arrière."
+
+[account.delete_confirm]
+other = "Supprimer votre compte et toutes vos données ? Cette action est définitive."
+
+[create.notify_organizer]
+other = "M'envoyer un email à chaque vote et commentaire"
+
+[error.csrf]
+other = "Le formulaire a expiré. Revenez en arrière, rechargez la page et réessayez."
+
+[error.owns_shared_space]
+other = "Vous possédez encore un espace avec d'autres membres. Transférez-en la propriété d'abord, puis supprimez votre compte."

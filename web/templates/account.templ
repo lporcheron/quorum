@@ -1,0 +1,44 @@
+package templates
+
+import (
+	"github.com/lporcheron/quorum/internal/auth"
+	"github.com/lporcheron/quorum/internal/i18n"
+)
+
+// AccountProps feeds the account page.
+type AccountProps struct {
+	Loc  *i18n.Locale
+	User *auth.User
+}
+
+templ AccountPage(p AccountProps) {
+	@layout(p.Loc, p.Loc.T("account.heading")+" — Quorum", p.User) {
+		<div class="mx-auto max-w-xl">
+			<h1 class="mt-10 font-display text-3xl font-semibold">{ p.Loc.T("account.heading") }</h1>
+
+			<section class="panel mt-6">
+				<dl class="space-y-2 text-sm">
+					<div>
+						<dt class="lbl">{ p.Loc.T("vote.name_label") }</dt>
+						<dd>{ p.User.Name }</dd>
+					</div>
+					<div>
+						<dt class="lbl">{ p.Loc.T("vote.email_label") }</dt>
+						<dd class="font-mono">{ p.User.Email }</dd>
+					</div>
+				</dl>
+			</section>
+
+			<section class="panel panel-danger mt-6">
+				<h2 class="panel-title">{ p.Loc.T("admin.danger_heading") }</h2>
+				<p class="mt-2 text-sm text-ink/70">{ p.Loc.T("account.delete_help") }</p>
+				<form method="post" action="/account/delete" class="mt-3">
+					@csrfField()
+					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ p.Loc.T("account.delete_confirm") }>
+						{ p.Loc.T("account.delete_submit") }
+					</button>
+				</form>
+			</section>
+		</div>
+	}
+}
