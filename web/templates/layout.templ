@@ -36,6 +36,9 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 								<div class="usermenu-panel">
 									<p class="truncate px-3 py-1 font-mono text-xs text-ink/60">{ user.Email }</p>
 									<a href="/account" class="block px-3 py-1.5 hover:bg-ink/5">{ loc.T("nav.account") }</a>
+									if isInstanceAdmin(ctx) {
+										<a href="/admin" class="block px-3 py-1.5 hover:bg-ink/5">{ loc.T("instadmin.heading") }</a>
+									}
 									<form method="post" action="/auth/logout">
 										@csrfField()
 										<button class="block w-full px-3 py-1.5 text-left hover:bg-ink/5" type="submit">{ loc.T("nav.logout") }</button>

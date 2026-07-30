@@ -199,7 +199,9 @@ func (h *Handler) CSRF(next http.HandlerFunc) http.HandlerFunc {
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {
 	// Chrome (and the lazily-minted CSRF token) must be resolved before
 	// WriteHeader: scs commits the session with the response headers.
-	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI(), h.csrfToken(r))
+	user := h.currentUser(r)
+	isAdmin := user != nil && h.adminEmails[user.Email]
+	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI(), h.csrfToken(r), isAdmin)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := c.Render(ctx, w); err != nil {

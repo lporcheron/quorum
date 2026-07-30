@@ -8,15 +8,22 @@ const (
 	ctxInstanceName chromeKey = iota
 	ctxCurrentPath
 	ctxCSRF
+	ctxIsInstanceAdmin
 )
 
 // WithChrome attaches the per-request page chrome (instance name,
-// current path for the language switcher, CSRF token) to the render
-// context.
-func WithChrome(ctx context.Context, instanceName, path, csrf string) context.Context {
+// current path for the language switcher, CSRF token, instance-admin
+// flag) to the render context.
+func WithChrome(ctx context.Context, instanceName, path, csrf string, isInstanceAdmin bool) context.Context {
 	ctx = context.WithValue(ctx, ctxInstanceName, instanceName)
 	ctx = context.WithValue(ctx, ctxCurrentPath, path)
-	return context.WithValue(ctx, ctxCSRF, csrf)
+	ctx = context.WithValue(ctx, ctxCSRF, csrf)
+	return context.WithValue(ctx, ctxIsInstanceAdmin, isInstanceAdmin)
+}
+
+func isInstanceAdmin(ctx context.Context) bool {
+	v, _ := ctx.Value(ctxIsInstanceAdmin).(bool)
+	return v
 }
 
 func csrfValue(ctx context.Context) string {
