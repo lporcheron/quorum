@@ -111,6 +111,23 @@ schema, one query set, migrations applied at startup either way.
 |---|---|
 | `DATABASE_URL` | `postgres://user:pass@host/db` switches the store to PostgreSQL (empty = SQLite at `QUORUM_DB_PATH`) |
 
+## Backups
+
+**SQLite** (the default): the database runs in WAL mode, so never copy
+`quorum.db` alone while the server runs — you would miss the WAL. Use
+one of:
+
+```sh
+sqlite3 /data/quorum.db ".backup '/backups/quorum.db'"   # safe online snapshot
+```
+
+or [Litestream](https://litestream.io) for continuous replication to
+object storage. Restoring is copying the file back and starting the
+server.
+
+**PostgreSQL**: standard tooling — `pg_dump`/`pg_restore` or your
+provider's snapshots. Quorum keeps no state outside the database.
+
 ## License
 
 [Apache 2.0](LICENSE).
