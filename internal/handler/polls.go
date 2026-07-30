@@ -158,6 +158,7 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 		Timezones: poll.CommonTimezones,
 		Me:        me,
 		EditToken: editToken,
+		OGImage:   h.baseURL + "/static/og.png",
 	}
 	if p.FinalizedOptionID != 0 {
 		props.FinalizedLabel = h.finalizedOptionLabel(r, p, props.Loc.Lang, tz)

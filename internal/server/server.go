@@ -46,6 +46,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/static/favicon-32.png", http.StatusMovedPermanently)
 	})
+	mux.HandleFunc("GET /apple-touch-icon.png", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/static/apple-touch-icon.png", http.StatusMovedPermanently)
+	})
 	// Poll, invitation and auth URLs are capabilities: crawlers stay out.
 	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

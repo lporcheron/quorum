@@ -41,6 +41,8 @@ type PollPageProps struct {
 	// FinalizedLabel is the chosen option, formatted for the viewer,
 	// when the poll is decided.
 	FinalizedLabel string
+	// OGImage is the absolute URL of the link-preview banner.
+	OGImage string
 }
 
 func (p PollPageProps) lang() string { return p.Loc.Lang }
