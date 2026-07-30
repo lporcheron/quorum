@@ -81,6 +81,7 @@ type Poll struct {
 	UpdatedAt         string
 	RetentionDays     sql.NullInt64
 	ReminderSentAt    sql.NullString
+	NotifyOrganizer   int64
 }
 
 type PollOption struct {

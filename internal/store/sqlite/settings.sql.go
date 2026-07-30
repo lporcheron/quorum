@@ -106,7 +106,7 @@ func (q *Queries) ListDeadJobs(ctx context.Context, arg ListDeadJobsParams) ([]J
 }
 
 const listExpiredPolls = `-- name: ListExpiredPolls :many
-SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at FROM polls
+SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at, notify_organizer FROM polls
 WHERE deletes_at IS NOT NULL AND deletes_at <= ?1
 ORDER BY deletes_at LIMIT ?2
 `
@@ -147,6 +147,7 @@ func (q *Queries) ListExpiredPolls(ctx context.Context, arg ListExpiredPollsPara
 			&i.UpdatedAt,
 			&i.RetentionDays,
 			&i.ReminderSentAt,
+			&i.NotifyOrganizer,
 		); err != nil {
 			return nil, err
 		}
@@ -162,7 +163,7 @@ func (q *Queries) ListExpiredPolls(ctx context.Context, arg ListExpiredPollsPara
 }
 
 const listPollsNeedingReminder = `-- name: ListPollsNeedingReminder :many
-SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at FROM polls
+SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at, notify_organizer FROM polls
 WHERE deletes_at IS NOT NULL AND deletes_at <= ?1
   AND reminder_sent_at IS NULL AND created_by_user_id IS NOT NULL
 ORDER BY deletes_at LIMIT ?2
@@ -204,6 +205,7 @@ func (q *Queries) ListPollsNeedingReminder(ctx context.Context, arg ListPollsNee
 			&i.UpdatedAt,
 			&i.RetentionDays,
 			&i.ReminderSentAt,
+			&i.NotifyOrganizer,
 		); err != nil {
 			return nil, err
 		}

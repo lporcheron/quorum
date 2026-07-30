@@ -87,7 +87,7 @@ func (n *Notifier) skippable(p poll.Poll) bool {
 
 // VoteCast tells the organizer somebody voted.
 func (n *Notifier) VoteCast(ctx context.Context, p poll.Poll, actor string) {
-	if n.skippable(p) {
+	if n.skippable(p) || !p.NotifyOrganizer {
 		return
 	}
 	n.enqueue(ctx, typeNotify, notifyPayload{PollID: p.PublicID, Kind: "vote", Actor: actor})
@@ -95,7 +95,7 @@ func (n *Notifier) VoteCast(ctx context.Context, p poll.Poll, actor string) {
 
 // CommentPosted tells the organizer somebody commented.
 func (n *Notifier) CommentPosted(ctx context.Context, p poll.Poll, actor string) {
-	if n.skippable(p) {
+	if n.skippable(p) || !p.NotifyOrganizer {
 		return
 	}
 	n.enqueue(ctx, typeNotify, notifyPayload{PollID: p.PublicID, Kind: "comment", Actor: actor})

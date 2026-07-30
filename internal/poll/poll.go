@@ -76,7 +76,9 @@ type Poll struct {
 	HideParticipants  bool
 	RequireVoterEmail bool
 	AllowComments     bool
-	CreatedAt         time.Time
+	// NotifyOrganizer controls the new-vote / new-comment emails.
+	NotifyOrganizer bool
+	CreatedAt       time.Time
 	// CreatedByUserID is 0 while the poll is unclaimed (guest-created).
 	CreatedByUserID int64
 	// SpaceID is 0 while the poll is unclaimed.
@@ -181,6 +183,7 @@ func pollFromRow(r sqlite.Poll) (Poll, error) {
 		HideParticipants:  r.HideParticipants != 0,
 		RequireVoterEmail: r.RequireVoterEmail != 0,
 		AllowComments:     r.AllowComments != 0,
+		NotifyOrganizer:   r.NotifyOrganizer != 0,
 		CreatedAt:         createdAt,
 		CreatedByUserID:   r.CreatedByUserID.Int64,
 		SpaceID:           r.SpaceID.Int64,

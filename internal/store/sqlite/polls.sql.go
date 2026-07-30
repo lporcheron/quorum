@@ -40,14 +40,14 @@ INSERT INTO polls (
     public_id, space_id, created_by_user_id, admin_token_hash,
     title, description, location, video_url,
     kind, timezone, hide_participants, require_voter_email, allow_comments,
-    retention_days, deletes_at, created_at, updated_at
+    notify_organizer, retention_days, deletes_at, created_at, updated_at
 ) VALUES (
     ?1, ?2, ?3, ?4,
     ?5, ?6, ?7, ?8,
     ?9, ?10, ?11, ?12, ?13,
-    ?14, ?15, ?16, ?17
+    ?14, ?15, ?16, ?17, ?18
 )
-RETURNING id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at
+RETURNING id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at, notify_organizer
 `
 
 type CreatePollParams struct {
@@ -64,6 +64,7 @@ type CreatePollParams struct {
 	HideParticipants  int64
 	RequireVoterEmail int64
 	AllowComments     int64
+	NotifyOrganizer   int64
 	RetentionDays     sql.NullInt64
 	DeletesAt         sql.NullString
 	CreatedAt         string
@@ -85,6 +86,7 @@ func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, e
 		arg.HideParticipants,
 		arg.RequireVoterEmail,
 		arg.AllowComments,
+		arg.NotifyOrganizer,
 		arg.RetentionDays,
 		arg.DeletesAt,
 		arg.CreatedAt,
@@ -113,6 +115,7 @@ func (q *Queries) CreatePoll(ctx context.Context, arg CreatePollParams) (Poll, e
 		&i.UpdatedAt,
 		&i.RetentionDays,
 		&i.ReminderSentAt,
+		&i.NotifyOrganizer,
 	)
 	return i, err
 }
@@ -157,7 +160,7 @@ func (q *Queries) FinalizePoll(ctx context.Context, arg FinalizePollParams) erro
 }
 
 const getPollByPublicID = `-- name: GetPollByPublicID :one
-SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at FROM polls WHERE public_id = ?1
+SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at, notify_organizer FROM polls WHERE public_id = ?1
 `
 
 func (q *Queries) GetPollByPublicID(ctx context.Context, publicID string) (Poll, error) {
@@ -185,12 +188,13 @@ func (q *Queries) GetPollByPublicID(ctx context.Context, publicID string) (Poll,
 		&i.UpdatedAt,
 		&i.RetentionDays,
 		&i.ReminderSentAt,
+		&i.NotifyOrganizer,
 	)
 	return i, err
 }
 
 const listPollsByCreator = `-- name: ListPollsByCreator :many
-SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at FROM polls WHERE created_by_user_id = ?1 ORDER BY created_at DESC
+SELECT id, public_id, space_id, created_by_user_id, admin_token_hash, title, description, location, video_url, kind, timezone, status, hide_participants, require_voter_email, allow_comments, finalized_option_id, deletes_at, created_at, updated_at, retention_days, reminder_sent_at, notify_organizer FROM polls WHERE created_by_user_id = ?1 ORDER BY created_at DESC
 `
 
 func (q *Queries) ListPollsByCreator(ctx context.Context, userID sql.NullInt64) ([]Poll, error) {
@@ -224,6 +228,7 @@ func (q *Queries) ListPollsByCreator(ctx context.Context, userID sql.NullInt64) 
 			&i.UpdatedAt,
 			&i.RetentionDays,
 			&i.ReminderSentAt,
+			&i.NotifyOrganizer,
 		); err != nil {
 			return nil, err
 		}
@@ -239,7 +244,7 @@ func (q *Queries) ListPollsByCreator(ctx context.Context, userID sql.NullInt64) 
 }
 
 const listPollsVotedByUser = `-- name: ListPollsVotedByUser :many
-SELECT polls.id, polls.public_id, polls.space_id, polls.created_by_user_id, polls.admin_token_hash, polls.title, polls.description, polls.location, polls.video_url, polls.kind, polls.timezone, polls.status, polls.hide_participants, polls.require_voter_email, polls.allow_comments, polls.finalized_option_id, polls.deletes_at, polls.created_at, polls.updated_at, polls.retention_days, polls.reminder_sent_at FROM polls
+SELECT polls.id, polls.public_id, polls.space_id, polls.created_by_user_id, polls.admin_token_hash, polls.title, polls.description, polls.location, polls.video_url, polls.kind, polls.timezone, polls.status, polls.hide_participants, polls.require_voter_email, polls.allow_comments, polls.finalized_option_id, polls.deletes_at, polls.created_at, polls.updated_at, polls.retention_days, polls.reminder_sent_at, polls.notify_organizer FROM polls
 JOIN participants ON participants.poll_id = polls.id
 WHERE participants.user_id = ?1
 ORDER BY polls.created_at DESC
@@ -276,6 +281,7 @@ func (q *Queries) ListPollsVotedByUser(ctx context.Context, userID sql.NullInt64
 			&i.UpdatedAt,
 			&i.RetentionDays,
 			&i.ReminderSentAt,
+			&i.NotifyOrganizer,
 		); err != nil {
 			return nil, err
 		}
@@ -314,8 +320,9 @@ UPDATE polls SET
     hide_participants = ?5,
     require_voter_email = ?6,
     allow_comments = ?7,
-    updated_at = ?8
-WHERE id = ?9
+    notify_organizer = ?8,
+    updated_at = ?9
+WHERE id = ?10
 `
 
 type UpdatePollDetailsParams struct {
@@ -326,6 +333,7 @@ type UpdatePollDetailsParams struct {
 	HideParticipants  int64
 	RequireVoterEmail int64
 	AllowComments     int64
+	NotifyOrganizer   int64
 	UpdatedAt         string
 	ID                int64
 }
@@ -339,6 +347,7 @@ func (q *Queries) UpdatePollDetails(ctx context.Context, arg UpdatePollDetailsPa
 		arg.HideParticipants,
 		arg.RequireVoterEmail,
 		arg.AllowComments,
+		arg.NotifyOrganizer,
 		arg.UpdatedAt,
 		arg.ID,
 	)

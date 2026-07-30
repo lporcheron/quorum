@@ -172,7 +172,7 @@ func (q *Queries) GetSpaceInvitationByTokenHash(ctx context.Context, tokenHash s
 }
 
 const listPollsBySpace = `-- name: ListPollsBySpace :many
-SELECT polls.id, polls.public_id, polls.space_id, polls.created_by_user_id, polls.admin_token_hash, polls.title, polls.description, polls.location, polls.video_url, polls.kind, polls.timezone, polls.status, polls.hide_participants, polls.require_voter_email, polls.allow_comments, polls.finalized_option_id, polls.deletes_at, polls.created_at, polls.updated_at, polls.retention_days, polls.reminder_sent_at, users.name AS owner_name
+SELECT polls.id, polls.public_id, polls.space_id, polls.created_by_user_id, polls.admin_token_hash, polls.title, polls.description, polls.location, polls.video_url, polls.kind, polls.timezone, polls.status, polls.hide_participants, polls.require_voter_email, polls.allow_comments, polls.finalized_option_id, polls.deletes_at, polls.created_at, polls.updated_at, polls.retention_days, polls.reminder_sent_at, polls.notify_organizer, users.name AS owner_name
 FROM polls
 LEFT JOIN users ON users.id = polls.created_by_user_id
 WHERE polls.space_id = ?1
@@ -215,6 +215,7 @@ func (q *Queries) ListPollsBySpace(ctx context.Context, spaceID sql.NullInt64) (
 			&i.Poll.UpdatedAt,
 			&i.Poll.RetentionDays,
 			&i.Poll.ReminderSentAt,
+			&i.Poll.NotifyOrganizer,
 			&i.OwnerName,
 		); err != nil {
 			return nil, err

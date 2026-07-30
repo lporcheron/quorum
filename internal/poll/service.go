@@ -45,6 +45,7 @@ type NewPoll struct {
 	HideParticipants  bool
 	RequireVoterEmail bool
 	AllowComments     bool
+	NotifyOrganizer   bool
 	Slots             []TimedSlot
 	Dates             []Date
 	// SpaceID/CreatedByUserID attach the poll to an account's space at
@@ -65,6 +66,7 @@ type Details struct {
 	HideParticipants  bool
 	RequireVoterEmail bool
 	AllowComments     bool
+	NotifyOrganizer   bool
 }
 
 // Create validates and persists a poll with its options. It returns
@@ -121,6 +123,7 @@ func (s *Service) Create(ctx context.Context, in NewPoll) (Poll, string, error) 
 			HideParticipants:  boolInt(in.HideParticipants),
 			RequireVoterEmail: boolInt(in.RequireVoterEmail),
 			AllowComments:     boolInt(in.AllowComments),
+			NotifyOrganizer:   boolInt(in.NotifyOrganizer),
 			RetentionDays:     nullInt64(int64(in.RetentionDays)),
 			DeletesAt:         sql.NullString{String: store.FormatTime(now.Add(time.Duration(retentionDays) * 24 * time.Hour)), Valid: true},
 			CreatedAt:         store.FormatTime(now),
@@ -450,6 +453,7 @@ func (s *Service) UpdateDetails(ctx context.Context, p Poll, in Details) error {
 		HideParticipants:  boolInt(in.HideParticipants),
 		RequireVoterEmail: boolInt(in.RequireVoterEmail),
 		AllowComments:     boolInt(in.AllowComments),
+		NotifyOrganizer:   boolInt(in.NotifyOrganizer),
 		UpdatedAt:         store.FormatTime(s.now()),
 	})
 	if err != nil {
