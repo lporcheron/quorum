@@ -63,7 +63,7 @@ func TestInstanceAdminPage(t *testing.T) {
 	}
 
 	// Rename the instance and close registrations, hot.
-	resp, body = cPost(t, root, ts.URL+"/admin/settings", url.Values{
+	resp, body = cPostS(t, ts, root, "/admin/settings", url.Values{
 		"instance_name": {"Bleemeo Polls"},
 		// registrations_open unchecked
 	})

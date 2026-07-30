@@ -45,6 +45,29 @@ func cPost(t *testing.T, c *http.Client, url string, values url.Values) (*http.R
 
 var magicTokenRe = regexp.MustCompile(`token=([1-9A-HJ-NP-Za-km-z]{26})`)
 
+var csrfRe = regexp.MustCompile(`name="csrf" value="([^"]+)"`)
+
+// csrfOf fetches a signed-in page and extracts the session's CSRF token.
+func csrfOf(t *testing.T, ts *httptest.Server, c *http.Client) string {
+	t.Helper()
+	_, body := cGet(t, c, ts.URL+"/dashboard")
+	m := csrfRe.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("no csrf token on dashboard")
+	}
+	return m[1]
+}
+
+// cPostS posts to a session-authenticated (CSRF-protected) route.
+func cPostS(t *testing.T, ts *httptest.Server, c *http.Client, path string, values url.Values) (*http.Response, string) {
+	t.Helper()
+	if values == nil {
+		values = url.Values{}
+	}
+	values.Set("csrf", csrfOf(t, ts, c))
+	return cPost(t, c, ts.URL+path, values)
+}
+
 // signInByEmail drives the full magic-link flow for a fresh browser.
 func signInByEmail(t *testing.T, ts *httptest.Server, mailer *testMailer, c *http.Client, email string) {
 	t.Helper()
@@ -82,7 +105,7 @@ func TestMagicLinkSignInAndLogout(t *testing.T) {
 
 	// Reusing the same link fails (single use) — covered at the domain
 	// level; here check logout kills the session.
-	resp, _ := cPost(t, c, ts.URL+"/auth/logout", nil)
+	resp, _ := cPostS(t, ts, c, "/auth/logout", nil)
 	if resp.Request.URL.Path != "/" {
 		t.Errorf("logout landed on %s", resp.Request.URL.Path)
 	}
@@ -137,7 +160,7 @@ func TestClaimPollAndManage(t *testing.T) {
 		t.Fatalf("manage page: %d", resp.StatusCode)
 	}
 	// Managing works through the session path: pause the poll.
-	resp, _ = cPost(t, c, ts.URL+public+"/manage/status", url.Values{"action": {"pause"}})
+	resp, _ = cPostS(t, ts, c, public+"/manage/status", url.Values{"action": {"pause"}})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("pause via manage: %d", resp.StatusCode)
 	}

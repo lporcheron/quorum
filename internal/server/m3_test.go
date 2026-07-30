@@ -9,13 +9,16 @@ import (
 	"testing"
 )
 
-var inviteLinkRe = regexp.MustCompile(`/invitations/([1-9A-HJ-NP-Za-km-z]{26})`)
+var (
+	inviteLinkRe = regexp.MustCompile(`/invitations/([1-9A-HJ-NP-Za-km-z]{26})`)
+	transferRe   = regexp.MustCompile(`/members/(\d+)/transfer`)
+)
 
 // createSpace makes a space through the dashboard form and returns its
 // settings path (found in the redirected dashboard).
 func createSpace(t *testing.T, ts *httptest.Server, c *http.Client, name string) string {
 	t.Helper()
-	resp, body := cPost(t, c, ts.URL+"/spaces", url.Values{"name": {name}})
+	resp, body := cPostS(t, ts, c, "/spaces", url.Values{"name": {name}})
 	if resp.StatusCode != http.StatusOK || !strings.Contains(body, name) {
 		t.Fatalf("create space: %d", resp.StatusCode)
 	}
@@ -34,7 +37,7 @@ func TestSpaceLifecycle(t *testing.T) {
 	spacePath := createSpace(t, ts, owner, "Bleemeo")
 
 	// Settings: rename, default tz, retention.
-	resp, body := cPost(t, owner, ts.URL+spacePath+"/settings", url.Values{
+	resp, body := cPostS(t, ts, owner, spacePath+"/settings", url.Values{
 		"name":             {"Bleemeo Team"},
 		"default_timezone": {"Europe/Paris"},
 		"retention_days":   {"30"},
@@ -45,7 +48,7 @@ func TestSpaceLifecycle(t *testing.T) {
 
 	// Invite a member: the test mailer is enabled, so the link travels
 	// by email.
-	resp, body = cPost(t, owner, ts.URL+spacePath+"/invitations", url.Values{
+	resp, body = cPostS(t, ts, owner, spacePath+"/invitations", url.Values{
 		"email": {"member@example.com"}, "role": {"member"},
 	})
 	if resp.StatusCode != http.StatusOK {
@@ -68,7 +71,7 @@ func TestSpaceLifecycle(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || !strings.Contains(body, "Bleemeo Team") {
 		t.Fatalf("invitation page: %d", resp.StatusCode)
 	}
-	resp, body = cPost(t, member, ts.URL+invitePath, nil)
+	resp, body = cPostS(t, ts, member, invitePath, nil)
 	if resp.StatusCode != http.StatusOK || resp.Request.URL.Path != "/dashboard" {
 		t.Fatalf("accept: %d at %s", resp.StatusCode, resp.Request.URL.Path)
 	}
@@ -100,7 +103,7 @@ func TestSpacePollAuthorization(t *testing.T) {
 	spacePath := createSpace(t, ts, owner, "Team")
 
 	join := func(email, role string) *http.Client {
-		if _, body := cPost(t, owner, ts.URL+spacePath+"/invitations", url.Values{
+		if _, body := cPostS(t, ts, owner, spacePath+"/invitations", url.Values{
 			"email": {email}, "role": {role},
 		}); body == "" {
 			t.Fatal("invite failed")
@@ -112,7 +115,7 @@ func TestSpacePollAuthorization(t *testing.T) {
 		}
 		c := jarClient(t)
 		signInByEmail(t, ts, mailer, c, email)
-		if resp, _ := cPost(t, c, ts.URL+"/invitations/"+m[1], nil); resp.StatusCode != http.StatusOK {
+		if resp, _ := cPostS(t, ts, c, "/invitations/"+m[1], nil); resp.StatusCode != http.StatusOK {
 			t.Fatalf("accept for %s: %d", email, resp.StatusCode)
 		}
 		return c
@@ -171,7 +174,7 @@ func TestSpaceRetentionAppliesToPolls(t *testing.T) {
 	owner := jarClient(t)
 	signInByEmail(t, ts, mailer, owner, "owner@example.com")
 	spacePath := createSpace(t, ts, owner, "Short")
-	if resp, _ := cPost(t, owner, ts.URL+spacePath+"/settings", url.Values{
+	if resp, _ := cPostS(t, ts, owner, spacePath+"/settings", url.Values{
 		"name": {"Short"}, "default_timezone": {""}, "retention_days": {"7"},
 	}); resp.StatusCode != http.StatusOK {
 		t.Fatal("settings")
@@ -196,20 +199,20 @@ func TestTransferOwnershipFlow(t *testing.T) {
 	spacePath := createSpace(t, ts, owner, "Handover")
 
 	// Bring in an admin.
-	cPost(t, owner, ts.URL+spacePath+"/invitations", url.Values{"email": {"heir@example.com"}, "role": {"admin"}})
+	cPostS(t, ts, owner, spacePath+"/invitations", url.Values{"email": {"heir@example.com"}, "role": {"admin"}})
 	_, mailBody := mailer.last(t)
 	m := inviteLinkRe.FindStringSubmatch(mailBody)
 	heir := jarClient(t)
 	signInByEmail(t, ts, mailer, heir, "heir@example.com")
-	cPost(t, heir, ts.URL+"/invitations/"+m[1], nil)
+	cPostS(t, ts, heir, "/invitations/"+m[1], nil)
 
 	// Find the heir's user id on the settings page (transfer form).
 	_, body := cGet(t, owner, ts.URL+spacePath+"/settings")
-	tm := regexp.MustCompile(`/members/(\d+)/transfer`).FindStringSubmatch(body)
+	tm := transferRe.FindStringSubmatch(body)
 	if tm == nil {
 		t.Fatalf("no transfer form on settings page")
 	}
-	resp, _ := cPost(t, owner, ts.URL+spacePath+"/members/"+tm[1]+"/transfer", nil)
+	resp, _ := cPostS(t, ts, owner, spacePath+"/members/"+tm[1]+"/transfer", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("transfer: %d", resp.StatusCode)
 	}
@@ -220,7 +223,7 @@ func TestTransferOwnershipFlow(t *testing.T) {
 		t.Errorf("heir does not see owner controls after transfer")
 	}
 	// The previous owner no longer has owner controls over roles.
-	resp, _ = cPost(t, owner, ts.URL+spacePath+"/members/"+tm[1]+"/role", url.Values{"role": {"member"}})
+	resp, _ = cPostS(t, ts, owner, spacePath+"/members/"+tm[1]+"/role", url.Values{"role": {"member"}})
 	if resp.StatusCode != http.StatusForbidden && resp.StatusCode != http.StatusConflict {
 		t.Errorf("previous owner still changes roles: %d", resp.StatusCode)
 	}

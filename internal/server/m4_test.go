@@ -16,12 +16,13 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 	organizer := jarClient(t)
 	signInByEmail(t, ts, mailer, organizer, "organizer@example.com")
 	resp, _ := cPost(t, organizer, ts.URL+"/polls", url.Values{
-		"title":           {"Team dinner"},
-		"kind":            {"timed"},
-		"timezone":        {"Europe/Paris"},
-		"option_date":     {"2026-09-12"},
-		"option_start":    {"19:00"},
-		"option_duration": {"120"},
+		"title":            {"Team dinner"},
+		"kind":             {"timed"},
+		"timezone":         {"Europe/Paris"},
+		"option_date":      {"2026-09-12"},
+		"option_start":     {"19:00"},
+		"option_duration":  {"120"},
+		"notify_organizer": {"1"},
 	})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("create: %d", resp.StatusCode)
@@ -53,7 +54,7 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 
 	// Finalize on the first option.
 	var body string
-	resp, body = cPost(t, organizer, ts.URL+managePath+"/finalize", url.Values{"option_id": {ids[0]}})
+	resp, body = cPostS(t, ts, organizer, managePath+"/finalize", url.Values{"option_id": {ids[0]}})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("finalize: %d", resp.StatusCode)
 	}
@@ -108,7 +109,7 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 	}
 
 	// Cancel: everyone gets the CANCEL object.
-	resp, _ = cPost(t, organizer, ts.URL+managePath+"/cancel", nil)
+	resp, _ = cPostS(t, ts, organizer, managePath+"/cancel", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("cancel: %d", resp.StatusCode)
 	}
@@ -136,7 +137,8 @@ func TestCommentNotifiesOrganizer(t *testing.T) {
 	organizer := jarClient(t)
 	signInByEmail(t, ts, mailer, organizer, "org2@example.com")
 	resp, _ := cPost(t, organizer, ts.URL+"/polls", url.Values{
-		"title": {"Picnic"}, "kind": {"allday"}, "option_date": {"2026-08-15"}, "allow_comments": {"1"},
+		"title": {"Picnic"}, "kind": {"allday"}, "option_date": {"2026-08-15"},
+		"allow_comments": {"1"}, "notify_organizer": {"1"},
 	})
 	public := strings.TrimSuffix(resp.Request.URL.Path, "/manage")
 
