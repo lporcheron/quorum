@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Ballot tally: three columns, the winning one in the one vivid blue. -->
+  <rect width="32" height="32" rx="6" fill="#141b2d"/>
+  <rect x="6" y="16" width="4" height="10" fill="#3f7d62"/>
+  <rect x="14" y="8" width="4" height="18" fill="#2f5bff"/>
+  <rect x="22" y="19" width="4" height="7" fill="#a8ada6"/>
+</svg>

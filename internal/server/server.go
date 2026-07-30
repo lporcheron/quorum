@@ -38,6 +38,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /{$}", s.h.Home)
 	mux.HandleFunc("GET /healthz", s.h.Healthz)
 	mux.Handle("GET /static/", cacheStatic(http.FileServerFS(web.StaticFS)))
+	// Browsers probe this path unprompted; point them at the real file.
+	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/static/favicon-32.png", http.StatusMovedPermanently)
+	})
 
 	// Poll lifecycle. Mutations are POST only: plain HTML forms are the
 	// no-JS fallback for the critical paths.
