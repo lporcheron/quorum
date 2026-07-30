@@ -55,6 +55,16 @@ catalog at M5) · slog JSON · stdlib testing + httptest.
   `YYYY-MM-DD`, a distinct type — never midnight timestamps.
 - Timestamps in SQLite: UTC RFC 3339 TEXT, written by the app (no DB
   defaults). `time.Time` ↔ TEXT conversion only in the store layer.
+- **Single SQL source for both engines.** Migrations and sqlc queries
+  are written once, in the SQLite dialect restricted to the
+  SQLite/PostgreSQL common subset (named `@params`, `RETURNING`,
+  `ON CONFLICT`; TEXT timestamps compare lexicographically). Exactly
+  three SQLite idioms are substituted when rendering migrations for
+  Postgres (`INTEGER PRIMARY KEY`, ` BLOB `, ` REAL ` — see
+  `store.pgSubstitutions`); placeholders `?N` are rewritten to `$N` by
+  the store's DBTX adapter. Any new migration or query MUST stay in
+  that subset — `make test-postgres` (and the CI postgres job) is the
+  enforcement. Never create a second migrations dir or query set.
 - Public IDs: base58 ~12 chars. Secret tokens (admin/edit links):
   base58 ≥26 chars, stored SHA-256-hashed, constant-time compare,
   shown once.

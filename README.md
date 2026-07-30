@@ -4,8 +4,8 @@ Self-hostable availability polls: propose dates, share a link, guests
 vote **yes / if need be / no** without an account, you finalize, and
 everyone gets the event in their calendar.
 
-A single static Go binary. SQLite by default. No Node, no Redis, no
-external services.
+A single static Go binary. SQLite by default, PostgreSQL when you want
+it. No Node, no Redis, no external services.
 
 ## Features
 
@@ -85,7 +85,16 @@ OAuth callback URLs are `<base URL>/auth/<google|github|microsoft|oidc>/callback
 | `QUORUM_EMAIL_ALLOWED_DOMAINS` | Comma-separated sign-up domain allowlist (empty = all) |
 | `QUORUM_TRUST_PROXY` | Use `X-Forwarded-For` for rate limiting (`false`; enable only behind a proxy that sets it) |
 | `QUORUM_METRICS` | Serve Prometheus metrics on `/metrics` (`false`) |
-| `DATABASE_URL` | Reserved for PostgreSQL support (rejected for now) |
+
+### Database
+
+SQLite (the default) needs nothing. For bigger instances, point
+`DATABASE_URL` at PostgreSQL (≥ 13) and the same binary uses it — one
+schema, one query set, migrations applied at startup either way.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | `postgres://user:pass@host/db` switches the store to PostgreSQL (empty = SQLite at `QUORUM_DB_PATH`) |
 
 ## License
 

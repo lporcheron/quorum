@@ -31,6 +31,19 @@ services:
       # QUORUM_EMAIL_ALLOWED_DOMAINS: "example.com"
       # QUORUM_TRUST_PROXY: "true"   # only behind a proxy that sets X-Forwarded-For
       # QUORUM_METRICS: "false"
+      # --- PostgreSQL instead of SQLite (uncomment the db service below)
+      # DATABASE_URL: "postgres://quorum:change-me@db/quorum?sslmode=disable"
+
+  # db:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: quorum
+  #     POSTGRES_PASSWORD: change-me
+  #     POSTGRES_DB: quorum
+  #   volumes:
+  #     - quorum-pg:/var/lib/postgresql/data
 
 volumes:
   quorum-data:
+  # quorum-pg:

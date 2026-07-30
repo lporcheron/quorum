@@ -272,6 +272,13 @@ both engines from the start.
 engine accepts; the fallback (duplicating that one query) is localized
 rather than systemic. The dual-engine test suite is the guard.
 
+**Outcome (post-v1):** implemented even leaner than planned — no
+second sqlc config at all. The SQLite generation is the single source;
+a store-level DBTX adapter rewrites `?N` placeholders to `$N` for pgx,
+and migrations are rendered per dialect with exactly three
+substitutions (`INTEGER PRIMARY KEY`, ` BLOB `, ` REAL `). The full
+test suite runs against both engines (`make test-postgres`, CI job).
+
 **Rejected:**
 - *Systematic per-engine duplication of every query* — the original
   proposal; retracted after review since named parameters remove the
