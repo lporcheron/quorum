@@ -3,12 +3,10 @@ package poll
 import (
 	"context"
 	"errors"
-	"io"
-	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/lporcheron/quorum/internal/store"
+	"github.com/lporcheron/quorum/internal/store/storetest"
 )
 
 var testNow = time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
@@ -16,15 +14,8 @@ var testNow = time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
 func newTestService(t *testing.T) (context.Context, *Service) {
 	t.Helper()
 	ctx := context.Background()
-	db, err := store.Open(ctx, ":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	if err := store.Migrate(ctx, db, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
-		t.Fatalf("Migrate: %v", err)
-	}
-	return ctx, NewService(store.New(db), func() time.Time { return testNow })
+	_, st := storetest.Open(t)
+	return ctx, NewService(st, func() time.Time { return testNow })
 }
 
 func createTimedPoll(t *testing.T, ctx context.Context, s *Service) (Poll, string) {

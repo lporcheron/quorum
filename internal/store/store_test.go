@@ -16,7 +16,7 @@ func openMigrated(t *testing.T) (context.Context, *sql.DB) {
 		t.Fatalf("Open: %v", err)
 	}
 	t.Cleanup(func() { db.Close() })
-	if err := Migrate(ctx, db, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+	if err := Migrate(ctx, db, DialectSQLite, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
 	return ctx, db

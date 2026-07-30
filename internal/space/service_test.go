@@ -3,13 +3,11 @@ package space
 import (
 	"context"
 	"errors"
-	"io"
-	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/lporcheron/quorum/internal/auth"
-	"github.com/lporcheron/quorum/internal/store"
+	"github.com/lporcheron/quorum/internal/store/storetest"
 )
 
 var testNow = time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
@@ -28,15 +26,7 @@ type fixture struct {
 func newFixture(t *testing.T) (context.Context, *fixture) {
 	t.Helper()
 	ctx := context.Background()
-	db, err := store.Open(ctx, ":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	if err := store.Migrate(ctx, db, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
-		t.Fatalf("Migrate: %v", err)
-	}
-	st := store.New(db)
+	_, st := storetest.Open(t)
 	now := func() time.Time { return testNow }
 	users := auth.NewService(st, now, nil, nil)
 	svc := NewService(st, now)
@@ -56,10 +46,11 @@ func newFixture(t *testing.T) (context.Context, *fixture) {
 		member:  newUser("member", "member@example.com"),
 		outside: newUser("outside", "outside@example.com"),
 	}
-	f.sp, err = svc.Create(ctx, f.owner.ID, "Bleemeo")
+	sp, err := svc.Create(ctx, f.owner.ID, "Bleemeo")
 	if err != nil {
 		t.Fatalf("create space: %v", err)
 	}
+	f.sp = sp
 	join := func(u auth.User, role Role) {
 		token, err := svc.Invite(ctx, f.sp, f.owner.ID, u.Email, role)
 		if err != nil {

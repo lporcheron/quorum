@@ -11,6 +11,7 @@ import (
 
 	"github.com/lporcheron/quorum/internal/store"
 	"github.com/lporcheron/quorum/internal/store/sqlite"
+	"github.com/lporcheron/quorum/internal/store/storetest"
 )
 
 var testNow = time.Date(2026, time.July, 29, 10, 0, 0, 0, time.UTC)
@@ -20,15 +21,7 @@ type clock struct{ t time.Time }
 func newTestQueue(t *testing.T) (context.Context, *Queue, *clock, *store.Store) {
 	t.Helper()
 	ctx := context.Background()
-	db, err := store.Open(ctx, ":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	if err := store.Migrate(ctx, db, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
-		t.Fatalf("Migrate: %v", err)
-	}
-	st := store.New(db)
+	_, st := storetest.Open(t)
 	c := &clock{t: testNow}
 	return ctx, NewQueue(st, func() time.Time { return c.t }), c, st
 }

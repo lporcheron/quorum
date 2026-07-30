@@ -22,7 +22,7 @@ import (
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/setting"
 	"github.com/lporcheron/quorum/internal/space"
-	"github.com/lporcheron/quorum/internal/store"
+	"github.com/lporcheron/quorum/internal/store/storetest"
 )
 
 func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
@@ -30,14 +30,7 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	db, err := store.Open(ctx, ":memory:")
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(func() { db.Close() })
-	if err := store.Migrate(ctx, db, log); err != nil {
-		t.Fatalf("Migrate: %v", err)
-	}
+	db, st := storetest.Open(t)
 	tr, err := i18n.New()
 	if err != nil {
 		t.Fatalf("i18n.New: %v", err)
@@ -47,12 +40,11 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	if err != nil {
 		t.Fatalf("config.Load: %v", err)
 	}
-	st := store.New(db)
 	settings := setting.NewService(st, "Quorum", cfg.RegistrationsOpen)
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
 	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
-	sessions := auth.NewSessionManager(db, cfg.BaseURL)
+	sessions := auth.NewSessionManager(db, cfg.BaseURL, storetest.Dialect())
 	mailer := &testMailer{}
 	queue := job.NewQueue(st, nil)
 	notifier := notify.New(log, queue, mailer, polls, authsvc, tr, cfg.BaseURL, "quorum@example.com", nil)
