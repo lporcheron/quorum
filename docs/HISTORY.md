@@ -1,4 +1,9 @@
-# Quorum — implementation plan
+# Quorum — original implementation plan (historical)
+
+> This is the design document the project was bootstrapped from, kept
+> for the record. Where reality diverged, outcome notes are inline
+> (e.g. decision D1); the living references are README.md, CLAUDE.md
+> and the code itself.
 
 Scope of this document: repository layout, complete M1 SQL schema with
 indexes, HTTP routes for M1, and the three technical decisions I am
