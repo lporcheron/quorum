@@ -1,12 +1,18 @@
-// Package store opens the database and keeps the schema current. The
-// sqlc-generated query code will live in subpackages (one per engine).
+// Package store opens the database and keeps the schema current. One
+// set of migrations and one sqlc-generated query package serve both
+// engines: the SQLite text is the single source, and the three
+// SQLite-only idioms it contains are substituted when rendering for
+// PostgreSQL (see renderMigrations).
 package store
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"log/slog"
+	"strings"
+	"testing/fstest"
 
 	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite"
@@ -36,9 +42,54 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 	return db, nil
 }
 
-// Migrate applies all pending embedded migrations.
-func Migrate(ctx context.Context, db *sql.DB, log *slog.Logger) error {
-	provider, err := goose.NewProvider(goose.DialectSQLite3, db, migrations.FS)
+// pgSubstitutions maps the only three SQLite idioms the migrations may
+// use onto their PostgreSQL forms. Anything else in the migration
+// files must be common to both engines — the PostgreSQL test run is
+// the enforcement.
+var pgSubstitutions = [][2]string{
+	{"INTEGER PRIMARY KEY", "INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY"},
+	{" BLOB ", " BYTEA "},
+	{" REAL ", " TIMESTAMPTZ "}, // sessions.expiry, per scs store convention
+}
+
+// renderMigrations returns the migration filesystem for a dialect.
+func renderMigrations(dialect Dialect) (fs.FS, error) {
+	if dialect != DialectPostgres {
+		return migrations.FS, nil
+	}
+	rendered := fstest.MapFS{}
+	entries, err := fs.ReadDir(migrations.FS, ".")
+	if err != nil {
+		return nil, fmt.Errorf("read migrations: %w", err)
+	}
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".sql") {
+			continue
+		}
+		raw, err := fs.ReadFile(migrations.FS, e.Name())
+		if err != nil {
+			return nil, fmt.Errorf("read migration %s: %w", e.Name(), err)
+		}
+		text := string(raw)
+		for _, sub := range pgSubstitutions {
+			text = strings.ReplaceAll(text, sub[0], sub[1])
+		}
+		rendered[e.Name()] = &fstest.MapFile{Data: []byte(text)}
+	}
+	return rendered, nil
+}
+
+// Migrate applies all pending embedded migrations for the dialect.
+func Migrate(ctx context.Context, db *sql.DB, dialect Dialect, log *slog.Logger) error {
+	gooseDialect := goose.DialectSQLite3
+	if dialect == DialectPostgres {
+		gooseDialect = goose.DialectPostgres
+	}
+	fsys, err := renderMigrations(dialect)
+	if err != nil {
+		return err
+	}
+	provider, err := goose.NewProvider(gooseDialect, db, fsys)
 	if err != nil {
 		return fmt.Errorf("create migration provider: %w", err)
 	}

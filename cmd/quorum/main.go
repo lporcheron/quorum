@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log/slog"
@@ -56,14 +57,21 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Info("starting quorum", "version", version, "db", cfg.DBPath)
-
-	db, err := store.Open(ctx, cfg.DBPath)
+	dialect := store.DialectSQLite
+	var db *sql.DB
+	if cfg.DatabaseURL != "" {
+		dialect = store.DialectPostgres
+		log.Info("starting quorum", "version", version, "db", "postgresql")
+		db, err = store.OpenPostgres(ctx, cfg.DatabaseURL)
+	} else {
+		log.Info("starting quorum", "version", version, "db", cfg.DBPath)
+		db, err = store.Open(ctx, cfg.DBPath)
+	}
 	if err != nil {
 		return err
 	}
 	defer db.Close()
-	if err := store.Migrate(ctx, db, log); err != nil {
+	if err := store.Migrate(ctx, db, dialect, log); err != nil {
 		return err
 	}
 
@@ -72,13 +80,13 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 		return err
 	}
 
-	st := store.New(db)
+	st := store.New(db, dialect)
 	settings := setting.NewService(st, "Quorum", cfg.RegistrationsOpen)
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
 	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
 	providers := auth.NewProviders(cfg, cfg.BaseURL)
-	sessions := auth.NewSessionManager(db, cfg.BaseURL)
+	sessions := auth.NewSessionManager(db, cfg.BaseURL, dialect)
 	mailer := mail.New(cfg.SMTP)
 	if !mailer.Enabled() {
 		log.Info("smtp not configured; email features are disabled")
