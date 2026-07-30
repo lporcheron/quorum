@@ -42,7 +42,7 @@ templ Grid(p PollPageProps) {
 		if len(p.View.Participants) == 0 {
 			<p class="mb-4 text-ink/70">{ p.Loc.T("poll.no_votes") }</p>
 		} else {
-			<p class="mb-4 font-mono text-sm text-ink/70">{ p.Loc.TN("poll.participants", len(p.View.Participants)) }</p>
+			<p class="mb-4 font-mono text-sm text-ink/70 md:hidden">{ p.Loc.TN("poll.participants", len(p.View.Participants)) }</p>
 		}
 		if !p.showParticipants() && len(p.View.Participants) > 0 {
 			<p class="mb-4 text-sm text-ink/60">{ p.Loc.T("poll.hidden_participants") }</p>
@@ -62,7 +62,9 @@ templ matrix(p PollPageProps) {
 			class="qmatrix hidden md:grid"
 			style={ fmt.Sprintf("grid-template-columns: minmax(8rem, 14rem) repeat(%d, minmax(5.5rem, 1fr))", len(p.View.Options)) }
 		>
-			<div class="qcell qhead"></div>
+			<div class="qcell qhead">
+				<span class="font-mono text-xs text-ink/50">{ p.Loc.TN("poll.participants", len(p.View.Participants)) }</span>
+			</div>
 			for i, o := range p.View.Options {
 				<div class={ "qcell qhead qopt", templ.KV("qwin", p.View.Tallies[i].Winner) }>
 					<span class="text-xs text-ink/60">{ OptionWeekday(p.lang(), o, p.TZ) }</span>
@@ -78,11 +80,11 @@ templ matrix(p PollPageProps) {
 					<div class="qcell qname">
 						{ pa.Name }
 						if p.Me != nil && pa.ID == p.Me.ID {
-							<span class="text-ink/50"> ·</span>
+							<span class="ml-1 text-xs text-ink/50">({ p.Loc.T("vote.you") })</span>
 						}
 					</div>
 					for i, o := range p.View.Options {
-						<div class={ voteClass(p.View.Votes[pa.ID][o.ID]), templ.KV("qwincell", p.View.Tallies[i].Winner) } title={ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) }>
+						<div class={ "qcell", voteClass(p.View.Votes[pa.ID][o.ID]), templ.KV("qwincell", p.View.Tallies[i].Winner) } title={ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) }>
 							{ voteSymbol(p.View.Votes[pa.ID][o.ID]) }
 						</div>
 					}
@@ -142,7 +144,7 @@ templ voteForm(p PollPageProps) {
 			</h2>
 			<div class="mt-3 divide-y divide-ink/10 border-y border-ink/15" data-vote-rows>
 				for i, o := range p.View.Options {
-					<div class={ "flex flex-wrap items-center gap-x-4 gap-y-1 py-2", templ.KV("qwinrow", p.View.Tallies[i].Winner) }>
+					<div class={ "flex flex-wrap items-center gap-x-4 gap-y-1 px-2 py-2.5 hover:bg-ink/5", templ.KV("qwinrow", p.View.Tallies[i].Winner) }>
 						<div class="min-w-40 flex-1">
 							<span class="text-sm">{ OptionLabel(p.lang(), o, p.TZ) }</span>
 							if p.View.Tallies[i].Winner {

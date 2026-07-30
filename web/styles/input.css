@@ -157,7 +157,7 @@
 	.seg-opt {
 		display: inline-flex;
 		align-items: center;
-		padding: --spacing(1) --spacing(2);
+		padding: --spacing(1.5) --spacing(2.5);
 		font-size: var(--text-xs);
 		font-weight: 600;
 		cursor: pointer;
@@ -185,13 +185,18 @@
 		align-items: center;
 		justify-content: center;
 		gap: --spacing(1);
-		min-height: --spacing(9);
+		min-height: --spacing(11);
 	}
 	.qhead { flex-direction: column; padding-top: --spacing(2.5); }
 	.qname { justify-content: flex-start; font-size: var(--text-sm); }
 	.qtally-label { justify-content: flex-start; }
 
-	.vc { font-family: var(--font-mono); font-size: var(--text-sm); }
+	.vc {
+		font-family: var(--font-mono);
+		font-size: var(--text-2xl);
+		font-weight: 700;
+		letter-spacing: -0.06em;
+	}
 	.vc-yes { color: var(--color-yes); background: --alpha(var(--color-yes) / 12%); }
 	.vc-ifneedbe { color: var(--color-ifneedbe); background: --alpha(var(--color-ifneedbe) / 12%); }
 	.vc-no { color: --alpha(var(--color-ink) / 45%); background: --alpha(var(--color-no) / 18%); }

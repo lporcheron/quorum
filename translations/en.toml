@@ -711,3 +711,6 @@ other = "The form has expired. Go back, reload the page and try again."
 
 [error.owns_shared_space]
 other = "You still own a space with other members. Transfer its ownership first, then delete your account."
+
+[vote.you]
+other = "you"

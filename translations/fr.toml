@@ -711,3 +711,6 @@ other = "Le formulaire a expiré. Revenez en arrière, rechargez la page et rée
 
 [error.owns_shared_space]
 other = "Vous possédez encore un espace avec d'autres membres. Transférez-en la propriété d'abord, puis supprimez votre compte."
+
+[vote.you]
+other = "vous"

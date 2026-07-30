@@ -53,7 +53,11 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 			</main>
 			<footer class="border-t border-ink/15">
 				<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-ink/60">
+					if instanceName(ctx) == "Quorum" {
+					<span>Quorum</span>
+				} else {
 					<span>{ instanceName(ctx) } · Quorum</span>
+				}
 					<form method="post" action="/lang" class="flex items-center gap-3">
 						<input type="hidden" name="next" value={ currentPath(ctx) }/>
 						<span class="sr-only">{ loc.T("footer.language") }</span>
