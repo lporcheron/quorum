@@ -94,6 +94,7 @@ templ DashboardPage(p DashboardProps) {
 		<section class="mt-12 border-t border-ink/15 pt-6">
 			<details>
 				<summary class="cursor-pointer text-sm font-semibold">{ p.Loc.T("space.new_heading") }</summary>
+				<p class="mt-2 max-w-prose text-sm text-ink/70">{ p.Loc.T("space.new_help") }</p>
 				<form method="post" action="/spaces" class="mt-3 flex flex-wrap items-end gap-2">
 					@csrfField()
 					<label class="block">

@@ -711,3 +711,6 @@ other = "Clair"
 
 [theme.dark]
 other = "Sombre"
+
+[space.new_help]
+other = "Un espace regroupe les sondages d'une équipe. Invitez des membres par email : les admins gèrent tous les sondages de l'espace, les membres uniquement les leurs. Vos sondages personnels vivent déjà dans votre propre espace."

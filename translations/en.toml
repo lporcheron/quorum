@@ -711,3 +711,6 @@ other = "Light"
 
 [theme.dark]
 other = "Dark"
+
+[space.new_help]
+other = "A space groups a team's polls. Invite members by email: admins manage every poll in the space, members only their own. Your personal polls already live in your own space."
