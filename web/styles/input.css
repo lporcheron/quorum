@@ -14,8 +14,14 @@
 	--color-card: #ffffff;
 	--color-yes: #3f7d62;
 	--color-ifneedbe: #c8892b;
+	/* The brand amber sits below AA against light surfaces; text uses
+	 * this darker cut (4.5:1 on paper), the tinted fills keep the
+	 * brand tone. */
+	--color-ifneedbe-text: #8a5f0c;
 	--color-no: #a8ada6;
 	--color-winner: #2f5bff;
+	/* Text over the yes/if-need-be fills, per scheme. */
+	--color-on-yes: #ffffff;
 
 	--font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 	--font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
@@ -60,8 +66,10 @@
 			--color-card: #1d2026;
 			--color-yes: #5aa686;
 			--color-ifneedbe: #d9a04c;
+			--color-ifneedbe-text: #d9a04c;
 			--color-no: #676c66;
 			--color-winner: #7b95ff;
+			--color-on-yes: #141b2d;
 		}
 	}
 
@@ -168,8 +176,8 @@
 	}
 	.seg-opt:last-child { border-right: none; }
 	.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-ink); outline-offset: -1px; }
-	.seg-yes:has(input:checked) { background: var(--color-yes); color: white; }
-	.seg-ifneedbe:has(input:checked) { background: var(--color-ifneedbe); color: white; }
+	.seg-yes:has(input:checked) { background: var(--color-yes); color: var(--color-on-yes); }
+	.seg-ifneedbe:has(input:checked) { background: var(--color-ifneedbe); color: #141b2d; }
 	.seg-no:has(input:checked) { background: var(--color-no); color: var(--color-ink); }
 	.seg-kind { border: 1px solid --alpha(var(--color-ink) / 35%); }
 	.seg-kind:has(input:checked) { background: var(--color-ink); color: var(--color-paper); }
@@ -198,7 +206,7 @@
 		letter-spacing: -0.06em;
 	}
 	.vc-yes { color: var(--color-yes); background: --alpha(var(--color-yes) / 12%); }
-	.vc-ifneedbe { color: var(--color-ifneedbe); background: --alpha(var(--color-ifneedbe) / 12%); }
+	.vc-ifneedbe { color: var(--color-ifneedbe-text); background: --alpha(var(--color-ifneedbe) / 12%); }
 	.vc-no { color: --alpha(var(--color-ink) / 45%); background: --alpha(var(--color-no) / 18%); }
 	.vc-none { color: --alpha(var(--color-ink) / 25%); }
 

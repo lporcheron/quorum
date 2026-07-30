@@ -51,9 +51,6 @@ other = "Proposed dates"
 [create.calendar_hint]
 other = "Pick one or more dates in the calendar."
 
-[create.slots_label]
-other = "Time slots"
-
 [create.add_slot]
 other = "Add a slot"
 
@@ -276,9 +273,6 @@ other = "That didn't work"
 [error.back_home]
 other = "Back to the home page"
 
-[error.back]
-other = "Go back"
-
 [error.not_found]
 other = "This poll does not exist. Check the link you received."
 
@@ -367,20 +361,8 @@ other = "Open this link to sign in to Quorum:\n\n{{.Link}}\n\nIt is valid for 15
 
 # ---- Dashboard ----
 
-[dashboard.heading]
-other = "My polls"
-
-[dashboard.mine]
-other = "Polls I run"
-
-[dashboard.closed]
-other = "Paused or closed"
-
 [dashboard.voted]
 other = "Polls I voted in"
-
-[dashboard.empty_mine]
-other = "You run no poll yet."
 
 [dashboard.empty_voted]
 other = "You have not voted anywhere yet."
@@ -430,9 +412,6 @@ other = "Your identity provider did not assert a verified email address, so the 
 
 [error.invalid_login_token]
 other = "This sign-in link is invalid or has expired. Request a new one."
-
-[error.login_required]
-other = "Sign in to open this page."
 
 [error.oauth_failed]
 other = "The sign-in attempt failed. Try again."
@@ -501,9 +480,6 @@ other = "Make owner"
 
 [space.transfer_help]
 other = "Transfers ownership; you become an admin."
-
-[space.invite_heading]
-other = "Invite someone"
 
 [space.invite_email]
 other = "Email"
@@ -720,3 +696,6 @@ other = "Your vote is updated."
 
 [og.description]
 other = "Vote yes, if need be, or no — no account required."
+
+[error.page_not_found]
+other = "There is nothing at this address. Check the link, or start from the home page."

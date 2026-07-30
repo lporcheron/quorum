@@ -35,6 +35,10 @@ func New(cfg config.Config, log *slog.Logger, h *handler.Handler, sessions *scs.
 // Handler builds the full routing table with the middleware chain.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	// Method-less "/" is the fallback for every unmatched path: a
+	// localized 404 instead of Go's plain-text default. Specific
+	// patterns below always win.
+	mux.HandleFunc("/", s.h.NotFound)
 	mux.HandleFunc("GET /{$}", s.h.Home)
 	mux.HandleFunc("GET /healthz", s.h.Healthz)
 	mux.Handle("GET /static/", cacheStatic(http.FileServerFS(web.StaticFS)))

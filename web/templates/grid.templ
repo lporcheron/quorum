@@ -111,7 +111,7 @@ templ tallyCell(p PollPageProps, i int) {
 		}
 		<span class="font-mono text-lg font-semibold tabular-nums">{ fmt.Sprintf("%d", p.View.Tallies[i].Yes) }</span>
 		if p.View.Tallies[i].IfNeedBe > 0 {
-			<span class="font-mono text-xs tabular-nums text-ifneedbe">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
+			<span class="font-mono text-xs tabular-nums text-ifneedbe-text">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
 		}
 	</div>
 }
@@ -155,7 +155,7 @@ templ voteForm(p PollPageProps) {
 							{ fmt.Sprintf("%d", p.View.Tallies[i].Yes) }
 							if p.View.Tallies[i].IfNeedBe > 0 {
 								{ " " }
-								<span class="text-ifneedbe">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
+								<span class="text-ifneedbe-text">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
 							}
 						</span>
 						@segControl(p, o)

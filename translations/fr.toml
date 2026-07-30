@@ -51,9 +51,6 @@ other = "Dates proposées"
 [create.calendar_hint]
 other = "Choisissez une ou plusieurs dates dans le calendrier."
 
-[create.slots_label]
-other = "Créneaux"
-
 [create.add_slot]
 other = "Ajouter un créneau"
 
@@ -276,9 +273,6 @@ other = "Ça n'a pas fonctionné"
 [error.back_home]
 other = "Retour à l'accueil"
 
-[error.back]
-other = "Revenir en arrière"
-
 [error.not_found]
 other = "Ce sondage n'existe pas. Vérifiez le lien reçu."
 
@@ -367,20 +361,8 @@ other = "Ouvrez ce lien pour vous connecter à Quorum :\n\n{{.Link}}\n\nIl est v
 
 # ---- Dashboard ----
 
-[dashboard.heading]
-other = "Mes sondages"
-
-[dashboard.mine]
-other = "Sondages que je pilote"
-
-[dashboard.closed]
-other = "En pause ou clos"
-
 [dashboard.voted]
 other = "Sondages où j'ai voté"
-
-[dashboard.empty_mine]
-other = "Vous ne pilotez encore aucun sondage."
 
 [dashboard.empty_voted]
 other = "Vous n'avez encore voté nulle part."
@@ -430,9 +412,6 @@ other = "Votre fournisseur d'identité n'a pas certifié d'adresse email vérifi
 
 [error.invalid_login_token]
 other = "Ce lien de connexion est invalide ou expiré. Demandez-en un nouveau."
-
-[error.login_required]
-other = "Connectez-vous pour ouvrir cette page."
 
 [error.oauth_failed]
 other = "La tentative de connexion a échoué. Réessayez."
@@ -501,9 +480,6 @@ other = "Rendre propriétaire"
 
 [space.transfer_help]
 other = "Transfère la propriété ; vous devenez admin."
-
-[space.invite_heading]
-other = "Inviter quelqu'un"
 
 [space.invite_email]
 other = "Email"
@@ -720,3 +696,6 @@ other = "Votre vote est mis à jour."
 
 [og.description]
 other = "Votez oui, si nécessaire ou non — sans créer de compte."
+
+[error.page_not_found]
+other = "Il n'y a rien à cette adresse. Vérifiez le lien, ou repartez de l'accueil."

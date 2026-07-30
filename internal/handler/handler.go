@@ -209,6 +209,12 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c t
 	}
 }
 
+// NotFound is the catch-all for unmatched paths: the localized error
+// page instead of Go's plain-text default.
+func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
+	h.renderError(w, r, http.StatusNotFound, "error.page_not_found")
+}
+
 // SetLanguage stores the manual language choice and returns whence the
 // visitor came.
 func (h *Handler) SetLanguage(w http.ResponseWriter, r *http.Request) {
