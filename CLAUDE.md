@@ -78,6 +78,10 @@ catalog at M5) · slog JSON · stdlib testing + httptest.
   handlers use in-memory SQLite. Don't test template rendering.
 - Every milestone ends with `make lint test` green and atomic
   Conventional Commits per logical unit.
+- Releases are manual only: the *Release* workflow (workflow_dispatch)
+  mints a CalVer tag `YYYY.MM.DD.HHmmss`, publishes binaries and the
+  GHCR image for that tag. Never create release tags by hand and never
+  publish from pushes.
 
 ## UI direction (summary)
 

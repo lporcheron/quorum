@@ -28,16 +28,31 @@ it. No Node, no Redis, no external services.
 
 ## Run it
 
+Grab a release — a static binary for your platform from the
+[releases page](https://github.com/lporcheron/quorum/releases), or the
+container image:
+
 ```sh
-docker compose up          # see docker-compose.yml
-# or, with Go ≥ 1.26:
+docker run -p 8080:8080 -v quorum-data:/data ghcr.io/lporcheron/quorum:latest
+docker compose up          # or the example docker-compose.yml
+```
+
+From source, with Go ≥ 1.26:
+
+```sh
 make run                   # builds and starts on :8080
 make dev                   # live-reload development loop
 make test lint             # what CI runs
+make test-postgres         # the same suite against PostgreSQL
 ```
 
-Deploying is copying one binary (or one ~15 MB container image) and
+Deploying is copying one binary (or one ~19 MB container image) and
 mounting one directory for the SQLite file.
+
+Releases are cut manually from the *Release* GitHub Action: it mints a
+CalVer tag (`YYYY.MM.DD.HHmmss`), publishes cross-compiled binaries
+with checksums, and pushes the `linux/amd64` + `linux/arm64` image to
+GHCR. Nothing is published on push.
 
 ## Configuration
 

@@ -2,9 +2,9 @@
 # the volume is the whole persistence story.
 services:
   quorum:
-    build: .
-    # or, once images are published:
-    # image: ghcr.io/lporcheron/quorum:latest
+    image: ghcr.io/lporcheron/quorum:latest
+    # or build from source:
+    # build: .
     restart: unless-stopped
     ports:
       - "8080:8080"
