@@ -41,12 +41,14 @@ type Mailer interface {
 	Send(ctx context.Context, msg Message) error
 }
 
-// New picks the implementation matching the configuration.
-func New(cfg config.SMTP) Mailer {
+// New picks the implementation matching the configuration. fromName
+// resolves the sender display name at send time (the instance name is
+// a hot setting); nil means no display name.
+func New(cfg config.SMTP, fromName func() string) Mailer {
 	if !cfg.Enabled() {
 		return disabled{}
 	}
-	return &smtpMailer{cfg: cfg}
+	return &smtpMailer{cfg: cfg, fromName: fromName}
 }
 
 type disabled struct{}
@@ -55,14 +57,23 @@ func (disabled) Enabled() bool                       { return false }
 func (disabled) Send(context.Context, Message) error { return ErrDisabled }
 
 type smtpMailer struct {
-	cfg config.SMTP
+	cfg      config.SMTP
+	fromName func() string
 }
 
 func (m *smtpMailer) Enabled() bool { return true }
 
 func (m *smtpMailer) Send(ctx context.Context, message Message) error {
 	msg := gomail.NewMsg()
-	if err := msg.From(m.cfg.From); err != nil {
+	name := ""
+	if m.fromName != nil {
+		name = m.fromName()
+	}
+	if name != "" {
+		if err := msg.FromFormat(name, m.cfg.From); err != nil {
+			return fmt.Errorf("mail from %q <%s>: %w", name, m.cfg.From, err)
+		}
+	} else if err := msg.From(m.cfg.From); err != nil {
 		return fmt.Errorf("mail from %q: %w", m.cfg.From, err)
 	}
 	if err := msg.To(message.To); err != nil {

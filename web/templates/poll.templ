@@ -2,9 +2,26 @@ package templates
 
 import "github.com/lporcheron/quorum/internal/poll"
 
+// pollMeta feeds link previews (the share gesture is the product) and
+// keeps poll pages out of search indexes: their URLs are capabilities.
+templ pollMeta(p PollPageProps) {
+	<meta name="robots" content="noindex"/>
+	<meta property="og:type" content="website"/>
+	<meta property="og:title" content={ p.Poll.Title }/>
+	if p.Poll.Description != "" {
+		<meta property="og:description" content={ p.Poll.Description }/>
+	} else {
+		<meta property="og:description" content={ p.Loc.T("og.description") }/>
+	}
+	<meta property="og:site_name" content={ instanceName(ctx) }/>
+}
+
 // PollPage is the public poll page: header, grid, comments.
 templ PollPage(p PollPageProps) {
-	@layout(p.Loc, p.Poll.Title+" — Quorum", p.User) {
+	@layoutWithMeta(p.Loc, p.Poll.Title+" — Quorum", p.User, pollMeta(p)) {
+		if p.Updated {
+			<p class="notice mt-6">{ p.Loc.T("vote.updated") }</p>
+		}
 		if p.JustJoined && p.EditURL != "" {
 			<div class="banner mt-6">
 				<p class="font-semibold">{ p.Loc.T("vote.edit_banner_title") }</p>

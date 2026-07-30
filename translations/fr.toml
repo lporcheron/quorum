@@ -714,3 +714,9 @@ other = "Vous possédez encore un espace avec d'autres membres. Transférez-en l
 
 [vote.you]
 other = "vous"
+
+[vote.updated]
+other = "Votre vote est mis à jour."
+
+[og.description]
+other = "Votez oui, si nécessaire ou non — sans créer de compte."

@@ -5,7 +5,7 @@ import "github.com/lporcheron/quorum/internal/poll"
 // AdminPage is the organizer's control panel, reached only through the
 // capability URL.
 templ AdminPage(a AdminProps, grid PollPageProps) {
-	@layout(a.Loc, a.Poll.Title+" — Quorum", a.User) {
+	@layoutWithMeta(a.Loc, a.Poll.Title+" — Quorum", a.User, noindexMeta()) {
 		if a.New && a.AdminURL != "" {
 			<div class="banner banner-strong mt-6" data-admin-link data-title={ a.Poll.Title }>
 				<p class="font-semibold">{ a.Loc.T("admin.new_banner_title") }</p>

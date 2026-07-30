@@ -12,12 +12,27 @@ templ csrfField() {
 }
 
 templ layout(loc *i18n.Locale, title string, user *auth.User) {
+	@layoutWithMeta(loc, title, user, nil) {
+		{ children... }
+	}
+}
+
+// noindexMeta keeps capability-URL pages (admin, invitations) out of
+// search engines even when a link leaks.
+templ noindexMeta() {
+	<meta name="robots" content="noindex"/>
+}
+
+templ layoutWithMeta(loc *i18n.Locale, title string, user *auth.User, meta templ.Component) {
 	<!DOCTYPE html>
 	<html lang={ loc.Lang }>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title }</title>
+			if meta != nil {
+				@meta
+			}
 			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
 			<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
 			<link rel="stylesheet" href="/static/css/app.css"/>
@@ -64,8 +79,16 @@ templ layout(loc *i18n.Locale, title string, user *auth.User) {
 					<form method="post" action="/lang" class="flex items-center gap-3">
 						<input type="hidden" name="next" value={ currentPath(ctx) }/>
 						<span class="sr-only">{ loc.T("footer.language") }</span>
-						<button class="btn-link" name="lang" value="en" type="submit" lang="en">English</button>
-						<button class="btn-link" name="lang" value="fr" type="submit" lang="fr">Français</button>
+						if loc.Lang == "en" {
+							<span class="font-semibold text-ink" lang="en">English</span>
+						} else {
+							<button class="btn-link" name="lang" value="en" type="submit" lang="en">English</button>
+						}
+						if loc.Lang == "fr" {
+							<span class="font-semibold text-ink" lang="fr">Français</span>
+						} else {
+							<button class="btn-link" name="lang" value="fr" type="submit" lang="fr">Français</button>
+						}
 					</form>
 				</div>
 			</footer>

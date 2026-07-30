@@ -87,7 +87,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
 	providers := auth.NewProviders(cfg, cfg.BaseURL)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL, dialect)
-	mailer := mail.New(cfg.SMTP)
+	mailer := mail.New(cfg.SMTP, func() string { return settings.InstanceName(context.Background()) })
 	if !mailer.Enabled() {
 		log.Info("smtp not configured; email features are disabled")
 	}

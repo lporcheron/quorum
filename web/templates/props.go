@@ -34,6 +34,8 @@ type PollPageProps struct {
 	EditToken  string
 	EditURL    string // absolute personal link, for the banner
 	JustJoined bool
+	// Updated flashes the vote-updated confirmation.
+	Updated bool
 	// IsAdmin reveals participants even when the poll hides them.
 	IsAdmin bool
 	// FinalizedLabel is the chosen option, formatted for the viewer,

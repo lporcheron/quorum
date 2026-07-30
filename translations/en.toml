@@ -714,3 +714,9 @@ other = "You still own a space with other members. Transfer its ownership first,
 
 [vote.you]
 other = "you"
+
+[vote.updated]
+other = "Your vote is updated."
+
+[og.description]
+other = "Vote yes, if need be, or no — no account required."

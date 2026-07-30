@@ -973,7 +973,7 @@ func InvitationPage(p InvitationProps) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layout(p.Loc, p.Loc.TD("invitation.heading", map[string]any{"Space": p.SpaceName})+" — Quorum", p.User).Render(templ.WithChildren(ctx, templ_7745c5c3_Var48), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layoutWithMeta(p.Loc, p.Loc.TD("invitation.heading", map[string]any{"Space": p.SpaceName})+" — Quorum", p.User, noindexMeta()).Render(templ.WithChildren(ctx, templ_7745c5c3_Var48), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

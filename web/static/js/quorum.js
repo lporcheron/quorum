@@ -266,6 +266,8 @@
 		});
 	}
 
+	var submitBtn = form.querySelector('button[type="submit"]');
+
 	function refresh() {
 		var timed = mode() === "timed";
 		if (tzRow) tzRow.hidden = !timed;
@@ -273,6 +275,9 @@
 		renderCalendar();
 		renderSlots();
 		syncInputs();
+		// No date picked yet → nothing to create; the calendar hint
+		// above explains what to do.
+		if (submitBtn) submitBtn.disabled = selectedDates().length === 0;
 	}
 
 	$$("input[name=kind]", form).forEach(function (radio) {

@@ -83,6 +83,7 @@ func (h *Handler) ShowPollAsParticipant(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	props.JustJoined = r.URL.Query().Get("joined") == "1"
+	props.Updated = r.URL.Query().Get("updated") == "1"
 	props.EditURL = h.baseURL + "/polls/" + p.PublicID + "/p/" + token
 	h.render(w, r, http.StatusOK, templates.PollPage(props))
 }
@@ -101,7 +102,7 @@ func (h *Handler) UpdateVotes(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
-	redirect(w, r, "/polls/"+p.PublicID+"/p/"+token)
+	redirect(w, r, "/polls/"+p.PublicID+"/p/"+token+"?updated=1")
 }
 
 // DeleteParticipantSelf removes the participant through their own link.
