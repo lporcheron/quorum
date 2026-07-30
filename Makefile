@@ -26,7 +26,7 @@ TAILWIND := $(TOOLS)/tailwindcss-$(TAILWIND_VERSION)
 GOLANGCI_VERSION := v2.12.2
 GOLANGCI := $(TOOLS)/golangci/$(GOLANGCI_VERSION)/golangci-lint
 
-.PHONY: build run dev test lint generate css clean
+.PHONY: build run dev test test-postgres lint generate css clean
 
 build: generate css
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BIN) ./cmd/quorum
@@ -43,6 +43,17 @@ dev: $(TAILWIND)
 
 test: generate
 	$(GO) test ./...
+
+# Runs the same suite against a throwaway PostgreSQL container: the
+# proof that the single SQL source stays in the common dialect subset.
+PG_TEST_URL := postgres://quorum:quorum@127.0.0.1:5433/quorum_test?sslmode=disable
+test-postgres: generate
+	docker run -d --rm --name quorum-pg-test \
+		-e POSTGRES_USER=quorum -e POSTGRES_PASSWORD=quorum -e POSTGRES_DB=quorum_test \
+		-p 127.0.0.1:5433:5432 postgres:16-alpine >/dev/null
+	@until docker exec quorum-pg-test pg_isready -U quorum -q; do sleep 0.5; done
+	TEST_DATABASE_URL='$(PG_TEST_URL)' $(GO) test ./... || (docker stop quorum-pg-test >/dev/null; exit 1)
+	docker stop quorum-pg-test >/dev/null
 
 lint: $(GOLANGCI)
 	$(GOLANGCI) run
