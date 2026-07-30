@@ -41,6 +41,23 @@
 		}
 	});
 
+	/* ---------- dropdown menus (theme, user): close on outside
+	 * click or Escape — native <details> only closes on re-click. ---------- */
+
+	document.addEventListener("click", function (ev) {
+		$$("details.usermenu[open]").forEach(function (menu) {
+			if (!menu.contains(ev.target)) menu.removeAttribute("open");
+		});
+	});
+	document.addEventListener("keydown", function (ev) {
+		if (ev.key !== "Escape") return;
+		$$("details.usermenu[open]").forEach(function (menu) {
+			menu.removeAttribute("open");
+			var s = menu.querySelector("summary");
+			if (s) s.focus();
+		});
+	});
+
 	/* ---------- three-state control: space cycles ---------- */
 
 	document.addEventListener("keydown", function (ev) {
