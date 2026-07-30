@@ -47,8 +47,11 @@ type Config struct {
 	// "http://localhost:8080").
 	BaseURL string
 	// DBPath is the SQLite database file path (QUORUM_DB_PATH, default
-	// "quorum.db").
+	// "quorum.db"). Ignored when DatabaseURL is set.
 	DBPath string
+	// DatabaseURL switches the store to PostgreSQL (DATABASE_URL,
+	// postgres:// URL; empty = SQLite at DBPath).
+	DatabaseURL string
 	// LogLevel is the minimum slog level (QUORUM_LOG_LEVEL, default "info").
 	LogLevel slog.Level
 	// LogFormat is "json" (default) or "text" (QUORUM_LOG_FORMAT).
@@ -121,7 +124,10 @@ func Load(getenv func(string) string) (Config, error) {
 		cfg.LogFormat = v
 	}
 	if v := getenv("DATABASE_URL"); v != "" {
-		return Config{}, fmt.Errorf("DATABASE_URL is set but PostgreSQL support is not available yet; unset it to use SQLite")
+		if !strings.HasPrefix(v, "postgres://") && !strings.HasPrefix(v, "postgresql://") {
+			return Config{}, fmt.Errorf("DATABASE_URL must be a postgres:// URL, got %q", v)
+		}
+		cfg.DatabaseURL = v
 	}
 
 	cfg.Google = oauthClient(getenv, "GOOGLE")

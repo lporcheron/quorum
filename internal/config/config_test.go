@@ -49,6 +49,13 @@ func TestLoadOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadAcceptsPostgresURL(t *testing.T) {
+	cfg, err := Load(env(map[string]string{"DATABASE_URL": "postgres://quorum@localhost/quorum"}))
+	if err != nil || cfg.DatabaseURL != "postgres://quorum@localhost/quorum" {
+		t.Errorf("cfg.DatabaseURL = %q, err = %v", cfg.DatabaseURL, err)
+	}
+}
+
 func TestLoadRejectsInvalid(t *testing.T) {
 	cases := []struct {
 		name string
@@ -59,7 +66,7 @@ func TestLoadRejectsInvalid(t *testing.T) {
 		{"relative base URL", map[string]string{"QUORUM_BASE_URL": "/polls"}, "QUORUM_BASE_URL"},
 		{"bad log level", map[string]string{"QUORUM_LOG_LEVEL": "verbose"}, "QUORUM_LOG_LEVEL"},
 		{"bad log format", map[string]string{"QUORUM_LOG_FORMAT": "xml"}, "QUORUM_LOG_FORMAT"},
-		{"postgres not ready", map[string]string{"DATABASE_URL": "postgres://x"}, "DATABASE_URL"},
+		{"non-postgres DATABASE_URL", map[string]string{"DATABASE_URL": "mysql://x"}, "DATABASE_URL"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
