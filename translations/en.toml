@@ -699,3 +699,15 @@ other = "Vote yes, if need be, or no — no account required."
 
 [error.page_not_found]
 other = "There is nothing at this address. Check the link, or start from the home page."
+
+[nav.theme]
+other = "Theme"
+
+[theme.system]
+other = "System"
+
+[theme.light]
+other = "Light"
+
+[theme.dark]
+other = "Dark"

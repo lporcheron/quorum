@@ -153,7 +153,48 @@ func (h *Handler) currentUser(r *http.Request) *auth.User {
 	return &u
 }
 
-const langCookie = "quorum_lang"
+const (
+	langCookie  = "quorum_lang"
+	themeCookie = "quorum_theme"
+)
+
+// theme returns the forced theme from the cookie, "" for system.
+func (h *Handler) theme(r *http.Request) string {
+	if c, err := r.Cookie(themeCookie); err == nil && (c.Value == "light" || c.Value == "dark") {
+		return c.Value
+	}
+	return ""
+}
+
+// SetTheme stores the device's theme choice; "system" clears it so the
+// OS preference rules again. Server-rendered like the language switch:
+// no flash of the wrong theme, works without JavaScript.
+func (h *Handler) SetTheme(w http.ResponseWriter, r *http.Request) {
+	if !h.parseForm(w, r) {
+		return
+	}
+	choice := r.PostForm.Get("theme")
+	switch choice {
+	case "light", "dark":
+		http.SetCookie(w, &http.Cookie{
+			Name:     themeCookie,
+			Value:    choice,
+			Path:     "/",
+			MaxAge:   365 * 24 * 3600,
+			SameSite: http.SameSiteLaxMode,
+		})
+	case "system":
+		http.SetCookie(w, &http.Cookie{Name: themeCookie, Path: "/", MaxAge: -1})
+	default:
+		h.renderError(w, r, http.StatusBadRequest, "error.bad_request")
+		return
+	}
+	dest := next(r)
+	if dest == "" {
+		dest = "/"
+	}
+	redirect(w, r, dest)
+}
 
 // locale resolves the UI language: explicit cookie choice first, then
 // the Accept-Language header.
@@ -201,7 +242,7 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c t
 	// WriteHeader: scs commits the session with the response headers.
 	user := h.currentUser(r)
 	isAdmin := user != nil && h.adminEmails[user.Email]
-	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI(), h.csrfToken(r), isAdmin)
+	ctx := templates.WithChrome(r.Context(), h.settings.InstanceName(r.Context()), r.URL.RequestURI(), h.csrfToken(r), isAdmin, h.theme(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := c.Render(ctx, w); err != nil {

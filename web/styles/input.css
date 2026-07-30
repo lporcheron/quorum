@@ -56,11 +56,28 @@
 		color-scheme: light dark;
 	}
 
-	/* Dark mode follows the system: ink and paper swap roles, surfaces
-	 * deepen, the state colors brighten a notch for contrast. The
-	 * winning blue keeps its exclusivity. */
+	/* Dark palette: ink and paper swap roles, surfaces deepen, the
+	 * state colors brighten a notch for contrast. The winning blue
+	 * keeps its exclusivity. Applied when forced via data-theme="dark",
+	 * or by the system unless light is forced — keep BOTH blocks in
+	 * sync. */
+	:root[data-theme="dark"] {
+		color-scheme: dark;
+		--color-ink: #e6e7e2;
+		--color-paper: #14161b;
+		--color-card: #1d2026;
+		--color-yes: #5aa686;
+		--color-ifneedbe: #d9a04c;
+		--color-ifneedbe-text: #d9a04c;
+		--color-no: #676c66;
+		--color-winner: #7b95ff;
+		--color-on-yes: #141b2d;
+	}
+	:root[data-theme="light"] {
+		color-scheme: light;
+	}
 	@media (prefers-color-scheme: dark) {
-		:root {
+		:root:not([data-theme="light"]) {
 			--color-ink: #e6e7e2;
 			--color-paper: #14161b;
 			--color-card: #1d2026;

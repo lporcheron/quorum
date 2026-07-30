@@ -9,16 +9,24 @@ const (
 	ctxCurrentPath
 	ctxCSRF
 	ctxIsInstanceAdmin
+	ctxTheme
 )
 
 // WithChrome attaches the per-request page chrome (instance name,
 // current path for the language switcher, CSRF token, instance-admin
 // flag) to the render context.
-func WithChrome(ctx context.Context, instanceName, path, csrf string, isInstanceAdmin bool) context.Context {
+func WithChrome(ctx context.Context, instanceName, path, csrf string, isInstanceAdmin bool, theme string) context.Context {
 	ctx = context.WithValue(ctx, ctxInstanceName, instanceName)
 	ctx = context.WithValue(ctx, ctxCurrentPath, path)
 	ctx = context.WithValue(ctx, ctxCSRF, csrf)
-	return context.WithValue(ctx, ctxIsInstanceAdmin, isInstanceAdmin)
+	ctx = context.WithValue(ctx, ctxIsInstanceAdmin, isInstanceAdmin)
+	return context.WithValue(ctx, ctxTheme, theme)
+}
+
+// theme is the forced theme ("light"/"dark"), empty for system.
+func theme(ctx context.Context) string {
+	v, _ := ctx.Value(ctxTheme).(string)
+	return v
 }
 
 func isInstanceAdmin(ctx context.Context) bool {

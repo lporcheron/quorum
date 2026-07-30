@@ -120,6 +120,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /auth/logout", s.h.CSRF(s.h.Logout))
 	mux.HandleFunc("GET /dashboard", s.h.Dashboard)
 	mux.HandleFunc("POST /lang", s.h.SetLanguage)
+	mux.HandleFunc("POST /theme", s.h.SetTheme)
 	mux.HandleFunc("GET /account", s.h.ShowAccount)
 	mux.HandleFunc("POST /account/delete", s.h.CSRF(s.h.DeleteAccount))
 

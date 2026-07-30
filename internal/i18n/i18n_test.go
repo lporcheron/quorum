@@ -127,7 +127,7 @@ func TestNoOrphanKeys(t *testing.T) {
 	}
 
 	// Keys assembled at runtime from these prefixes cannot be grepped.
-	dynamicPrefixes := []string{"dashboard.status_", "space.role_"}
+	dynamicPrefixes := []string{"dashboard.status_", "space.role_", "theme."}
 
 	var src strings.Builder
 	root := filepath.Join("..", "..")

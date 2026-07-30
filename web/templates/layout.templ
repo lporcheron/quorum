@@ -25,7 +25,12 @@ templ noindexMeta() {
 
 templ layoutWithMeta(loc *i18n.Locale, title string, user *auth.User, meta templ.Component) {
 	<!DOCTYPE html>
-	<html lang={ loc.Lang }>
+	<html
+		lang={ loc.Lang }
+		if theme(ctx) != "" {
+			data-theme={ theme(ctx) }
+		}
+	>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -44,6 +49,21 @@ templ layoutWithMeta(loc *i18n.Locale, title string, user *auth.User, meta templ
 				<div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4">
 					<a href="/" class="font-display text-lg font-semibold tracking-tight">{ instanceName(ctx) }</a>
 					<nav class="flex items-center gap-4 text-sm">
+						<details class="usermenu">
+							<summary class="cursor-pointer list-none px-1 text-lg leading-none text-ink/70 hover:text-ink" title={ loc.T("nav.theme") } aria-label={ loc.T("nav.theme") }>◐</summary>
+							<div class="usermenu-panel">
+								<form method="post" action="/theme">
+									<input type="hidden" name="next" value={ currentPath(ctx) }/>
+									for _, choice := range []string{"system", "light", "dark"} {
+										if (theme(ctx) == "" && choice == "system") || theme(ctx) == choice {
+											<span class="block px-3 py-1.5 font-semibold">{ loc.T("theme." + choice) }</span>
+										} else {
+											<button class="block w-full px-3 py-1.5 text-left hover:bg-ink/5" name="theme" value={ choice } type="submit">{ loc.T("theme." + choice) }</button>
+										}
+									}
+								</form>
+							</div>
+						</details>
 						if user != nil {
 							<a href="/dashboard" class="underline">{ loc.T("nav.dashboard") }</a>
 							<details class="usermenu">

@@ -126,3 +126,37 @@ func TestMagicLinkRateLimit(t *testing.T) {
 		t.Errorf("sixth request: %d, want 429", resp.StatusCode)
 	}
 }
+
+func TestThemeToggle(t *testing.T) {
+	ts, _ := newTestServer(t)
+	c := jarClient(t)
+
+	// Default: system — no data-theme attribute.
+	_, body := cGet(t, c, ts.URL+"/")
+	if strings.Contains(body, "data-theme=") {
+		t.Errorf("data-theme present by default")
+	}
+
+	// Force dark: the attribute is server-rendered, so no flash.
+	resp, body := cPost(t, c, ts.URL+"/theme", url.Values{"theme": {"dark"}, "next": {"/"}})
+	if resp.StatusCode != http.StatusOK || !strings.Contains(body, `data-theme="dark"`) {
+		t.Fatalf("dark theme not applied: %d", resp.StatusCode)
+	}
+	// The choice sticks on later navigation.
+	_, body = cGet(t, c, ts.URL+"/login")
+	if !strings.Contains(body, `data-theme="dark"`) {
+		t.Errorf("theme not persisted across pages")
+	}
+
+	// Back to system clears the cookie and the attribute.
+	_, body = cPost(t, c, ts.URL+"/theme", url.Values{"theme": {"system"}, "next": {"/"}})
+	if strings.Contains(body, "data-theme=") {
+		t.Errorf("data-theme still present after reset to system")
+	}
+
+	// Garbage is refused.
+	resp, _ = cPost(t, c, ts.URL+"/theme", url.Values{"theme": {"blue"}})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("bad theme: %d, want 400", resp.StatusCode)
+	}
+}
