@@ -3,3 +3,6 @@
 *.db
 *.db-shm
 *.db-wal
+# Database dumps (e.g. a Rallly export for rallly-import) contain
+# personal data and must never be committed.
+/*.sql
