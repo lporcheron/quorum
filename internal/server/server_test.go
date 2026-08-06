@@ -152,6 +152,27 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+// Rallly's invitation links live under /invite/{id}. rallly-import
+// keeps the Rallly ids, so those links must land on the poll once
+// Quorum serves the old domain.
+func TestRalllyInviteLinksRedirect(t *testing.T) {
+	ts, _ := newTestServer(t)
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+	resp, err := client.Get(ts.URL + "/invite/pollTimed001")
+	if err != nil {
+		t.Fatalf("GET /invite: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusMovedPermanently {
+		t.Fatalf("status = %d, want 301", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Location"); got != "/polls/pollTimed001" {
+		t.Errorf("Location = %q, want /polls/pollTimed001", got)
+	}
+}
+
 func TestHomeLocalized(t *testing.T) {
 	ts, _ := newTestServer(t)
 

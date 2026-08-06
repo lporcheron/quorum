@@ -52,7 +52,7 @@ func (s *Server) Handler() http.Handler {
 	// Poll, invitation and auth URLs are capabilities: crawlers stay out.
 	mux.HandleFunc("GET /robots.txt", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.Write([]byte("User-agent: *\nDisallow: /polls/\nDisallow: /invitations/\nDisallow: /auth/\nDisallow: /admin\n"))
+		w.Write([]byte("User-agent: *\nDisallow: /polls/\nDisallow: /invite/\nDisallow: /invitations/\nDisallow: /auth/\nDisallow: /admin\n"))
 	})
 
 	// Poll lifecycle. Mutations are POST only: plain HTML forms are the
@@ -63,6 +63,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /polls/{pollID}/calendar.ics", s.h.CalendarFeed)
 	mux.HandleFunc("POST /polls/{pollID}/participants", s.h.CreateParticipant)
 	mux.HandleFunc("POST /polls/{pollID}/comments", s.h.CreateComment)
+
+	// Rallly served its polls under /invite/{id}. rallly-import keeps the
+	// Rallly ids, so links already in circulation keep working when
+	// Quorum takes over the old domain.
+	mux.HandleFunc("GET /invite/{pollID}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/polls/"+r.PathValue("pollID"), http.StatusMovedPermanently)
+	})
 
 	// Participant capability URLs.
 	mux.HandleFunc("GET /polls/{pollID}/p/{editToken}", s.h.ShowPollAsParticipant)
