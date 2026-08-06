@@ -1,4 +1,9 @@
-@import "tailwindcss";
+/* source(none) turns off Tailwind's automatic project-wide scan: the two
+ * @source lines below are the whole universe of class names. Without it
+ * every Go file is scanned too, and an ordinary English word in a comment
+ * ("collapse", "uppercase") silently adds a dead utility to the shipped
+ * stylesheet. */
+@import "tailwindcss" source(none);
 
 @source "../templates";
 @source "../static/js/quorum.js";
