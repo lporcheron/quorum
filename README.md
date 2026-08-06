@@ -128,6 +128,55 @@ server.
 **PostgreSQL**: standard tooling — `pg_dump`/`pg_restore` or your
 provider's snapshots. Quorum keeps no state outside the database.
 
+## Migrating from Rallly
+
+`rallly-import` moves an existing self-hosted
+[Rallly](https://rallly.co) instance into Quorum from a plain-format
+dump of its PostgreSQL database:
+
+```sh
+pg_dump --format=plain rallly > rallly.sql
+go run ./cmd/rallly-import -dump rallly.sql -db quorum.db -dry-run  # rehearse
+go run ./cmd/rallly-import -dump rallly.sql -db quorum.db           # SQLite target
+go run ./cmd/rallly-import -dump rallly.sql -database-url postgres://…  # PostgreSQL target
+```
+
+Start with `-dry-run`: it performs every insert, reports the counts and
+everything it had to skip, then rolls the transaction back and leaves
+the target untouched. The real import runs in a single transaction
+against a fresh database (it refuses a target that already has polls
+unless you pass `-force`) and brings over users, spaces, memberships,
+polls, options, participants, votes and comments. Finalized Rallly
+polls come out finalized in Quorum, with the chosen option matched.
+
+Polls keep their Rallly IDs, and Quorum answers Rallly's
+`/invite/{id}` URLs with a redirect — so invitation links already in
+circulation keep working once Quorum serves the old domain.
+
+If the dump comes from a Rallly version whose schema differs from the
+one the importer expects, it stops before touching the database and
+names the tables and columns it could not find. That is deliberate: a
+partial import is worse than none.
+
+What to know before running it:
+
+- **Accounts** are recreated by email only. Rallly stores no passwords
+  Quorum could reuse; each user just signs in on Quorum (magic link or
+  OAuth) with the same address and is reunited with their polls.
+- **Anonymous guests** are not turned into accounts. Their polls are
+  imported as guest polls, each with a fresh admin link the importer
+  hands back once — on stdout, or into a file with
+  `-links-out links.txt` (written 0600). Pass those links to their
+  organizers; they cannot be recovered afterwards.
+- **Participant edit links** cannot be migrated (Quorum stores only
+  token hashes). Votes are all there; a voter who wants to change
+  theirs votes again or asks the organizer.
+- **Hidden scores** have no Quorum equivalent: a poll that hid its
+  results until voting comes out with them visible, and the importer
+  says so.
+
+The dump contains personal data — delete it once the import is done.
+
 ## License
 
 [Apache 2.0](LICENSE).
