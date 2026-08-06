@@ -25,6 +25,7 @@ import (
 	"github.com/lporcheron/quorum/internal/metrics"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/internal/rallly"
 	"github.com/lporcheron/quorum/internal/server"
 	"github.com/lporcheron/quorum/internal/setting"
 	"github.com/lporcheron/quorum/internal/space"
@@ -35,6 +36,17 @@ import (
 var version = "dev"
 
 func main() {
+	// One binary, two jobs. `quorum` serves; `quorum import-rallly`
+	// migrates a Rallly instance into this one. The subcommand shares the
+	// server's database configuration, so a containerized instance needs
+	// no flag beyond -dump — and cannot import into the wrong database.
+	if len(os.Args) > 1 && os.Args[1] == "import-rallly" {
+		if err := rallly.RunCLI(context.Background(), os.Args[2:], os.Getenv, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, "quorum import-rallly:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(context.Background(), os.Getenv, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "quorum:", err)
 		os.Exit(1)
