@@ -7,6 +7,11 @@ everyone gets the event in their calendar.
 A single static Go binary. SQLite by default, PostgreSQL when you want
 it. No Node, no Redis, no external services.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/grid-dark.png">
+  <img src="docs/screenshots/grid-light.png" alt="A poll called Sprint review: six participants have voted across five time slots, and the Tuesday 11:00 column is highlighted as the leading option with all six votes." width="1280">
+</picture>
+
 ## Features
 
 - Create a poll in seconds, with or without an account — time slots
@@ -44,6 +49,7 @@ make run                   # builds and starts on :8080
 make dev                   # live-reload development loop
 make test lint             # what CI runs
 make test-postgres         # the same suite against PostgreSQL
+make screenshots           # regenerates the images above
 ```
 
 Deploying is copying one binary (or one ~19 MB container image) and
