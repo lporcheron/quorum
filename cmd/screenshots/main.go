@@ -44,13 +44,26 @@ type shot struct {
 
 // The desktop height stops in the gap after the second voting row:
 // slicing through a row reads as a broken image in a README.
+// minWidth is the narrowest viewport Chrome will actually lay out. Ask
+// for less and it clamps the window to ~500 CSS px, renders the page at
+// that width, and still crops the PNG to the size you asked for — so a
+// "375px" capture would be a 500px layout with its right edge cut off,
+// which reads as a responsive bug that is not there. Measured on Chrome
+// 151/macOS by outlining <html> and comparing requested vs actual width
+// (375, 450 and 500 all produced 500; 560 and 700 tracked the request).
+// A narrower viewport needs real device emulation over CDP, which is a
+// dependency this tool deliberately does not take.
+const minWidth = 500
+
+// The desktop height stops in the gap after the second voting row:
+// slicing through a row reads as a broken image in a README.
 var shots = []shot{
 	{name: "grid-light", theme: "light", width: 1280, height: 880},
 	{name: "grid-dark", theme: "dark", width: 1280, height: 880},
-	// The mobile grid is a designed alternative, not a scrolled desktop
+	// The narrow layout is a designed alternative, not a scrolled desktop
 	// one, so it earns its own image.
-	{name: "grid-mobile-light", theme: "light", width: 390, height: 844},
-	{name: "grid-mobile-dark", theme: "dark", width: 390, height: 844},
+	{name: "grid-narrow-light", theme: "light", width: minWidth, height: 900},
+	{name: "grid-narrow-dark", theme: "dark", width: minWidth, height: 900},
 }
 
 func main() {
@@ -107,6 +120,10 @@ func run() error {
 	defer stopProxy()
 
 	for _, s := range shots {
+		if s.width < minWidth {
+			return fmt.Errorf("shot %q asks for %dpx: Chrome clamps the viewport to %dpx and would crop a wider layout",
+				s.name, s.width, minWidth)
+		}
 		theme.Store(s.theme)
 		dest := filepath.Join(*out, s.name+".png")
 		page := fmt.Sprintf("http://%s/polls/%s", proxyAddr, pollID)

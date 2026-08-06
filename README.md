@@ -12,6 +12,18 @@ it. No Node, no Redis, no external services.
   <img src="docs/screenshots/grid-light.png" alt="A poll called Sprint review: six participants have voted across five time slots, and the Tuesday 11:00 column is highlighted as the leading option with all six votes." width="1280">
 </picture>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/grid-narrow-dark.png">
+  <img src="docs/screenshots/grid-narrow-light.png" alt="The same poll on a narrow screen: the matrix becomes a vertical list, one row per slot, each with its count and its three vote buttons." width="300" align="right">
+</picture>
+
+On a narrow screen the matrix becomes a vertical list — one row per slot,
+with its tally and its three buttons. A designed alternative, not a
+horizontally scrolled table.
+
+<br clear="all">
+
+
 ## Features
 
 - Create a poll in seconds, with or without an account — time slots
