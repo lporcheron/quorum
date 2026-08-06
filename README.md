@@ -130,24 +130,73 @@ provider's snapshots. Quorum keeps no state outside the database.
 
 ## Migrating from Rallly
 
-`rallly-import` moves an existing self-hosted
+`quorum import-rallly` moves an existing self-hosted
 [Rallly](https://rallly.co) instance into Quorum from a plain-format
-dump of its PostgreSQL database:
+dump of its PostgreSQL database. It is a subcommand of the same binary,
+so it ships inside the container image — nothing extra to install.
+
+### 1. Dump the Rallly database
+
+If Rallly runs in Docker Compose, dump from its database service
+(`-T` keeps Docker from mangling the output; adjust the service name,
+user and database to your setup):
+
+```sh
+docker compose exec -T rallly_db pg_dump --format=plain -U postgres rallly > rallly.sql
+```
+
+Otherwise, straight from PostgreSQL:
 
 ```sh
 pg_dump --format=plain rallly > rallly.sql
-go run ./cmd/rallly-import -dump rallly.sql -db quorum.db -dry-run  # rehearse
-go run ./cmd/rallly-import -dump rallly.sql -db quorum.db           # SQLite target
-go run ./cmd/rallly-import -dump rallly.sql -database-url postgres://…  # PostgreSQL target
+```
+
+### 2. Rehearse, then import
+
+Without `-db` or `-database-url`, the importer targets the database this
+instance is configured to serve (`QUORUM_DB_PATH`, or `DATABASE_URL`) —
+so in a container it needs no flag beyond `-dump`. It prints the target
+it opened before doing anything.
+
+Stop the Quorum container first if it is already running: the import
+wants the database to itself.
+
+**Docker Compose** — mount the dump into a one-off container:
+
+```sh
+docker compose stop quorum
+docker compose run --rm -v "$PWD/rallly.sql:/dump.sql:ro" \
+  quorum import-rallly -dump /dump.sql -dry-run     # rehearse
+docker compose run --rm -v "$PWD/rallly.sql:/dump.sql:ro" \
+  quorum import-rallly -dump /dump.sql -links-out /data/links.txt
+docker compose start quorum
+```
+
+**Plain Docker** — same idea, naming the data volume yourself:
+
+```sh
+docker run --rm -v quorum-data:/data -v "$PWD/rallly.sql:/dump.sql:ro" \
+  ghcr.io/lporcheron/quorum:latest import-rallly -dump /dump.sql -dry-run
+```
+
+**Binary or source**:
+
+```sh
+quorum import-rallly -dump rallly.sql -dry-run
+quorum import-rallly -dump rallly.sql -db quorum.db
+quorum import-rallly -dump rallly.sql -database-url postgres://…
+go run ./cmd/quorum import-rallly -dump rallly.sql -dry-run   # from source
 ```
 
 Start with `-dry-run`: it performs every insert, reports the counts and
-everything it had to skip, then rolls the transaction back and leaves
-the target untouched. The real import runs in a single transaction
-against a fresh database (it refuses a target that already has polls
-unless you pass `-force`) and brings over users, spaces, memberships,
-polls, options, participants, votes and comments. Finalized Rallly
-polls come out finalized in Quorum, with the chosen option matched.
+everything it had to skip, then rolls the transaction back and writes
+no data. The real import runs in a single transaction against a fresh
+database (it refuses a target that already has polls unless you pass
+`-force`) and brings over users, spaces, memberships, polls, options,
+participants, votes and comments. Finalized Rallly polls come out
+finalized in Quorum, with the chosen option matched.
+
+### What to expect
 
 Polls keep their Rallly IDs, and Quorum answers Rallly's
 `/invite/{id}` URLs with a redirect — so invitation links already in
@@ -158,16 +207,16 @@ one the importer expects, it stops before touching the database and
 names the tables and columns it could not find. That is deliberate: a
 partial import is worse than none.
 
-What to know before running it:
-
 - **Accounts** are recreated by email only. Rallly stores no passwords
   Quorum could reuse; each user just signs in on Quorum (magic link or
   OAuth) with the same address and is reunited with their polls.
 - **Anonymous guests** are not turned into accounts. Their polls are
   imported as guest polls, each with a fresh admin link the importer
-  hands back once — on stdout, or into a file with
-  `-links-out links.txt` (written 0600). Pass those links to their
-  organizers; they cannot be recovered afterwards.
+  hands back once — on stdout, or into a file with `-links-out`
+  (written 0600, and it refuses to overwrite). Pass those links to
+  their organizers; they cannot be recovered afterwards. In a
+  container, write them somewhere that survives it, such as
+  `/data/links.txt` in the volume.
 - **Participant edit links** cannot be migrated (Quorum stores only
   token hashes). Votes are all there; a voter who wants to change
   theirs votes again or asks the organizer.
