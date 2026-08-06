@@ -26,7 +26,7 @@ TAILWIND := $(TOOLS)/tailwindcss-$(TAILWIND_VERSION)
 GOLANGCI_VERSION := v2.12.2
 GOLANGCI := $(TOOLS)/golangci/$(GOLANGCI_VERSION)/golangci-lint
 
-.PHONY: build run dev test test-postgres lint generate css clean
+.PHONY: build run dev test test-postgres lint generate css clean screenshots
 
 build: generate css
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BIN) ./cmd/quorum
@@ -57,6 +57,12 @@ test-postgres: generate
 
 lint: $(GOLANGCI)
 	$(GOLANGCI) run
+
+# Regenerates the README images from a throwaway seeded instance, using
+# the Chrome already on the machine (no Node, no automation library).
+# Override the browser with `make screenshots CHROME=/path/to/chromium`.
+screenshots: build
+	$(GO) run ./cmd/screenshots $(if $(CHROME),-chrome "$(CHROME)")
 
 generate:
 	$(GO) tool templ generate
