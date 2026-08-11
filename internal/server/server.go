@@ -150,6 +150,9 @@ func (s *Server) Handler() http.Handler {
 		requestID,
 		accessLog(s.log, s.metrics),
 		securityHeaders,
+		// Inside accessLog, so the logged byte count is what went on the
+		// wire; outside the session store, which buffers the body.
+		compress,
 		s.sessions.LoadAndSave,
 	)
 }
