@@ -3,6 +3,7 @@ package templates
 import (
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
+	"github.com/lporcheron/quorum/web"
 )
 
 // csrfField embeds the session's synchronizer token in a form. Empty
@@ -38,12 +39,12 @@ templ layoutWithMeta(loc *i18n.Locale, title string, user *auth.User, meta templ
 			if meta != nil {
 				@meta
 			}
-			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
-			<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png"/>
-			<link rel="apple-touch-icon" href="/static/apple-touch-icon.png"/>
-			<link rel="stylesheet" href="/static/css/app.css"/>
-			<script src="/static/js/htmx.min.js" defer></script>
-			<script src="/static/js/quorum.js" defer></script>
+			<link rel="icon" type="image/svg+xml" href={ web.AssetURL("favicon.svg") }/>
+			<link rel="icon" type="image/png" sizes="32x32" href={ web.AssetURL("favicon-32.png") }/>
+			<link rel="apple-touch-icon" href={ web.AssetURL("apple-touch-icon.png") }/>
+			<link rel="stylesheet" href={ web.AssetURL("css/app.css") }/>
+			<script src={ web.AssetURL("js/htmx.min.js") } defer></script>
+			<script src={ web.AssetURL("js/quorum.js") } defer></script>
 		</head>
 		<body class="flex min-h-screen flex-col bg-paper font-sans text-ink antialiased">
 			<header class="border-b border-ink/15">

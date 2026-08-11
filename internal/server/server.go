@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -153,11 +154,27 @@ func (s *Server) Handler() http.Handler {
 	)
 }
 
-// cacheStatic sets a modest cache lifetime on embedded assets; hashed
-// filenames (and immutable caching) come with the real asset pipeline.
+// cacheStatic makes the embedded assets properly cacheable. embed.FS
+// files have no modification time, so http.FileServerFS can offer no
+// validator by itself: every expiry costs a full re-download. An ETag
+// fixes that, and a request whose ?v= matches the bytes about to be
+// served came from a fingerprinted URL (web.AssetURL), so it can be kept
+// forever — a new build changes the URL. Assets reached without the
+// fingerprint (the fonts, referenced from inside app.css) keep the short
+// lifetime and revalidate with a 304.
 func cacheStatic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+		hash := web.AssetHash(strings.TrimPrefix(r.URL.Path, "/static/"))
+		switch {
+		case hash == "":
+			// No such asset: let the file server answer 404.
+		case r.URL.Query().Get("v") == hash:
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			w.Header().Set("ETag", `"`+hash+`"`)
+		default:
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+			w.Header().Set("ETag", `"`+hash+`"`)
+		}
 		next.ServeHTTP(w, r)
 	})
 }
