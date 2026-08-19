@@ -70,3 +70,20 @@ func TestUnknownStaticFileIs404(t *testing.T) {
 		t.Errorf("status = %d, want 404", resp.StatusCode)
 	}
 }
+
+func TestDynamicPagesAreNotCacheable(t *testing.T) {
+	ts, _ := newTestServer(t)
+
+	for _, path := range []string{"/", "/login", "/dashboard"} {
+		resp, _ := get(t, ts, path, nil)
+		if cc := resp.Header.Get("Cache-Control"); cc != "no-store" {
+			t.Errorf("%s Cache-Control = %q, want no-store", path, cc)
+		}
+	}
+
+	// Assets are the exception, and must keep saying so.
+	resp, _ := get(t, ts, "/static/css/app.css", nil)
+	if cc := resp.Header.Get("Cache-Control"); !strings.Contains(cc, "public") {
+		t.Errorf("asset Cache-Control = %q, want a public lifetime", cc)
+	}
+}

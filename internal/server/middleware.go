@@ -102,6 +102,12 @@ func securityHeaders(next http.Handler) http.Handler {
 		// computed per poll. Scripts stay 'self' only.
 		h.Set("Content-Security-Policy",
 			"default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'")
+		// Nothing dynamic is cacheable: a page's content depends on the
+		// session cookie or on a capability token in its URL, and a
+		// shared cache holding either would serve one visitor another's
+		// view. The embedded assets opt back in downstream, in
+		// cacheStatic, which replaces this value.
+		h.Set("Cache-Control", "no-store")
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
