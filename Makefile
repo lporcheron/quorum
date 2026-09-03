@@ -23,7 +23,7 @@ else
 endif
 TAILWIND := $(TOOLS)/tailwindcss-$(TAILWIND_VERSION)
 
-GOLANGCI_VERSION := v2.12.2
+GOLANGCI_VERSION := v2.13.2
 GOLANGCI := $(TOOLS)/golangci/$(GOLANGCI_VERSION)/golangci-lint
 
 .PHONY: build run dev test test-postgres lint generate css clean screenshots
