@@ -27,10 +27,16 @@ jobs:
       - name: Build
         run: make build
 
+      # The Makefile is the single source of truth for the pinned
+      # golangci-lint version; read it so local and CI never drift.
+      - name: Read pinned golangci-lint version
+        id: golangci
+        run: echo "version=$(sed -n 's/^GOLANGCI_VERSION := //p' Makefile)" >> "$GITHUB_OUTPUT"
+
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.12.2
+          version: ${{ steps.golangci.outputs.version }}
 
   postgres:
     runs-on: ubuntu-latest
