@@ -81,6 +81,9 @@ other = "Autoriser les commentaires"
 [create.submit]
 other = "Créer le sondage"
 
+[create.sign_in_required]
+other = "Sur cette instance, la création de sondage est réservée aux comptes. Connectez-vous pour en créer un."
+
 [create.nojs_hint]
 other = "Ajoutez jusqu'à cinq options ci-dessous. Vous pourrez en ajouter d'autres depuis la page d'administration."
 
@@ -329,6 +332,9 @@ other = "Se connecter"
 [login.blurb]
 other = "Un compte regroupe vos sondages et permet à votre équipe de les gérer avec vous."
 
+[login.registrations_closed]
+other = "Les nouveaux comptes sont fermés sur cette instance. Connectez-vous avec un compte qui existe déjà ici."
+
 [login.continue_with]
 other = "Continuer avec"
 
@@ -403,6 +409,9 @@ other = "Ce sondage est rattaché à votre compte."
 
 [error.registrations_closed]
 other = "Les inscriptions sont fermées sur cette instance."
+
+[error.guest_polls_closed]
+other = "Sur cette instance, la création de sondage est réservée aux comptes. Connectez-vous puis recréez le sondage."
 
 [error.email_not_allowed]
 other = "Cette adresse email n'est pas autorisée sur cette instance."
@@ -640,6 +649,9 @@ other = "Nom de l'instance"
 
 [instadmin.registrations_open]
 other = "Inscriptions ouvertes"
+
+[instadmin.guest_polls_open]
+other = "Autoriser les visiteurs non connectés à créer des sondages"
 
 [instadmin.jobs]
 other = "File de jobs"

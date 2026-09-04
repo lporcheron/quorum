@@ -71,6 +71,10 @@ type Config struct {
 	// (QUORUM_REGISTRATIONS_OPEN, default true). Existing users always
 	// sign in. The admin page can override it at runtime.
 	RegistrationsOpen bool
+	// GuestPollsOpen lets signed-out visitors create polls from the
+	// landing page (QUORUM_GUEST_POLLS_OPEN, default true). The admin
+	// page can override it at runtime.
+	GuestPollsOpen bool
 	// EmailAllowedDomains restricts sign-up emails when non-empty
 	// (QUORUM_EMAIL_ALLOWED_DOMAINS, comma-separated).
 	EmailAllowedDomains []string
@@ -168,12 +172,21 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 
 	cfg.RegistrationsOpen = true
-	if v := getenv("QUORUM_REGISTRATIONS_OPEN"); v != "" {
-		open, err := strconv.ParseBool(v)
-		if err != nil {
-			return Config{}, fmt.Errorf("QUORUM_REGISTRATIONS_OPEN must be a boolean, got %q", v)
+	cfg.GuestPollsOpen = true
+	for _, b := range []struct {
+		env    string
+		target *bool
+	}{
+		{"QUORUM_REGISTRATIONS_OPEN", &cfg.RegistrationsOpen},
+		{"QUORUM_GUEST_POLLS_OPEN", &cfg.GuestPollsOpen},
+	} {
+		if v := getenv(b.env); v != "" {
+			open, err := strconv.ParseBool(v)
+			if err != nil {
+				return Config{}, fmt.Errorf("%s must be a boolean, got %q", b.env, v)
+			}
+			*b.target = open
 		}
-		cfg.RegistrationsOpen = open
 	}
 	if v := getenv("QUORUM_EMAIL_ALLOWED_DOMAINS"); v != "" {
 		for _, d := range strings.Split(v, ",") {

@@ -6,23 +6,39 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/web"
 	"github.com/lporcheron/quorum/web/templates"
 )
 
-// Home renders the landing page with the creation form.
+// Home renders the landing page, with the creation form when the
+// visitor is allowed to create a poll.
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
+	user := h.currentUser(r)
 	h.render(w, r, http.StatusOK, templates.Home(templates.HomeProps{
 		Loc:       h.locale(r),
-		User:      h.currentUser(r),
+		User:      user,
 		Timezones: poll.CommonTimezones,
+		CanCreate: h.canCreatePoll(r, user),
 	}))
+}
+
+// canCreatePoll answers the instance policy on guest poll creation:
+// signed-in users always create, signed-out visitors only while
+// guest polls are open.
+func (h *Handler) canCreatePoll(r *http.Request, user *auth.User) bool {
+	return user != nil || h.settings.GuestPollsOpen(r.Context())
 }
 
 // CreatePoll handles the creation form and redirects to the admin URL.
 func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	if !h.allow(w, r, h.limitCreate) {
+		return
+	}
+	user := h.currentUser(r)
+	if !h.canCreatePoll(r, user) {
+		h.renderError(w, r, http.StatusForbidden, "error.guest_polls_closed")
 		return
 	}
 	if !h.parseForm(w, r) {
@@ -53,7 +69,7 @@ func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	}
 	// A signed-in creator's poll lands in their current space directly,
 	// inheriting the space's retention.
-	if user := h.currentUser(r); user != nil {
+	if user != nil {
 		sp, _, err := h.currentSpace(r, user)
 		if err != nil {
 			h.spaceError(w, r, err)
@@ -90,6 +106,7 @@ func (h *Handler) rerenderCreate(w http.ResponseWriter, r *http.Request, err err
 		Loc:         loc,
 		User:        h.currentUser(r),
 		Timezones:   poll.CommonTimezones,
+		CanCreate:   true,
 		Error:       loc.T(msgID),
 		Title:       r.PostForm.Get("title"),
 		Description: r.PostForm.Get("description"),

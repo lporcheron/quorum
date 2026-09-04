@@ -26,11 +26,12 @@ func next(r *http.Request) string {
 
 func (h *Handler) loginProps(r *http.Request) templates.LoginProps {
 	return templates.LoginProps{
-		Loc:         h.locale(r),
-		User:        h.currentUser(r),
-		Providers:   h.providers,
-		MailEnabled: h.mailer.Enabled(),
-		Next:        next(r),
+		Loc:               h.locale(r),
+		User:              h.currentUser(r),
+		Providers:         h.providers,
+		MailEnabled:       h.mailer.Enabled(),
+		RegistrationsOpen: h.settings.RegistrationsOpen(r.Context()),
+		Next:              next(r),
 	}
 }
 

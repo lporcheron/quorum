@@ -93,7 +93,11 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	}
 
 	st := store.New(db, dialect)
-	settings := setting.NewService(st, "Quorum", cfg.RegistrationsOpen)
+	settings := setting.NewService(st, setting.Defaults{
+		InstanceName:      "Quorum",
+		RegistrationsOpen: cfg.RegistrationsOpen,
+		GuestPollsOpen:    cfg.GuestPollsOpen,
+	})
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
 	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)

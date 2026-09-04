@@ -14,6 +14,9 @@ type HomeProps struct {
 	Loc       *i18n.Locale
 	User      *auth.User
 	Timezones []string
+	// CanCreate is false when the instance reserves poll creation for
+	// signed-in users and the visitor is signed out.
+	CanCreate bool
 	Error     string // localized message after a failed submission
 	// Submitted values echoed back on error so text fields survive.
 	Title, Description, Location, VideoURL string

@@ -11,9 +11,11 @@ type LoginProps struct {
 	User        *auth.User
 	Providers   []*auth.Provider
 	MailEnabled bool
-	Next        string // local path to land on after sign-in
-	Sent        bool   // magic link request accepted
-	Error       string // localized message
+	// RegistrationsOpen is false when only existing accounts sign in.
+	RegistrationsOpen bool
+	Next              string // local path to land on after sign-in
+	Sent              bool   // magic link request accepted
+	Error             string // localized message
 }
 
 templ LoginPage(p LoginProps) {
@@ -21,6 +23,9 @@ templ LoginPage(p LoginProps) {
 		<div class="mx-auto max-w-md py-16">
 			<h1 class="font-display text-3xl font-semibold">{ p.Loc.T("login.heading") }</h1>
 			<p class="mt-2 text-sm text-ink/70">{ p.Loc.T("login.blurb") }</p>
+			if !p.RegistrationsOpen {
+				<p class="notice mt-4">{ p.Loc.T("login.registrations_closed") }</p>
+			}
 			if p.Error != "" {
 				<p class="error mt-4" role="alert">{ p.Error }</p>
 			}

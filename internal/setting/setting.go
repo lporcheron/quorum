@@ -18,6 +18,7 @@ import (
 const (
 	KeyInstanceName      = "instance_name"
 	KeyRegistrationsOpen = "registrations_open"
+	KeyGuestPollsOpen    = "guest_polls_open"
 )
 
 // Service reads and writes settings. Safe for concurrent use.
@@ -32,14 +33,23 @@ type Service struct {
 	defaults map[string]string
 }
 
+// Defaults are the fallback values used until the admin page writes a
+// row for the key; they come from the environment configuration.
+type Defaults struct {
+	InstanceName      string
+	RegistrationsOpen bool
+	GuestPollsOpen    bool
+}
+
 // NewService wires the settings service with its fallback values.
-func NewService(st *store.Store, defaultName string, defaultRegistrationsOpen bool) *Service {
+func NewService(st *store.Store, d Defaults) *Service {
 	return &Service{
 		store: st,
 		cache: make(map[string]string),
 		defaults: map[string]string{
-			KeyInstanceName:      defaultName,
-			KeyRegistrationsOpen: strconv.FormatBool(defaultRegistrationsOpen),
+			KeyInstanceName:      d.InstanceName,
+			KeyRegistrationsOpen: strconv.FormatBool(d.RegistrationsOpen),
+			KeyGuestPollsOpen:    strconv.FormatBool(d.GuestPollsOpen),
 		},
 	}
 }
@@ -86,7 +96,17 @@ func (s *Service) InstanceName(ctx context.Context) string {
 
 // RegistrationsOpen gates new account creation.
 func (s *Service) RegistrationsOpen(ctx context.Context) bool {
-	v, err := strconv.ParseBool(s.get(ctx, KeyRegistrationsOpen))
+	return s.boolValue(ctx, KeyRegistrationsOpen)
+}
+
+// GuestPollsOpen gates poll creation by signed-out visitors.
+func (s *Service) GuestPollsOpen(ctx context.Context) bool {
+	return s.boolValue(ctx, KeyGuestPollsOpen)
+}
+
+// boolValue reads a boolean setting, permissive on an unparsable value.
+func (s *Service) boolValue(ctx context.Context, key string) bool {
+	v, err := strconv.ParseBool(s.get(ctx, key))
 	if err != nil {
 		return true
 	}

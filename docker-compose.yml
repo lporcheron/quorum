@@ -28,6 +28,7 @@ services:
       # --- instance policy
       # QUORUM_ADMIN_EMAILS: "you@example.com"
       # QUORUM_REGISTRATIONS_OPEN: "true"
+      # QUORUM_GUEST_POLLS_OPEN: "true"
       # QUORUM_EMAIL_ALLOWED_DOMAINS: "example.com"
       # QUORUM_TRUST_PROXY: "true"   # only behind a proxy that sets X-Forwarded-For
       # QUORUM_METRICS: "false"

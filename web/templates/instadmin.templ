@@ -28,6 +28,7 @@ type InstanceAdminProps struct {
 	User              *auth.User
 	InstanceName      string
 	RegistrationsOpen bool
+	GuestPollsOpen    bool
 	Users             []InstanceUser
 	PendingJobs       int64
 	DeadJobs          []DeadJob
@@ -52,6 +53,10 @@ templ InstanceAdminPage(p InstanceAdminProps) {
 				<label class="flex items-center gap-2 text-sm">
 					<input type="checkbox" name="registrations_open" value="1" checked?={ p.RegistrationsOpen }/>
 					{ p.Loc.T("instadmin.registrations_open") }
+				</label>
+				<label class="flex items-center gap-2 text-sm">
+					<input type="checkbox" name="guest_polls_open" value="1" checked?={ p.GuestPollsOpen }/>
+					{ p.Loc.T("instadmin.guest_polls_open") }
 				</label>
 				<button class="btn" type="submit">{ p.Loc.T("admin.save") }</button>
 			</form>

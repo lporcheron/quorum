@@ -81,6 +81,9 @@ other = "Allow comments"
 [create.submit]
 other = "Create the poll"
 
+[create.sign_in_required]
+other = "This instance keeps poll creation for account holders. Sign in to create one."
+
 [create.nojs_hint]
 other = "Add up to five options below. You can add more from the admin page."
 
@@ -329,6 +332,9 @@ other = "Sign in"
 [login.blurb]
 other = "An account keeps your polls together and lets your team manage them with you."
 
+[login.registrations_closed]
+other = "New accounts are closed on this instance. Sign in with an account that already exists here."
+
 [login.continue_with]
 other = "Continue with"
 
@@ -403,6 +409,9 @@ other = "This poll is attached to your account."
 
 [error.registrations_closed]
 other = "Registrations are closed on this instance."
+
+[error.guest_polls_closed]
+other = "This instance keeps poll creation for account holders. Sign in and create the poll again."
 
 [error.email_not_allowed]
 other = "This email address is not allowed on this instance."
@@ -640,6 +649,9 @@ other = "Instance name"
 
 [instadmin.registrations_open]
 other = "Open registrations"
+
+[instadmin.guest_polls_open]
+other = "Let signed-out visitors create polls"
 
 [instadmin.jobs]
 other = "Job queue"

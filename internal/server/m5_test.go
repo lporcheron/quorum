@@ -160,3 +160,66 @@ func TestThemeToggle(t *testing.T) {
 		t.Errorf("bad theme: %d, want 400", resp.StatusCode)
 	}
 }
+
+// TestGuestPollAndRegistrationGates covers the two instance policies
+// that change what a signed-out visitor sees: guest poll creation on
+// the landing page, and closed registrations on the sign-in page.
+func TestGuestPollAndRegistrationGates(t *testing.T) {
+	ts, mailer := newTestServer(t)
+
+	// Both are open by default: the landing page carries the form.
+	_, home := cGet(t, jarClient(t), ts.URL+"/")
+	if !strings.Contains(home, `action="/polls"`) {
+		t.Fatalf("creation form missing from the default landing page")
+	}
+	if _, login := cGet(t, jarClient(t), ts.URL+"/login"); strings.Contains(login, "New accounts are closed") {
+		t.Errorf("login page announces closed registrations while they are open")
+	}
+
+	root := jarClient(t)
+	signInByEmail(t, ts, mailer, root, "root@example.com")
+	// Close both, hot, from the admin page.
+	if resp, _ := cPostS(t, ts, root, "/admin/settings", url.Values{
+		"instance_name": {"Quorum"},
+		// registrations_open and guest_polls_open unchecked
+	}); resp.StatusCode != http.StatusOK {
+		t.Fatalf("save settings: %d", resp.StatusCode)
+	}
+
+	// A signed-out visitor gets the sign-in invitation, not the form.
+	guest := jarClient(t)
+	_, home = cGet(t, guest, ts.URL+"/")
+	if strings.Contains(home, `action="/polls"`) {
+		t.Errorf("creation form still shown to a signed-out visitor")
+	}
+	if !strings.Contains(home, "/login?next=/") {
+		t.Errorf("landing page does not point the visitor at sign-in")
+	}
+	// And a crafted POST is refused rather than quietly accepted.
+	resp, _ := cPost(t, guest, ts.URL+"/polls", url.Values{
+		"title": {"Sneaky"}, "kind": {"allday"}, "timezone": {"UTC"},
+		"option_date": {"2026-03-01"},
+	})
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("guest POST /polls = %d, want 403", resp.StatusCode)
+	}
+
+	// The sign-in page now says accounts are closed.
+	_, login := cGet(t, guest, ts.URL+"/login")
+	if !strings.Contains(login, "New accounts are closed") {
+		t.Errorf("login page does not announce closed registrations")
+	}
+
+	// Signed-in users are untouched: the form is back and it works.
+	_, home = cGet(t, root, ts.URL+"/")
+	if !strings.Contains(home, `action="/polls"`) {
+		t.Fatalf("creation form missing for a signed-in user")
+	}
+	resp, _ = cPostS(t, ts, root, "/polls", url.Values{
+		"title": {"Team sync"}, "kind": {"allday"}, "timezone": {"UTC"},
+		"option_date": {"2026-03-01"},
+	})
+	if resp.StatusCode != http.StatusOK || !strings.Contains(resp.Request.URL.Path, "/manage") {
+		t.Errorf("signed-in creation landed on %s (%d)", resp.Request.URL.Path, resp.StatusCode)
+	}
+}

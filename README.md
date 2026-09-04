@@ -115,6 +115,7 @@ OAuth callback URLs are `<base URL>/auth/<google|github|microsoft|oidc>/callback
 |---|---|
 | `QUORUM_ADMIN_EMAILS` | Comma-separated account emails granted the `/admin` page |
 | `QUORUM_REGISTRATIONS_OPEN` | Allow new accounts (`true`); overridable at runtime from `/admin`; existing users always sign in |
+| `QUORUM_GUEST_POLLS_OPEN` | Let signed-out visitors create polls (`true`); overridable at runtime from `/admin`; when off, the landing page points them at sign-in |
 | `QUORUM_EMAIL_ALLOWED_DOMAINS` | Comma-separated sign-up domain allowlist (empty = all) |
 | `QUORUM_TRUST_PROXY` | Use `X-Forwarded-For` for rate limiting (`false`; enable only behind a proxy that sets it) |
 | `QUORUM_METRICS` | Serve Prometheus metrics on `/metrics` (`false`) |

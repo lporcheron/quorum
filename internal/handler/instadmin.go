@@ -56,6 +56,7 @@ func (h *Handler) ShowInstanceAdmin(w http.ResponseWriter, r *http.Request) {
 		User:              user,
 		InstanceName:      h.settings.InstanceName(r.Context()),
 		RegistrationsOpen: h.settings.RegistrationsOpen(r.Context()),
+		GuestPollsOpen:    h.settings.GuestPollsOpen(r.Context()),
 		PendingJobs:       pending,
 		Saved:             r.URL.Query().Get("saved") == "1",
 	}
@@ -92,10 +93,15 @@ func (h *Handler) UpdateInstanceSettings(w http.ResponseWriter, r *http.Request)
 		h.domainError(w, r, err)
 		return
 	}
-	open := strconv.FormatBool(r.PostForm.Get("registrations_open") == "1")
-	if err := h.settings.Set(r.Context(), setting.KeyRegistrationsOpen, open); err != nil {
-		h.domainError(w, r, err)
-		return
+	for key, field := range map[string]string{
+		setting.KeyRegistrationsOpen: "registrations_open",
+		setting.KeyGuestPollsOpen:    "guest_polls_open",
+	} {
+		v := strconv.FormatBool(r.PostForm.Get(field) == "1")
+		if err := h.settings.Set(r.Context(), key, v); err != nil {
+			h.domainError(w, r, err)
+			return
+		}
 	}
 	redirect(w, r, "/admin?saved=1")
 }
