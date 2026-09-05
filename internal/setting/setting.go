@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 
@@ -77,11 +78,40 @@ func (s *Service) get(ctx context.Context, key string) string {
 
 // Set persists and caches a value.
 func (s *Service) Set(ctx context.Context, key, value string) error {
-	if err := s.store.UpsertSetting(ctx, sqlite.UpsertSettingParams{Key: key, Value: value}); err != nil {
-		return fmt.Errorf("save setting %s: %w", key, err)
+	return s.SetMany(ctx, map[string]string{key: value})
+}
+
+// SetMany persists values in one transaction and caches them only once
+// it commits: a form that writes several settings must not leave half
+// of them applied, since the page it renders back claims all of them
+// were saved.
+func (s *Service) SetMany(ctx context.Context, values map[string]string) error {
+	if len(values) == 0 {
+		return nil
 	}
+	// Sorted so the statements hit the rows in a stable order, which
+	// keeps concurrent admin saves from deadlocking on PostgreSQL.
+	keys := make([]string, 0, len(values))
+	for k := range values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	if err := s.store.Tx(ctx, func(q *sqlite.Queries) error {
+		for _, k := range keys {
+			if err := q.UpsertSetting(ctx, sqlite.UpsertSettingParams{Key: k, Value: values[k]}); err != nil {
+				return fmt.Errorf("save setting %s: %w", k, err)
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	s.mu.Lock()
-	s.cache[key] = value
+	for k, v := range values {
+		s.cache[k] = v
+	}
 	s.mu.Unlock()
 	return nil
 }

@@ -89,19 +89,14 @@ func (h *Handler) UpdateInstanceSettings(w http.ResponseWriter, r *http.Request)
 	if name == "" {
 		name = "Quorum"
 	}
-	if err := h.settings.Set(r.Context(), setting.KeyInstanceName, name); err != nil {
+	// One write: the page rendered back reports the whole form as saved.
+	if err := h.settings.SetMany(r.Context(), map[string]string{
+		setting.KeyInstanceName:      name,
+		setting.KeyRegistrationsOpen: strconv.FormatBool(r.PostForm.Get("registrations_open") == "1"),
+		setting.KeyGuestPollsOpen:    strconv.FormatBool(r.PostForm.Get("guest_polls_open") == "1"),
+	}); err != nil {
 		h.domainError(w, r, err)
 		return
-	}
-	for key, field := range map[string]string{
-		setting.KeyRegistrationsOpen: "registrations_open",
-		setting.KeyGuestPollsOpen:    "guest_polls_open",
-	} {
-		v := strconv.FormatBool(r.PostForm.Get(field) == "1")
-		if err := h.settings.Set(r.Context(), key, v); err != nil {
-			h.domainError(w, r, err)
-			return
-		}
 	}
 	redirect(w, r, "/admin?saved=1")
 }
