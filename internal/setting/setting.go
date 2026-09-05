@@ -1,6 +1,10 @@
 // Package setting serves the hot instance settings (settings table):
 // values an operator changes from the admin page without restarting.
 // Reads are cached; writes update the cache and the database together.
+//
+// The cache has no expiry, so it only ever holds what this process
+// wrote or read first — which assumes the single running instance the
+// README prescribes.
 package setting
 
 import (

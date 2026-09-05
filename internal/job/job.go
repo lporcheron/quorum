@@ -2,6 +2,10 @@
 // today, outgoing email. One worker goroutine polls for due jobs,
 // retries failures with exponential backoff, and keeps exhausted jobs
 // in the table (attempts ≥ MaxAttempts) for inspection.
+//
+// A due job is picked up, not claimed: this assumes the single running
+// instance the README prescribes. Giving a second one its own worker
+// would deliver every email twice.
 package job
 
 import (

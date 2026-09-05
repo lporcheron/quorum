@@ -136,6 +136,15 @@ schema, one query set, migrations applied at startup either way.
 |---|---|
 | `DATABASE_URL` | `postgres://user:pass@host/db` switches the store to PostgreSQL (empty = SQLite at `QUORUM_DB_PATH`) |
 
+PostgreSQL buys operational comfort — your existing backups, monitoring
+and connection tooling — not horizontal scaling. **Run one instance.**
+Three pieces of state live in the process, not the database: the job
+queue picks up due work without claiming it, so a second instance would
+send every email twice; hot settings are cached until that process
+writes them, so a change made on one instance would never reach the
+other; and the rate limiter counts per process. A single binary
+comfortably serves the load this tool is built for.
+
 ## Backups
 
 **SQLite** (the default): the database runs in WAL mode, so never copy
