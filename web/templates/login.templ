@@ -1,9 +1,22 @@
 package templates
 
 import (
+	"net/url"
+
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
 )
+
+// providerStartURL builds a sign-in start link. The destination is a
+// query value and is encoded as one: unescaped, a "&" or "#" in it
+// would end the parameter early and silently drop the rest.
+func providerStartURL(key, next string) string {
+	u := "/auth/" + key + "/start"
+	if next != "" {
+		u += "?next=" + url.QueryEscape(next)
+	}
+	return u
+}
 
 // LoginProps feeds the sign-in page.
 type LoginProps struct {
@@ -41,7 +54,7 @@ templ LoginPage(p LoginProps) {
 			if len(p.Providers) > 0 {
 				<div class="mt-6 space-y-2">
 					for _, prov := range p.Providers {
-						<a class="btn block text-center" href={ templ.URL("/auth/" + prov.Key + "/start?next=" + p.Next) }>
+						<a class="btn block text-center" href={ templ.URL(providerStartURL(prov.Key, p.Next)) }>
 							{ p.Loc.T("login.continue_with") } { prov.Label }
 						</a>
 					}

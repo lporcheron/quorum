@@ -9,9 +9,22 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"net/url"
+
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/i18n"
 )
+
+// providerStartURL builds a sign-in start link. The destination is a
+// query value and is encoded as one: unescaped, a "&" or "#" in it
+// would end the parameter early and silently drop the rest.
+func providerStartURL(key, next string) string {
+	u := "/auth/" + key + "/start"
+	if next != "" {
+		u += "?next=" + url.QueryEscape(next)
+	}
+	return u
+}
 
 // LoginProps feeds the sign-in page.
 type LoginProps struct {
@@ -66,7 +79,7 @@ func LoginPage(p LoginProps) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.heading"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 24, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 37, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -79,7 +92,7 @@ func LoginPage(p LoginProps) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.blurb"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 25, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 38, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -97,7 +110,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.registrations_closed"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 27, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 40, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -116,7 +129,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.Error)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 30, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 43, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -135,7 +148,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_sent_title"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 34, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 47, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -148,7 +161,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_sent_body"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 35, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 48, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -167,7 +180,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.no_methods"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 39, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 52, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -189,9 +202,9 @@ func LoginPage(p LoginProps) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var10 templ.SafeURL
-					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/auth/" + prov.Key + "/start?next=" + p.Next))
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(providerStartURL(prov.Key, p.Next)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 44, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 57, Col: 91}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -204,7 +217,7 @@ func LoginPage(p LoginProps) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.continue_with"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 45, Col: 39}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 58, Col: 39}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -217,7 +230,7 @@ func LoginPage(p LoginProps) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(prov.Label)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 45, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 58, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -240,7 +253,7 @@ func LoginPage(p LoginProps) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_heading"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 50, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 63, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -258,7 +271,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Next)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 53, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 66, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 				if templ_7745c5c3_Err != nil {
@@ -271,7 +284,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_label"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 55, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 68, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -284,7 +297,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_submit"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 58, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 71, Col: 82}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -302,7 +315,7 @@ func LoginPage(p LoginProps) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("login.email_disabled"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 61, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/login.templ`, Line: 74, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {

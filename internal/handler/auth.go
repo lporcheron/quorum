@@ -15,13 +15,13 @@ const (
 	sessNextKey = "loginNext"
 )
 
-// next extracts and sanitizes the post-login destination.
+// next extracts the post-login destination. It carried its own copy of
+// the local-path rule, which had fallen behind auth.SanitizeRedirect:
+// the magic-link flow sanitizes on the way into the database, but the
+// OAuth flow put this value straight into the session and from there
+// into a redirect, so the weaker copy was the one that mattered.
 func next(r *http.Request) string {
-	p := r.FormValue("next")
-	if strings.HasPrefix(p, "/") && !strings.HasPrefix(p, "//") {
-		return p
-	}
-	return ""
+	return auth.SanitizeRedirect(r.FormValue("next"))
 }
 
 func (h *Handler) loginProps(r *http.Request) templates.LoginProps {

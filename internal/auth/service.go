@@ -279,7 +279,7 @@ func (s *Service) RequestMagicLink(ctx context.Context, email, redirect string, 
 	_, err := s.store.CreateLoginToken(ctx, sqlite.CreateLoginTokenParams{
 		Email:     email,
 		TokenHash: ids.HashToken(token),
-		Redirect:  sanitizeRedirect(redirect),
+		Redirect:  SanitizeRedirect(redirect),
 		ExpiresAt: store.FormatTime(now.Add(magicLinkTTL)),
 		CreatedAt: store.FormatTime(now),
 	})
@@ -326,8 +326,17 @@ func (s *Service) ConsumeMagicLink(ctx context.Context, token string, d Defaults
 	return user, row.Redirect, nil
 }
 
-// sanitizeRedirect keeps only local absolute paths.
-func sanitizeRedirect(p string) string {
+// SanitizeRedirect keeps only local absolute paths, and is the single
+// rule for every post-sign-in destination: a user hands one over in a
+// URL, and it ends up in a Location header at the moment they trust
+// what they see the most.
+//
+// Rejecting a leading "//" is not enough. Browsers parse "\" as "/" at
+// the start of a path, so "/\evil.com" reaches the network as
+// "//evil.com" — a protocol-relative URL onto someone else's host. CR
+// and LF are refused on the same principle, before anything downstream
+// gets a chance to split a header on them.
+func SanitizeRedirect(p string) string {
 	if strings.HasPrefix(p, "/") && !strings.HasPrefix(p, "//") && !strings.ContainsAny(p, "\r\n\\") {
 		return p
 	}
