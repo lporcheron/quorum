@@ -28,7 +28,7 @@ func newFixture(t *testing.T) (context.Context, *fixture) {
 	ctx := context.Background()
 	_, st := storetest.Open(t)
 	now := func() time.Time { return testNow }
-	users := auth.NewService(st, now, nil, nil)
+	users := auth.NewService(st, now, auth.Policy{})
 	svc := NewService(st, now)
 
 	newUser := func(sub, email string) auth.User {

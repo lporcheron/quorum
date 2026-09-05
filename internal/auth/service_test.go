@@ -19,7 +19,10 @@ func newTestServiceVar(t *testing.T, open *bool, domains []string) (context.Cont
 	t.Helper()
 	ctx := context.Background()
 	_, st := storetest.Open(t)
-	return ctx, NewService(st, func() time.Time { return testNow }, func(context.Context) bool { return *open }, domains)
+	return ctx, NewService(st, func() time.Time { return testNow }, Policy{
+		RegistrationsOpen: func(context.Context) bool { return *open },
+		AllowedDomains:    domains,
+	})
 }
 
 func google(sub, email string) Login {
@@ -175,5 +178,54 @@ func TestMagicLinkDoesNotLeakAccounts(t *testing.T) {
 	_, redirect, err := s.ConsumeMagicLink(ctx, token, Defaults{})
 	if err != nil || redirect != "" {
 		t.Errorf("redirect = %q, want empty", redirect)
+	}
+}
+
+// TestAdminEmailBootstrapsAClosedInstance covers the lockout an
+// operator would otherwise hit by hardening the instance before
+// signing in once: with registrations closed and a domain allowlist
+// that misses them, the address in QUORUM_ADMIN_EMAILS is the only way
+// anyone ever gets an account here again.
+func TestAdminEmailBootstrapsAClosedInstance(t *testing.T) {
+	ctx := context.Background()
+	_, st := storetest.Open(t)
+	s := NewService(st, func() time.Time { return testNow }, Policy{
+		RegistrationsOpen: func(context.Context) bool { return false },
+		AllowedDomains:    []string{"bleemeo.com"},
+		// Two addresses so the magic-link case below exercises one that
+		// has no account yet; case is normalized on the way in.
+		AdminEmails: []string{"Root@Example.com", "second@example.com"},
+	})
+
+	admin, err := s.Complete(ctx, google("g-admin", "root@example.com"), Defaults{})
+	if err != nil {
+		t.Fatalf("admin locked out of their own instance: %v", err)
+	}
+	if admin.PersonalSpaceID == 0 {
+		t.Errorf("admin registered without a personal space")
+	}
+	// The exception is that one list, not a hole in the gates.
+	if _, err := s.Complete(ctx, google("g-x", "stranger@example.com"), Defaults{}); !errors.Is(err, ErrRegistrationsClosed) {
+		t.Errorf("stranger registered on a closed instance: %v", err)
+	}
+	if _, err := s.Complete(ctx, google("g-y", "someone@gmail.com"), Defaults{}); !errors.Is(err, ErrRegistrationsClosed) {
+		t.Errorf("off-domain stranger registered: %v", err)
+	}
+
+	// The magic-link path uses the same rule, so the admin can sign in
+	// by email on an instance with no OAuth provider configured.
+	var sent int
+	send := func(string, string) error { sent++; return nil }
+	if err := s.RequestMagicLink(ctx, "admin2@example.com", "", send); err != nil {
+		t.Fatalf("RequestMagicLink: %v", err)
+	}
+	if sent != 0 {
+		t.Errorf("magic link sent to a non-admin on a closed instance")
+	}
+	if err := s.RequestMagicLink(ctx, "second@example.com", "", send); err != nil {
+		t.Fatalf("RequestMagicLink for the admin: %v", err)
+	}
+	if sent != 1 {
+		t.Errorf("no magic link for the admin address, sent = %d", sent)
 	}
 }

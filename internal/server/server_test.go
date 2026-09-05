@@ -47,7 +47,11 @@ func newTestServer(t *testing.T) (*httptest.Server, *testMailer) {
 	})
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
-	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
+	authsvc := auth.NewService(st, nil, auth.Policy{
+		RegistrationsOpen: settings.RegistrationsOpen,
+		AllowedDomains:    cfg.EmailAllowedDomains,
+		AdminEmails:       []string{"root@example.com"},
+	})
 	sessions := auth.NewSessionManager(db, cfg.BaseURL, storetest.Dialect())
 	mailer := &testMailer{}
 	queue := job.NewQueue(st, nil)

@@ -100,7 +100,11 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	})
 	polls := poll.NewService(st, nil)
 	spaces := space.NewService(st, nil)
-	authsvc := auth.NewService(st, nil, settings.RegistrationsOpen, cfg.EmailAllowedDomains)
+	authsvc := auth.NewService(st, nil, auth.Policy{
+		RegistrationsOpen: settings.RegistrationsOpen,
+		AllowedDomains:    cfg.EmailAllowedDomains,
+		AdminEmails:       cfg.AdminEmails,
+	})
 	providers := auth.NewProviders(cfg, cfg.BaseURL)
 	sessions := auth.NewSessionManager(db, cfg.BaseURL, dialect)
 	mailer := mail.New(cfg.SMTP, func() string { return settings.InstanceName(context.Background()) })

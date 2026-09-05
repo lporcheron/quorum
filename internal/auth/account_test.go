@@ -36,7 +36,7 @@ func newAccountFixture(t *testing.T) (context.Context, *accountFixture) {
 	_, st := storetest.Open(t)
 	now := func() time.Time { return testNow }
 	f := &accountFixture{
-		users:  NewService(st, now, nil, nil),
+		users:  NewService(st, now, Policy{}),
 		polls:  poll.NewService(st, now),
 		spaces: space.NewService(st, now),
 		st:     st,
