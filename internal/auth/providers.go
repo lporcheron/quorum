@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -41,6 +42,10 @@ type Provider struct {
 	// an email_verified claim. Set only for identity providers that
 	// hand out organization-verified addresses (Microsoft Entra).
 	trustEmail bool
+	// endpoint and apiURL locate GitHub's OAuth2 endpoints and REST
+	// API; unused by OIDC providers, which discover their endpoints.
+	endpoint oauth2.Endpoint
+	apiURL   string
 
 	once     sync.Once
 	oidcProv *oidc.Provider
@@ -62,6 +67,11 @@ func NewProviders(cfg config.Config, baseURL string) []*Provider {
 		out = append(out, &Provider{
 			Key: "github", Label: "GitHub",
 			client: cfg.GitHub, redirectURL: redirect("github"),
+			endpoint: oauth2.Endpoint{
+				AuthURL:  "https://github.com/login/oauth/authorize",
+				TokenURL: "https://github.com/login/oauth/access_token",
+			},
+			apiURL: "https://api.github.com",
 		})
 	}
 	if cfg.Microsoft.Enabled() {
@@ -113,10 +123,7 @@ func (p *Provider) oauthConfig(ctx context.Context) (*oauth2.Config, error) {
 		conf.Endpoint = p.oidcProv.Endpoint()
 		conf.Scopes = []string{oidc.ScopeOpenID, "email", "profile"}
 	} else { // GitHub
-		conf.Endpoint = oauth2.Endpoint{
-			AuthURL:  "https://github.com/login/oauth/authorize",
-			TokenURL: "https://github.com/login/oauth/access_token",
-		}
+		conf.Endpoint = p.endpoint
 		conf.Scopes = []string{"read:user", "user:email"}
 	}
 	return conf, nil
@@ -170,10 +177,15 @@ func (p *Provider) finishOIDC(ctx context.Context, token *oauth2.Token, nonce st
 	if !ok {
 		return Login{}, fmt.Errorf("%s returned no id_token", p.Key)
 	}
-	verifier := p.oidcProv.Verifier(&oidc.Config{ClientID: p.client.ClientID})
+	verifier := p.oidcProv.Verifier(&oidc.Config{ClientID: p.client.ClientID, SkipIssuerCheck: p.relaxIssuer})
 	idToken, err := verifier.Verify(ctx, raw)
 	if err != nil {
 		return Login{}, fmt.Errorf("verify id_token from %s: %w", p.Key, err)
+	}
+	if p.relaxIssuer {
+		if err := p.checkTenantIssuer(idToken); err != nil {
+			return Login{}, err
+		}
 	}
 	if idToken.Nonce != nonce {
 		return Login{}, fmt.Errorf("id_token nonce mismatch from %s", p.Key)
@@ -197,6 +209,33 @@ func (p *Provider) finishOIDC(ctx context.Context, token *oauth2.Token, nonce st
 	}, nil
 }
 
+// checkTenantIssuer replaces the issuer check skipped for Microsoft's
+// multi-tenant endpoints. Their discovery document advertises a
+// templated issuer (…/{tenantid}/v2.0), and each token must carry it
+// with its own tid claim substituted in.
+func (p *Provider) checkTenantIssuer(idToken *oidc.IDToken) error {
+	var discovery struct {
+		Issuer string `json:"issuer"`
+	}
+	if err := p.oidcProv.Claims(&discovery); err != nil {
+		return fmt.Errorf("read discovery issuer for %s: %w", p.Key, err)
+	}
+	var claims struct {
+		TenantID string `json:"tid"`
+	}
+	if err := idToken.Claims(&claims); err != nil {
+		return fmt.Errorf("parse claims from %s: %w", p.Key, err)
+	}
+	if claims.TenantID == "" {
+		return fmt.Errorf("id_token from %s has no tid claim", p.Key)
+	}
+	want := strings.ReplaceAll(discovery.Issuer, "{tenantid}", claims.TenantID)
+	if idToken.Issuer != want {
+		return fmt.Errorf("id_token from %s issued by %q, want %q", p.Key, idToken.Issuer, want)
+	}
+	return nil
+}
+
 // finishGitHub reads the user and their verified primary email from
 // the REST API; GitHub is plain OAuth2, not OIDC.
 func (p *Provider) finishGitHub(ctx context.Context, token *oauth2.Token) (Login, error) {
@@ -206,7 +245,7 @@ func (p *Provider) finishGitHub(ctx context.Context, token *oauth2.Token) (Login
 		Name      string `json:"name"`
 		AvatarURL string `json:"avatar_url"`
 	}
-	if err := githubGet(ctx, token, "https://api.github.com/user", &user); err != nil {
+	if err := githubGet(ctx, token, p.apiURL+"/user", &user); err != nil {
 		return Login{}, err
 	}
 	var emails []struct {
@@ -214,7 +253,7 @@ func (p *Provider) finishGitHub(ctx context.Context, token *oauth2.Token) (Login
 		Primary  bool   `json:"primary"`
 		Verified bool   `json:"verified"`
 	}
-	if err := githubGet(ctx, token, "https://api.github.com/user/emails", &emails); err != nil {
+	if err := githubGet(ctx, token, p.apiURL+"/user/emails", &emails); err != nil {
 		return Login{}, err
 	}
 	login := Login{
