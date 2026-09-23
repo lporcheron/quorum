@@ -2,7 +2,7 @@
 # toolchain alone: no Node, no templ, no tailwind. The build stage runs
 # on the build platform and cross-compiles for the target, so
 # multi-arch releases never emulate the compiler.
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=dev

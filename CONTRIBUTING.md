@@ -2,7 +2,7 @@
 
 ## Build and test
 
-Go ≥ 1.26 is the only prerequisite; every other tool (templ, sqlc,
+Go ≥ 1.27 is the only prerequisite; every other tool (templ, sqlc,
 Tailwind CLI, golangci-lint) is version-pinned and fetched by the
 Makefile into `.tools/`.
 

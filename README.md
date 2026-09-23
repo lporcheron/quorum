@@ -54,7 +54,7 @@ docker run -p 8080:8080 -v quorum-data:/data ghcr.io/lporcheron/quorum:latest
 docker compose up          # or the example docker-compose.yml
 ```
 
-From source, with Go ≥ 1.26:
+From source, with Go ≥ 1.27:
 
 ```sh
 make run                   # builds and starts on :8080
