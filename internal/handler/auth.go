@@ -109,6 +109,7 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request, user auth.User,
 		return
 	}
 	h.sessions.Put(r.Context(), auth.SessionUserKey, user.ID)
+	h.sessions.Put(r.Context(), auth.SessionUserPublicKey, user.PublicID)
 	if dest == "" {
 		dest = "/dashboard"
 	}

@@ -150,6 +150,12 @@ func (h *Handler) currentUser(r *http.Request) *auth.User {
 	if err != nil {
 		return nil
 	}
+	// A session without the public id predates this check, or names an
+	// account that no longer owns this numeric id: either way, signed
+	// out (see auth.SessionUserPublicKey).
+	if h.sessions.GetString(r.Context(), auth.SessionUserPublicKey) != u.PublicID {
+		return nil
+	}
 	return &u
 }
 

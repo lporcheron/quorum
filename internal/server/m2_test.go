@@ -213,3 +213,32 @@ func TestSignedInVoteLinksAccount(t *testing.T) {
 		t.Errorf("voted poll missing from dashboard:\n%s", body)
 	}
 }
+
+// TestDeletedAccountSessionDoesNotCarryOver covers SQLite rowid reuse:
+// the newest account is deleted from one device while still signed in
+// on another, then someone new signs up and inherits the numeric id.
+// The stale session must come back signed out, not as the newcomer.
+func TestDeletedAccountSessionDoesNotCarryOver(t *testing.T) {
+	ts, mailer := newTestServer(t)
+
+	laptop, phone := jarClient(t), jarClient(t)
+	signInByEmail(t, ts, mailer, laptop, "leaver@example.com")
+	signInByEmail(t, ts, mailer, phone, "leaver@example.com")
+	if resp, _ := cPostS(t, ts, laptop, "/account/delete", nil); resp.StatusCode != http.StatusOK {
+		t.Fatalf("delete account: %d", resp.StatusCode)
+	}
+
+	newcomer := jarClient(t)
+	signInByEmail(t, ts, mailer, newcomer, "newcomer@example.com")
+	if _, body := cGet(t, newcomer, ts.URL+"/account"); !strings.Contains(body, "newcomer@example.com") {
+		t.Fatalf("newcomer not signed in")
+	}
+
+	resp, body := cGet(t, phone, ts.URL+"/account")
+	if strings.Contains(body, "newcomer@example.com") {
+		t.Fatalf("stale session signed in as the next account")
+	}
+	if resp.Request.URL.Path != "/login" {
+		t.Errorf("stale session landed on %s, want /login", resp.Request.URL.Path)
+	}
+}

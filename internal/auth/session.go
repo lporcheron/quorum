@@ -16,6 +16,13 @@ import (
 // SessionUserKey is where the signed-in user id lives in the session.
 const SessionUserKey = "userID"
 
+// SessionUserPublicKey pins the session to the account's public id as
+// well. Numeric ids are not stable on SQLite: deleting the newest
+// account frees its rowid for the next sign-up, and a session the
+// deleted user left open on another device would otherwise sign in as
+// that newcomer.
+const SessionUserPublicKey = "userPublicID"
+
 // NewSessionManager builds the scs manager backed by the sessions
 // table (created by migration 00002; its two engine-specific column
 // types are substituted when rendering for PostgreSQL).
