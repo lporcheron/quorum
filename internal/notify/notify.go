@@ -231,16 +231,10 @@ func (n *Notifier) handleEvent(ctx context.Context, raw []byte) error {
 	if organizer, oerr := n.organizer(ctx, p); oerr == nil {
 		organizerName = organizer.Name
 	}
-	v, err := n.polls.View(ctx, p)
-	if err != nil {
-		return err
-	}
-	var attendees []string
-	for _, pa := range v.Participants {
-		if pa.Email != "" {
-			attendees = append(attendees, pa.Email)
-		}
-	}
+	// Each participant gets their own copy: listing everyone as
+	// ATTENDEE would hand every voter's address to every other voter,
+	// even on a poll that hides its participants.
+	attendees := []string{payload.To}
 
 	loc := n.tr.Locale(payload.Locale)
 	org := ics.Organizer{Email: n.from, Name: organizerName}

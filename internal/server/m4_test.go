@@ -41,6 +41,9 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 	cPost(t, anon, ts.URL+public+"/participants", url.Values{
 		"name": {"NoMail"}, "vote_" + ids[0]: {"ifneedbe"},
 	})
+	cPost(t, jarClient(t), ts.URL+public+"/participants", url.Values{
+		"name": {"Carol"}, "email": {"carol@example.com"}, "vote_" + ids[0]: {"no"},
+	})
 
 	// The organizer got a "new vote" notification for each.
 	mailer.waitFor(t, func(msgs []mail.Message) bool {
@@ -50,7 +53,7 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 				n++
 			}
 		}
-		return n >= 2
+		return n >= 3
 	})
 
 	// Finalize on the first option.
@@ -83,6 +86,13 @@ func TestFinalizeSendsInvitations(t *testing.T) {
 	for _, want := range []string{"METHOD:REQUEST", "DTSTART:20260912T170000Z", "SUMMARY:Team dinner", "mailto:bob@example.com"} {
 		if !strings.Contains(icsBody, want) {
 			t.Errorf("invite.ics missing %q:\n%s", want, icsBody)
+		}
+	}
+	// Each copy names its own recipient only: other voters' addresses
+	// never travel to Bob.
+	for _, leak := range []string{"carol@example.com", "organizer@example.com"} {
+		if strings.Contains(icsBody, leak) {
+			t.Errorf("Bob's invite.ics leaks %s:\n%s", leak, icsBody)
 		}
 	}
 	if !strings.Contains(invite.Attachments[0].ContentType, "method=REQUEST") {
