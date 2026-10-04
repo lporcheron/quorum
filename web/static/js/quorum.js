@@ -18,18 +18,37 @@
 	function pad(n) { return (n < 10 ? "0" : "") + n; }
 	function dstr(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 
-	/* ---------- copy buttons ---------- */
+	/* ---------- copy buttons ----------
+	 * The async Clipboard API only exists in secure contexts; a
+	 * self-hosted instance served over plain HTTP falls back to the
+	 * legacy selection copy. Either way the text ends up selected, so a
+	 * manual Ctrl+C still works if both paths fail. */
+
+	function legacyCopy(input) {
+		input.focus();
+		input.select();
+		try { return document.execCommand("copy"); } catch (e) { return false; }
+	}
 
 	document.addEventListener("click", function (ev) {
 		var btn = ev.target.closest("[data-copy]");
 		if (!btn) return;
 		var input = document.getElementById(btn.getAttribute("data-copy"));
 		if (!input) return;
-		navigator.clipboard.writeText(input.value).then(function () {
-			var old = btn.textContent;
+		function done() {
+			// Keep the original label across rapid repeat clicks.
+			var old = btn.getAttribute("data-label") || btn.textContent;
+			btn.setAttribute("data-label", old);
 			btn.textContent = btn.getAttribute("data-copied") || old;
-			setTimeout(function () { btn.textContent = old; }, 1500);
-		});
+			clearTimeout(btn._copyTimer);
+			btn._copyTimer = setTimeout(function () { btn.textContent = old; }, 1500);
+		}
+		function fallback() { if (legacyCopy(input)) done(); }
+		if (navigator.clipboard && window.isSecureContext) {
+			navigator.clipboard.writeText(input.value).then(done, fallback);
+		} else {
+			fallback();
+		}
 	});
 
 	/* ---------- confirm on destructive forms ---------- */
