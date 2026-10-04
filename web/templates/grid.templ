@@ -135,7 +135,7 @@ templ quorumRing(t poll.Tally, participants int) {
 // voting must work without JavaScript.
 templ voteForm(p PollPageProps) {
 	if p.Poll.Open() && !p.IsAdmin {
-		<form method="post" action={ templ.URL(p.voteAction()) } class="qvote mt-6">
+		<form method="post" action={ templ.URL(p.voteAction()) } class="qvote mt-6" data-unsaved-guard>
 			<h2 class="font-display text-lg font-semibold">
 				{ p.Loc.T("vote.your_row") }
 				if p.Me != nil {

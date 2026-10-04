@@ -77,6 +77,37 @@
 		}
 	});
 
+	/* ---------- unsaved changes: warn before leaving a page whose
+	 * guarded form differs from what the server rendered. Comparing
+	 * against default values (rather than tracking edits) means a
+	 * reverted change does not warn, and an htmx-swapped form starts
+	 * clean. ---------- */
+
+	function isDirty(form) {
+		for (var i = 0; i < form.elements.length; i++) {
+			var f = form.elements[i];
+			if (f.type === "radio" || f.type === "checkbox") {
+				if (f.checked !== f.defaultChecked) return true;
+			} else if ((f.type === "text" || f.type === "email" || f.tagName === "TEXTAREA") && !f.readOnly) {
+				if (f.value !== f.defaultValue) return true;
+			}
+		}
+		return false;
+	}
+
+	document.addEventListener("submit", function (ev) {
+		if (!ev.defaultPrevented && ev.target.hasAttribute("data-unsaved-guard")) {
+			ev.target.setAttribute("data-submitting", "");
+		}
+	});
+	window.addEventListener("pageshow", function () {
+		$$("form[data-submitting]").forEach(function (f) { f.removeAttribute("data-submitting"); });
+	});
+	window.addEventListener("beforeunload", function (ev) {
+		var dirty = $$("form[data-unsaved-guard]:not([data-submitting])").some(isDirty);
+		if (dirty) { ev.preventDefault(); ev.returnValue = ""; }
+	});
+
 	/* ---------- dropdown menus (theme, user): close on outside
 	 * click or Escape — native <details> only closes on re-click. ---------- */
 

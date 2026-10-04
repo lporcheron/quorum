@@ -609,7 +609,7 @@ func commentsSection(p PollPageProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" class=\"mt-5 space-y-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" class=\"mt-5 space-y-2\" data-unsaved-guard>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

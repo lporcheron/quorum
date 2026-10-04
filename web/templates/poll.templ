@@ -92,7 +92,7 @@ templ commentsSection(p PollPageProps) {
 					</li>
 				}
 			</ul>
-			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2">
+			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2" data-unsaved-guard>
 				if p.Me != nil {
 					<input type="hidden" name="ptoken" value={ p.EditToken }/>
 				} else {
