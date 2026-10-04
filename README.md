@@ -93,7 +93,7 @@ Everything is optional; defaults in parentheses.
 | `QUORUM_OAUTH_GOOGLE_CLIENT_ID` / `_CLIENT_SECRET` | Google sign-in |
 | `QUORUM_OAUTH_GITHUB_CLIENT_ID` / `_CLIENT_SECRET` | GitHub sign-in |
 | `QUORUM_OAUTH_MICROSOFT_CLIENT_ID` / `_CLIENT_SECRET` | Microsoft sign-in |
-| `QUORUM_OAUTH_MICROSOFT_TENANT` | Entra tenant (`common`) |
+| `QUORUM_OAUTH_MICROSOFT_TENANT` | Entra tenant (`common`). A tenant ID trusts that organization's addresses. With `common`, `organizations` or `consumers`, an address only counts as verified when the token carries `xms_edov=true`: add the `email` and `xms_edov` optional claims to the app registration, or sign-ins are refused as unverified |
 | `QUORUM_OIDC_ISSUER_URL` | Generic OIDC discovery URL |
 | `QUORUM_OAUTH_OIDC_CLIENT_ID` / `_CLIENT_SECRET` | Generic OIDC client |
 | `QUORUM_OIDC_NAME` | Label on the OIDC login button (`SSO`) |

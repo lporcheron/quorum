@@ -356,7 +356,7 @@ func TestOIDCDiscoveryFailure(t *testing.T) {
 // Microsoft's multi-tenant endpoints advertise a templated issuer and
 // sign each token with the issuer of the user's own tenant.
 func TestMicrosoftMultiTenant(t *testing.T) {
-	newTenantIdP := func(t *testing.T, iss func(base string) string, tid any) (*fakeIdP, *Provider) {
+	newTenantIdPWith := func(t *testing.T, iss func(base string) string, tid any, edov any) (*fakeIdP, *Provider) {
 		f := newFakeIdP(t)
 		f.discoveredIssuer = f.srv.URL + "/{tenantid}/v2.0"
 		f.claims = func(nonce string) map[string]any {
@@ -365,14 +365,20 @@ func TestMicrosoftMultiTenant(t *testing.T) {
 			if tid != nil {
 				c["tid"] = tid
 			}
+			if edov != nil {
+				c["xms_edov"] = edov
+			}
 			return c
 		}
 		p := f.provider()
 		p.Key = "microsoft"
 		p.issuer = f.srv.URL + "/common/v2.0"
 		p.relaxIssuer = true
-		p.trustEmail = true
+		p.domainVerifiedEmail = true // as NewProviders sets it for "common"
 		return f, p
+	}
+	newTenantIdP := func(t *testing.T, iss func(base string) string, tid any) (*fakeIdP, *Provider) {
+		return newTenantIdPWith(t, iss, tid, true)
 	}
 	tenantA := func(base string) string { return base + "/tenant-a/v2.0" }
 
@@ -387,6 +393,31 @@ func TestMicrosoftMultiTenant(t *testing.T) {
 			t.Errorf("Finish = %+v", got)
 		}
 	})
+
+	// nOAuth: any tenant may claim any email. Without the owner-verified
+	// domain flag, the address must not count as verified — it would
+	// otherwise merge into the account that owns it.
+	for _, tc := range []struct {
+		name string
+		edov any
+		want bool
+	}{
+		{"email without xms_edov is unverified", nil, false},
+		{"xms_edov false", false, false},
+		{"xms_edov true", true, true},
+		{"xms_edov as string", "1", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f, p := newTenantIdPWith(t, tenantA, "tenant-a", tc.edov)
+			got, err := p.Finish(context.Background(), testCode, f.begin(t, p))
+			if err != nil {
+				t.Fatalf("Finish: %v", err)
+			}
+			if got.EmailVerified != tc.want {
+				t.Errorf("EmailVerified = %v, want %v", got.EmailVerified, tc.want)
+			}
+		})
+	}
 
 	for _, tc := range []struct {
 		name string
@@ -588,8 +619,11 @@ func TestNewProviders(t *testing.T) {
 		"8eaef023-2b34-4da1-9baa-8bc8c9d6a490": false,
 	} {
 		p := NewProviders(config.Config{Microsoft: client, MicrosoftTenant: tenant}, "https://quorum.example")[0]
-		if p.relaxIssuer != relaxed || !p.trustEmail {
-			t.Errorf("tenant %s: relaxIssuer = %v, trustEmail = %v", tenant, p.relaxIssuer, p.trustEmail)
+		// Only a pinned tenant is trusted for its addresses; the shared
+		// endpoints need the per-token xms_edov flag.
+		if p.relaxIssuer != relaxed || p.trustEmail == relaxed || p.domainVerifiedEmail != relaxed {
+			t.Errorf("tenant %s: relaxIssuer = %v, trustEmail = %v, domainVerifiedEmail = %v",
+				tenant, p.relaxIssuer, p.trustEmail, p.domainVerifiedEmail)
 		}
 		if want := "https://login.microsoftonline.com/" + tenant + "/v2.0"; p.issuer != want {
 			t.Errorf("tenant %s: issuer = %q", tenant, p.issuer)

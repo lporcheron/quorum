@@ -39,9 +39,16 @@ type Provider struct {
 	// whose issued tokens carry a per-tenant issuer.
 	relaxIssuer bool
 	// trustEmail treats the provider's email as verified even without
-	// an email_verified claim. Set only for identity providers that
-	// hand out organization-verified addresses (Microsoft Entra).
+	// an email_verified claim. Set only for Microsoft Entra pinned to
+	// one tenant: that organization manages its users' addresses, and
+	// the operator chose to trust it.
 	trustEmail bool
+	// domainVerifiedEmail accepts the email only when the token carries
+	// xms_edov=true (the email's domain is verified by its owner). Set
+	// for Microsoft's multi-tenant endpoints, where anyone can create a
+	// tenant and give a user any address — trusting that "email" claim
+	// is the nOAuth account-takeover pattern.
+	domainVerifiedEmail bool
 	// endpoint and apiURL locate GitHub's OAuth2 endpoints and REST
 	// API; unused by OIDC providers, which discover their endpoints.
 	endpoint oauth2.Endpoint
@@ -79,9 +86,10 @@ func NewProviders(cfg config.Config, baseURL string) []*Provider {
 		out = append(out, &Provider{
 			Key: "microsoft", Label: "Microsoft",
 			client: cfg.Microsoft, redirectURL: redirect("microsoft"),
-			issuer:      "https://login.microsoftonline.com/" + cfg.MicrosoftTenant + "/v2.0",
-			relaxIssuer: multiTenant,
-			trustEmail:  true,
+			issuer:              "https://login.microsoftonline.com/" + cfg.MicrosoftTenant + "/v2.0",
+			relaxIssuer:         multiTenant,
+			trustEmail:          !multiTenant,
+			domainVerifiedEmail: multiTenant,
 		})
 	}
 	if cfg.OIDC.Enabled() && cfg.OIDC.IssuerURL != "" {
@@ -191,22 +199,35 @@ func (p *Provider) finishOIDC(ctx context.Context, token *oauth2.Token, nonce st
 		return Login{}, fmt.Errorf("id_token nonce mismatch from %s", p.Key)
 	}
 	var claims struct {
-		Email         string `json:"email"`
-		EmailVerified bool   `json:"email_verified"`
-		Name          string `json:"name"`
-		Picture       string `json:"picture"`
+		Email          string          `json:"email"`
+		EmailVerified  bool            `json:"email_verified"`
+		DomainVerified json.RawMessage `json:"xms_edov"`
+		Name           string          `json:"name"`
+		Picture        string          `json:"picture"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
 		return Login{}, fmt.Errorf("parse claims from %s: %w", p.Key, err)
 	}
+	verified := claims.EmailVerified || p.trustEmail ||
+		(p.domainVerifiedEmail && truthy(claims.DomainVerified))
 	return Login{
 		Provider:      p.Key,
 		Subject:       idToken.Subject,
 		Email:         claims.Email,
-		EmailVerified: claims.EmailVerified || p.trustEmail,
+		EmailVerified: verified,
 		Name:          claims.Name,
 		AvatarURL:     claims.Picture,
 	}, nil
+}
+
+// truthy reads a boolean claim that issuers spell as true, 1, "true"
+// or "1".
+func truthy(raw json.RawMessage) bool {
+	switch strings.Trim(strings.ToLower(string(raw)), `"`) {
+	case "true", "1":
+		return true
+	}
+	return false
 }
 
 // checkTenantIssuer replaces the issuer check skipped for Microsoft's
