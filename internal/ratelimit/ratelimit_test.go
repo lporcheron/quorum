@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -25,5 +26,18 @@ func TestWindowLimit(t *testing.T) {
 	now = now.Add(time.Hour)
 	if !l.Allow("ip1") {
 		t.Error("request refused after window rollover")
+	}
+}
+
+// TestKeyCap: a flood of distinct keys inside one window cannot grow
+// the limiter past its cap.
+func TestKeyCap(t *testing.T) {
+	now := time.Date(2026, 7, 29, 10, 0, 0, 0, time.UTC)
+	l := New(1, time.Hour, func() time.Time { return now })
+	for i := 0; i < maxKeys+500; i++ {
+		l.Allow(fmt.Sprintf("key-%d", i))
+	}
+	if n := len(l.buckets); n > maxKeys {
+		t.Errorf("%d tracked keys, cap is %d", n, maxKeys)
 	}
 }

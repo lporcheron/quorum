@@ -349,3 +349,33 @@ func TestVideoURLValidation(t *testing.T) {
 		t.Errorf("UpdateDetails(ftp): %v, want ErrBadVideoURL", err)
 	}
 }
+
+// TestDecidedPollStaysDecided: pause/resume only moves between live
+// and paused. Resuming a finalized poll would reopen voting and let
+// finalize be replayed to re-mail every participant.
+func TestDecidedPollStaysDecided(t *testing.T) {
+	ctx, s := newTestService(t)
+	p, _, err := s.Create(ctx, NewPoll{Title: "Decided", Kind: KindAllDay, Dates: []Date{{2026, time.September, 1}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := s.View(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Finalize(ctx, p, v.Options[0].ID); err != nil {
+		t.Fatalf("Finalize: %v", err)
+	}
+	p, err = s.ByPublicID(ctx, p.PublicID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, paused := range []bool{false, true} {
+		if err := s.SetPaused(ctx, p, paused); !errors.Is(err, ErrNotPausable) {
+			t.Errorf("SetPaused(%v) on a finalized poll: %v, want ErrNotPausable", paused, err)
+		}
+	}
+	if p, _ = s.ByPublicID(ctx, p.PublicID); p.Status != StatusFinalized {
+		t.Errorf("status = %s, want finalized", p.Status)
+	}
+}

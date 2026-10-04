@@ -150,6 +150,15 @@ func (h *Handler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
 	if !h.parseForm(w, r) {
 		return
 	}
+	props := h.loginProps(r)
+	props.Sent = true
+	// Past the per-recipient budget, answer exactly as if the link had
+	// gone out: a distinct reply would tell a stranger that someone is
+	// signing in with that address right now.
+	if !h.limitEmailTo.Allow(strings.ToLower(strings.TrimSpace(r.PostForm.Get("email")))) {
+		h.render(w, r, http.StatusOK, templates.LoginPage(props))
+		return
+	}
 	loc := h.locale(r)
 	err := h.auth.RequestMagicLink(r.Context(), r.PostForm.Get("email"), next(r), func(email, token string) error {
 		link := h.baseURL + "/auth/email/callback?token=" + token
@@ -163,8 +172,6 @@ func (h *Handler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
 		h.authError(w, r, err)
 		return
 	}
-	props := h.loginProps(r)
-	props.Sent = true
 	h.render(w, r, http.StatusOK, templates.LoginPage(props))
 }
 

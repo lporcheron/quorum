@@ -606,6 +606,9 @@ other = "This poll is already decided."
 [error.not_finalized]
 other = "This poll has no finalized date."
 
+[error.not_pausable]
+other = "This poll is already decided. A finalized or cancelled poll cannot be paused or reopened."
+
 [email.cta_open]
 other = "Open the poll"
 

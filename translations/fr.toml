@@ -606,6 +606,9 @@ other = "Ce sondage est déjà tranché."
 [error.not_finalized]
 other = "Ce sondage n'a pas de date arrêtée."
 
+[error.not_pausable]
+other = "Ce sondage est déjà tranché : un sondage finalisé ou annulé ne peut être ni mis en pause ni rouvert."
+
 [email.cta_open]
 other = "Ouvrir le sondage"
 

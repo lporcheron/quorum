@@ -8,14 +8,22 @@ import (
 	"time"
 )
 
+// maxKeys caps the number of tracked keys. Pruning only drops expired
+// windows, so a flood of distinct keys inside one window could
+// otherwise grow the map without bound; past the cap, arbitrary live
+// entries are evicted. An evicted key just gets a fresh window: memory
+// stays bounded at the price of a little leniency under attack.
+const maxKeys = 100_000
+
 // Limiter allows max events per window and key.
 type Limiter struct {
 	max    int
 	window time.Duration
 	now    func() time.Time
 
-	mu      sync.Mutex
-	buckets map[string]*bucket
+	mu        sync.Mutex
+	buckets   map[string]*bucket
+	lastPrune time.Time
 }
 
 type bucket struct {
@@ -40,13 +48,27 @@ func (l *Limiter) Allow(key string) bool {
 
 	b, ok := l.buckets[key]
 	if !ok || now.Sub(b.start) >= l.window {
-		// Window rollover doubles as cleanup opportunity: prune stale
-		// entries occasionally so the map cannot grow without bound.
-		if len(l.buckets) > 4096 {
+		// A new key doubles as cleanup opportunity: prune stale entries,
+		// at most once a minute — a full scan on every new key would
+		// turn a flood of distinct keys into quadratic CPU work.
+		if len(l.buckets) > 4096 && now.Sub(l.lastPrune) >= time.Minute {
+			l.lastPrune = now
 			for k, old := range l.buckets {
 				if now.Sub(old.start) >= l.window {
 					delete(l.buckets, k)
 				}
+			}
+		}
+		if len(l.buckets) >= maxKeys {
+			// Evict a tenth in one pass (map order is random), so the
+			// cost is paid once per many insertions, not on each.
+			n := maxKeys / 10
+			for k := range l.buckets {
+				if n == 0 {
+					break
+				}
+				delete(l.buckets, k)
+				n--
 			}
 		}
 		l.buckets[key] = &bucket{count: 1, start: now}

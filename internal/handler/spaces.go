@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/lporcheron/quorum/internal/auth"
 	"github.com/lporcheron/quorum/internal/poll"
@@ -273,7 +274,12 @@ func (h *Handler) InviteMember(w http.ResponseWriter, r *http.Request) {
 		role = space.RoleAdmin
 	}
 	email := r.PostForm.Get("email")
-	token, err := h.spaces.Invite(r.Context(), sp, h.currentUser(r).ID, email, role)
+	inviter := h.currentUser(r).ID
+	if !h.limitInvite.Allow(strconv.FormatInt(inviter, 10)) {
+		h.renderError(w, r, http.StatusTooManyRequests, "error.rate_limited")
+		return
+	}
+	token, err := h.spaces.Invite(r.Context(), sp, inviter, email, role)
 	if err != nil {
 		h.spaceError(w, r, err)
 		return

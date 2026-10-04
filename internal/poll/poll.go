@@ -62,6 +62,7 @@ var (
 	ErrBodyRequired     = errors.New("comment body required")
 	ErrNotFinalizable   = errors.New("poll cannot be finalized in its current state")
 	ErrNotFinalized     = errors.New("poll is not finalized")
+	ErrNotPausable      = errors.New("a finalized or cancelled poll cannot be paused or resumed")
 )
 
 // Poll is the domain view of a poll row.

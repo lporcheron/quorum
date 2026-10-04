@@ -74,8 +74,13 @@ type Handler struct {
 
 	// Per-IP fixed-window budgets on the abuse-prone endpoints.
 	limitCreate *ratelimit.Limiter
-	limitVote   *ratelimit.Limiter
+	limitVote   *ratelimit.Limiter // votes and comments
 	limitEmail  *ratelimit.Limiter
+	// Budgets keyed by something other than the IP: magic links per
+	// recipient address (an IP limit alone lets a botnet bomb one
+	// inbox), and invitation emails per inviting account.
+	limitEmailTo *ratelimit.Limiter
+	limitInvite  *ratelimit.Limiter
 }
 
 // New wires a Handler.
@@ -93,20 +98,39 @@ func New(d Deps) *Handler {
 		limitCreate: ratelimit.New(30, time.Hour, nil),
 		limitVote:   ratelimit.New(120, time.Hour, nil),
 		limitEmail:  ratelimit.New(5, time.Hour, nil),
+
+		limitEmailTo: ratelimit.New(5, time.Hour, nil),
+		limitInvite:  ratelimit.New(30, time.Hour, nil),
 	}
 }
 
 // clientIP identifies the caller for rate limiting.
+//
+// Behind a trusted proxy (QUORUM_TRUST_PROXY) the client is the LAST
+// X-Forwarded-For entry: proxies append the address they saw, so every
+// entry before it is whatever the client chose to send — taking the
+// first one would let anyone rotate past every limit. One proxy hop is
+// assumed. IPv6 clients are keyed by their /64, the block a single
+// host usually controls.
 func (h *Handler) clientIP(r *http.Request) string {
+	host := ""
 	if h.trustProxy {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			first, _, _ := strings.Cut(xff, ",")
-			return strings.TrimSpace(first)
+		if xff := r.Header.Values("X-Forwarded-For"); len(xff) > 0 {
+			last := xff[len(xff)-1]
+			if i := strings.LastIndex(last, ","); i >= 0 {
+				last = last[i+1:]
+			}
+			host = strings.TrimSpace(last)
 		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
+	if host == "" {
+		var err error
+		if host, _, err = net.SplitHostPort(r.RemoteAddr); err != nil {
+			host = r.RemoteAddr
+		}
+	}
+	if ip := net.ParseIP(host); ip != nil && ip.To4() == nil {
+		return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 	}
 	return host
 }
@@ -346,6 +370,8 @@ func errStatus(err error) (int, string) {
 		return http.StatusConflict, "error.not_finalizable"
 	case errors.Is(err, poll.ErrNotFinalized):
 		return http.StatusConflict, "error.not_finalized"
+	case errors.Is(err, poll.ErrNotPausable):
+		return http.StatusConflict, "error.not_pausable"
 	}
 	return http.StatusInternalServerError, "error.internal"
 }

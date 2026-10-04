@@ -498,8 +498,14 @@ func (s *Service) RemoveOption(ctx context.Context, p Poll, optionID int64) erro
 	return nil
 }
 
-// SetPaused toggles voting between live and paused.
+// SetPaused toggles voting between live and paused. A decided poll
+// stays decided: resuming a finalized one would reopen voting with the
+// decision still set, and finalize → resume → finalize would re-mail
+// every participant as often as anyone cares to click.
 func (s *Service) SetPaused(ctx context.Context, p Poll, paused bool) error {
+	if p.Status != StatusLive && p.Status != StatusPaused {
+		return ErrNotPausable
+	}
 	status := StatusLive
 	if paused {
 		status = StatusPaused

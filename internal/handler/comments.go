@@ -10,6 +10,11 @@ import (
 // CreateComment posts a comment, attributed to the participant when a
 // ptoken field is present, otherwise to the free-form name.
 func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
+	// Anonymous, and each comment can email the organizer: same budget
+	// as votes.
+	if !h.allow(w, r, h.limitVote) {
+		return
+	}
 	p, err := h.polls.ByPublicID(r.Context(), r.PathValue("pollID"))
 	if err != nil {
 		h.domainError(w, r, err)
