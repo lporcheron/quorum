@@ -78,6 +78,11 @@ type Config struct {
 	// EmailAllowedDomains restricts sign-up emails when non-empty
 	// (QUORUM_EMAIL_ALLOWED_DOMAINS, comma-separated).
 	EmailAllowedDomains []string
+	// SignupProviders restricts which sign-in methods may create an
+	// account (QUORUM_SIGNUP_PROVIDERS, comma-separated provider keys:
+	// email, google, github, microsoft, oidc). Empty = all. Existing
+	// accounts sign in through any method regardless.
+	SignupProviders []string
 	// AdminEmails grants the instance admin page
 	// (QUORUM_ADMIN_EMAILS, comma-separated account emails).
 	AdminEmails []string
@@ -192,6 +197,19 @@ func Load(getenv func(string) string) (Config, error) {
 		for _, d := range strings.Split(v, ",") {
 			if d = strings.ToLower(strings.TrimSpace(d)); d != "" {
 				cfg.EmailAllowedDomains = append(cfg.EmailAllowedDomains, d)
+			}
+		}
+	}
+	if v := getenv("QUORUM_SIGNUP_PROVIDERS"); v != "" {
+		for _, p := range strings.Split(v, ",") {
+			p = strings.ToLower(strings.TrimSpace(p))
+			switch p {
+			case "":
+				continue
+			case "email", "google", "github", "microsoft", "oidc":
+				cfg.SignupProviders = append(cfg.SignupProviders, p)
+			default:
+				return Config{}, fmt.Errorf("QUORUM_SIGNUP_PROVIDERS: unknown provider %q (want email, google, github, microsoft or oidc)", p)
 			}
 		}
 	}

@@ -419,6 +419,9 @@ other = "Sur cette instance, la création de sondage est réservée aux comptes.
 [error.email_not_allowed]
 other = "Cette adresse email n'est pas autorisée sur cette instance."
 
+[error.signup_provider]
+other = "Cette méthode de connexion ne permet pas de créer un compte. Utilisez une autre option sur la page de connexion."
+
 [error.email_unverified]
 other = "Votre fournisseur d'identité n'a pas certifié d'adresse email vérifiée : la connexion a été refusée."
 

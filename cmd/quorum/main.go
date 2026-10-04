@@ -103,6 +103,7 @@ func run(ctx context.Context, getenv func(string) string, logOut io.Writer) erro
 	authsvc := auth.NewService(st, nil, auth.Policy{
 		RegistrationsOpen: settings.RegistrationsOpen,
 		AllowedDomains:    cfg.EmailAllowedDomains,
+		SignupProviders:   cfg.SignupProviders,
 		AdminEmails:       cfg.AdminEmails,
 	})
 	providers := auth.NewProviders(cfg, cfg.BaseURL)

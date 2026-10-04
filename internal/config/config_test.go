@@ -67,6 +67,7 @@ func TestLoadRejectsInvalid(t *testing.T) {
 		{"bad log level", map[string]string{"QUORUM_LOG_LEVEL": "verbose"}, "QUORUM_LOG_LEVEL"},
 		{"bad log format", map[string]string{"QUORUM_LOG_FORMAT": "xml"}, "QUORUM_LOG_FORMAT"},
 		{"non-postgres DATABASE_URL", map[string]string{"DATABASE_URL": "mysql://x"}, "DATABASE_URL"},
+		{"unknown signup provider", map[string]string{"QUORUM_SIGNUP_PROVIDERS": "oidc,saml"}, "QUORUM_SIGNUP_PROVIDERS"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -75,5 +76,15 @@ func TestLoadRejectsInvalid(t *testing.T) {
 				t.Errorf("err = %v, want mention of %s", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestLoadSignupProviders(t *testing.T) {
+	cfg, err := Load(env(map[string]string{"QUORUM_SIGNUP_PROVIDERS": " OIDC, github ,"}))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if strings.Join(cfg.SignupProviders, ",") != "oidc,github" {
+		t.Errorf("SignupProviders = %q", cfg.SignupProviders)
 	}
 }

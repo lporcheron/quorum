@@ -23,6 +23,7 @@ const magicLinkTTL = 15 * time.Minute
 var (
 	ErrRegistrationsClosed = errors.New("registrations are closed")
 	ErrEmailNotAllowed     = errors.New("email domain not allowed")
+	ErrSignupProvider      = errors.New("this sign-in method cannot create accounts")
 	ErrEmailUnverified     = errors.New("provider did not assert a verified email")
 	ErrInvalidToken        = errors.New("invalid or expired login token")
 	ErrNotFound            = errors.New("not found")
@@ -47,8 +48,12 @@ type Policy struct {
 	RegistrationsOpen func(context.Context) bool
 	// AllowedDomains restricts sign-up email domains when non-empty.
 	AllowedDomains []string
-	// AdminEmails open an account whatever the two fields above say;
-	// see registrationAllowed.
+	// SignupProviders restricts which provider keys ("email" for magic
+	// links) may create an account when non-empty. Existing accounts
+	// sign in through any provider.
+	SignupProviders []string
+	// AdminEmails open an account whatever the fields above say; see
+	// registrationAllowed.
 	AdminEmails []string
 }
 
@@ -85,12 +90,15 @@ func NewService(st *store.Store, now func() time.Time, p Policy) *Service {
 // allowlist that misses their own address) before signing in once has
 // locked every door from the outside, with no way back in and no way
 // to reopen registrations.
-func (s *Service) registrationAllowed(ctx context.Context, email string) error {
+func (s *Service) registrationAllowed(ctx context.Context, provider, email string) error {
 	if s.adminEmails[email] {
 		return nil
 	}
 	if !s.policy.RegistrationsOpen(ctx) {
 		return ErrRegistrationsClosed
+	}
+	if !s.providerAllowed(provider) {
+		return ErrSignupProvider
 	}
 	if !s.domainAllowed(email) {
 		return ErrEmailNotAllowed
@@ -163,7 +171,7 @@ func (s *Service) Complete(ctx context.Context, login Login, d Defaults) (User, 
 
 // register creates the account, its identity, and the personal space.
 func (s *Service) register(ctx context.Context, login Login, d Defaults) (User, error) {
-	if err := s.registrationAllowed(ctx, login.Email); err != nil {
+	if err := s.registrationAllowed(ctx, login.Provider, login.Email); err != nil {
 		return User{}, err
 	}
 
@@ -242,6 +250,18 @@ func (s *Service) refreshProfile(ctx context.Context, urow sqlite.User, login Lo
 	return nil
 }
 
+func (s *Service) providerAllowed(provider string) bool {
+	if len(s.policy.SignupProviders) == 0 {
+		return true
+	}
+	for _, p := range s.policy.SignupProviders {
+		if p == provider {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Service) domainAllowed(email string) bool {
 	if len(s.policy.AllowedDomains) == 0 {
 		return true
@@ -267,7 +287,7 @@ func (s *Service) RequestMagicLink(ctx context.Context, email, redirect string, 
 		return ErrEmailNotAllowed
 	}
 	if _, err := s.store.GetUserByEmail(ctx, email); errors.Is(err, sql.ErrNoRows) {
-		if s.registrationAllowed(ctx, email) != nil {
+		if s.registrationAllowed(ctx, "email", email) != nil {
 			return nil
 		}
 	} else if err != nil {

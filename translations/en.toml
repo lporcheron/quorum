@@ -419,6 +419,9 @@ other = "This instance keeps poll creation for account holders. Sign in and crea
 [error.email_not_allowed]
 other = "This email address is not allowed on this instance."
 
+[error.signup_provider]
+other = "New accounts can't be created with this sign-in method. Use another option on the sign-in page."
+
 [error.email_unverified]
 other = "Your identity provider did not assert a verified email address, so the sign-in was refused."
 

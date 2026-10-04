@@ -181,6 +181,50 @@ func TestMagicLinkDoesNotLeakAccounts(t *testing.T) {
 	}
 }
 
+// TestSignupProviders covers an SSO-only instance: only the listed
+// providers create accounts, while an existing account still signs in
+// through any provider (here a magic link) and admins keep their
+// bootstrap exception.
+func TestSignupProviders(t *testing.T) {
+	ctx := context.Background()
+	_, st := storetest.Open(t)
+	s := NewService(st, func() time.Time { return testNow }, Policy{
+		SignupProviders: []string{"oidc"},
+		AdminEmails:     []string{"root@example.com"},
+	})
+	sso := func(sub, email string) Login {
+		return Login{Provider: "oidc", Subject: sub, Email: email, EmailVerified: true}
+	}
+
+	if _, err := s.Complete(ctx, google("g-1", "alice@example.com"), Defaults{}); !errors.Is(err, ErrSignupProvider) {
+		t.Errorf("google sign-up on an oidc-only instance: err = %v", err)
+	}
+	if _, err := s.Complete(ctx, sso("o-1", "alice@example.com"), Defaults{}); err != nil {
+		t.Fatalf("oidc sign-up rejected: %v", err)
+	}
+	// Alice now exists: Google attaches through her verified email.
+	if _, err := s.Complete(ctx, google("g-1", "alice@example.com"), Defaults{}); err != nil {
+		t.Errorf("existing account blocked on another provider: %v", err)
+	}
+
+	// Magic links: no email for a stranger, a working link for Alice.
+	sent := ""
+	send := func(_, tok string) error { sent = tok; return nil }
+	if err := s.RequestMagicLink(ctx, "stranger@example.com", "", send); err != nil || sent != "" {
+		t.Errorf("magic link to a stranger: err=%v sent=%q, want silent no-op", err, sent)
+	}
+	if err := s.RequestMagicLink(ctx, "alice@example.com", "", send); err != nil || sent == "" {
+		t.Fatalf("magic link to an existing account: err=%v sent=%q", err, sent)
+	}
+	if _, _, err := s.ConsumeMagicLink(ctx, sent, Defaults{}); err != nil {
+		t.Errorf("existing account blocked on magic link: %v", err)
+	}
+
+	if _, err := s.Complete(ctx, google("g-root", "root@example.com"), Defaults{}); err != nil {
+		t.Errorf("admin locked out by the provider gate: %v", err)
+	}
+}
+
 // TestAdminEmailBootstrapsAClosedInstance covers the lockout an
 // operator would otherwise hit by hardening the instance before
 // signing in once: with registrations closed and a domain allowlist

@@ -122,6 +122,8 @@ func (h *Handler) authError(w http.ResponseWriter, r *http.Request, err error) {
 		h.renderError(w, r, http.StatusForbidden, "error.registrations_closed")
 	case errors.Is(err, auth.ErrEmailNotAllowed):
 		h.renderError(w, r, http.StatusForbidden, "error.email_not_allowed")
+	case errors.Is(err, auth.ErrSignupProvider):
+		h.renderError(w, r, http.StatusForbidden, "error.signup_provider")
 	case errors.Is(err, auth.ErrEmailUnverified):
 		h.renderError(w, r, http.StatusForbidden, "error.email_unverified")
 	case errors.Is(err, auth.ErrInvalidToken):

@@ -30,6 +30,7 @@ services:
       # QUORUM_REGISTRATIONS_OPEN: "true"
       # QUORUM_GUEST_POLLS_OPEN: "true"
       # QUORUM_EMAIL_ALLOWED_DOMAINS: "example.com"
+      # QUORUM_SIGNUP_PROVIDERS: "oidc"   # only SSO creates accounts
       # QUORUM_TRUST_PROXY: "true"   # only behind a proxy that sets X-Forwarded-For
       # QUORUM_METRICS: "false"
       # --- PostgreSQL instead of SQLite (uncomment the db service below)
