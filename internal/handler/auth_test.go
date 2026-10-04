@@ -23,6 +23,9 @@ func TestNextRejectsOffsiteDestinations(t *testing.T) {
 		{"https://evil.com", ""}, // absolute
 		{"evil.com", ""},         // relative to the current directory
 		{"/ok\r\nX-Evil: 1", ""}, // header splitting
+		{"/\t/evil.com", ""},     // browsers drop the tab: "//evil.com"
+		{"/\x00/evil.com", ""},   // any control character
+		{"/\x7f", ""},
 	} {
 		r := httptest.NewRequest("POST", "/login", strings.NewReader(url.Values{"next": {tc.in}}.Encode()))
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

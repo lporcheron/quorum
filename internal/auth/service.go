@@ -355,12 +355,20 @@ func (s *Service) ConsumeMagicLink(ctx context.Context, token string, d Defaults
 // the start of a path, so "/\evil.com" reaches the network as
 // "//evil.com" — a protocol-relative URL onto someone else's host. CR
 // and LF are refused on the same principle, before anything downstream
-// gets a chance to split a header on them.
+// gets a chance to split a header on them. So is every other control
+// character: browsers strip tab (and CR/LF) from URLs before parsing
+// them, so "/\t/evil.com" lands on "//evil.com", and Go's redirect
+// passes a path it cannot parse through untouched.
 func SanitizeRedirect(p string) string {
-	if strings.HasPrefix(p, "/") && !strings.HasPrefix(p, "//") && !strings.ContainsAny(p, "\r\n\\") {
-		return p
+	if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.Contains(p, "\\") {
+		return ""
 	}
-	return ""
+	for i := 0; i < len(p); i++ {
+		if p[i] < 0x20 || p[i] == 0x7f {
+			return ""
+		}
+	}
+	return p
 }
 
 func userFromRow(r sqlite.User) User {
