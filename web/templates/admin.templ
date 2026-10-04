@@ -48,9 +48,10 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ a.Loc.T("admin.share_heading") }</h2>
 			<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("admin.share_body") }</p>
-			<div class="mt-2 flex gap-2">
-				<input class="field flex-1 font-mono text-xs" type="text" readonly value={ a.PublicURL } id="public-url"/>
+			<div class="mt-2 flex flex-wrap gap-2">
+				<input class="field min-w-56 flex-1 font-mono text-xs" type="text" readonly value={ a.PublicURL } id="public-url"/>
 				<button class="btn btn-sm" type="button" data-copy="public-url" data-copied={ a.Loc.T("admin.copied") }>{ a.Loc.T("admin.copy") }</button>
+				<button class="btn btn-sm" type="button" hidden data-share="public-url" data-share-title={ a.Poll.Title }>{ a.Loc.T("admin.share") }</button>
 				<a class="btn btn-sm" href={ templ.URL("/polls/" + a.Poll.PublicID) }>{ a.Loc.T("admin.view_public") }</a>
 			</div>
 			<div class="mt-2 flex flex-wrap gap-4 text-sm">

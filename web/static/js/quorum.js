@@ -51,6 +51,23 @@
 		}
 	});
 
+	/* ---------- share buttons: native share sheet on touch devices
+	 * that support it; elsewhere the copy button is enough. ---------- */
+
+	if (navigator.share && window.matchMedia && window.matchMedia("(pointer: coarse)").matches) {
+		$$("[data-share]").forEach(function (btn) { btn.hidden = false; });
+	}
+
+	document.addEventListener("click", function (ev) {
+		var btn = ev.target.closest("[data-share]");
+		if (!btn) return;
+		var input = document.getElementById(btn.getAttribute("data-share"));
+		if (!input) return;
+		// AbortError means the user closed the sheet: nothing to do.
+		navigator.share({ title: btn.getAttribute("data-share-title") || document.title, url: input.value })
+			.catch(function () { /* dismissed or unsupported payload */ });
+	});
+
 	/* ---------- confirm on destructive forms ---------- */
 
 	document.addEventListener("submit", function (ev) {

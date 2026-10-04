@@ -201,6 +201,9 @@ other = "Copy"
 [admin.copied]
 other = "Copied"
 
+[admin.share]
+other = "Share"
+
 [admin.view_public]
 other = "Open the public page"
 
