@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/lporcheron/quorum/internal/handler"
 	"github.com/lporcheron/quorum/internal/metrics"
 )
 
@@ -68,7 +69,7 @@ func accessLog(log *slog.Logger, m *metrics.Metrics) func(http.Handler) http.Han
 			log.LogAttrs(r.Context(), slog.LevelInfo, "request",
 				slog.String("id", id),
 				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
+				slog.String("path", handler.RedactPath(r.URL.Path)),
 				slog.Int("status", sw.status),
 				slog.Int("bytes", sw.bytes),
 				slog.Duration("duration", dur),
@@ -84,7 +85,7 @@ func recoverPanic(log *slog.Logger) func(http.Handler) http.Handler {
 				if rec := recover(); rec != nil {
 					log.ErrorContext(r.Context(), "panic in handler",
 						"error", rec,
-						"path", r.URL.Path,
+						"path", handler.RedactPath(r.URL.Path),
 						"stack", string(debug.Stack()),
 					)
 					http.Error(w, "internal server error", http.StatusInternalServerError)

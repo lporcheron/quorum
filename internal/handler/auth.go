@@ -131,7 +131,7 @@ func (h *Handler) authError(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, mail.ErrDisabled):
 		h.renderError(w, r, http.StatusConflict, "error.mail_disabled")
 	default:
-		h.log.ErrorContext(r.Context(), "auth error", "error", err, "path", r.URL.Path)
+		h.log.ErrorContext(r.Context(), "auth error", "error", err, "path", RedactPath(r.URL.Path))
 		h.renderError(w, r, http.StatusInternalServerError, "error.internal")
 	}
 }

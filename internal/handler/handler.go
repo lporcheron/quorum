@@ -246,7 +246,7 @@ func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c t
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if err := c.Render(ctx, w); err != nil {
-		h.log.ErrorContext(r.Context(), "render", "error", err, "path", r.URL.Path)
+		h.log.ErrorContext(r.Context(), "render", "error", err, "path", RedactPath(r.URL.Path))
 	}
 }
 
@@ -348,7 +348,7 @@ func errStatus(err error) (int, string) {
 func (h *Handler) domainError(w http.ResponseWriter, r *http.Request, err error) {
 	status, msgID := errStatus(err)
 	if status >= 500 {
-		h.log.ErrorContext(r.Context(), "handler error", "error", err, "path", r.URL.Path)
+		h.log.ErrorContext(r.Context(), "handler error", "error", err, "path", RedactPath(r.URL.Path))
 	}
 	h.renderError(w, r, status, msgID)
 }

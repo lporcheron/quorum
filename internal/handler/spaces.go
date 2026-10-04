@@ -40,7 +40,7 @@ func (h *Handler) spaceError(w http.ResponseWriter, r *http.Request, err error) 
 	case errors.Is(err, space.ErrNotAMember):
 		h.renderError(w, r, http.StatusUnprocessableEntity, "error.not_a_member")
 	default:
-		h.log.ErrorContext(r.Context(), "space error", "error", err, "path", r.URL.Path)
+		h.log.ErrorContext(r.Context(), "space error", "error", err, "path", RedactPath(r.URL.Path))
 		h.renderError(w, r, http.StatusInternalServerError, "error.internal")
 	}
 }
