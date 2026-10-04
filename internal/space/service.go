@@ -212,8 +212,8 @@ func (s *Service) Invite(ctx context.Context, sp Space, actorID int64, email str
 		return "", ErrForbidden
 	}
 	email = strings.ToLower(strings.TrimSpace(email))
-	if _, err := mail.ParseAddress(email); err != nil {
-		return "", ErrBadEmail
+	if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email {
+		return "", ErrBadEmail // bare addresses only, no display name
 	}
 	// Refuse inviting someone already in.
 	if urow, err := s.store.GetUserByEmail(ctx, email); err == nil {

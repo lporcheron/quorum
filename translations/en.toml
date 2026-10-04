@@ -303,6 +303,12 @@ other = "Enter your name."
 [error.email_required]
 other = "This poll requires a valid email address."
 
+[error.bad_email]
+other = "This email address is not valid. Fix it, or leave the field empty."
+
+[error.bad_video_url]
+other = "The video link must be a full address starting with http:// or https://."
+
 [error.poll_closed]
 other = "Voting is closed on this poll."
 

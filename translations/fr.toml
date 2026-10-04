@@ -303,6 +303,12 @@ other = "Indiquez votre nom."
 [error.email_required]
 other = "Ce sondage demande une adresse email valide."
 
+[error.bad_email]
+other = "Cette adresse email n'est pas valide. Corrigez-la ou laissez le champ vide."
+
+[error.bad_video_url]
+other = "Le lien visio doit être une adresse complète commençant par http:// ou https://."
+
 [error.poll_closed]
 other = "Le vote est fermé sur ce sondage."
 

@@ -77,6 +77,10 @@ func (s *Service) Create(ctx context.Context, in NewPoll) (Poll, string, error) 
 	if in.Title == "" {
 		return Poll{}, "", ErrTitleRequired
 	}
+	in.VideoURL = strings.TrimSpace(in.VideoURL)
+	if !validVideoURL(in.VideoURL) {
+		return Poll{}, "", ErrBadVideoURL
+	}
 	var loc *time.Location
 	switch in.Kind {
 	case KindTimed:
@@ -324,8 +328,11 @@ func checkVoter(p Poll, name, email string) (string, string, error) {
 	if name == "" {
 		return "", "", ErrNameRequired
 	}
-	if p.RequireVoterEmail && (email == "" || !strings.Contains(email, "@")) {
+	if p.RequireVoterEmail && email == "" {
 		return "", "", ErrEmailRequired
+	}
+	if email != "" && !validEmail(email) {
+		return "", "", ErrBadEmail
 	}
 	return name, email, nil
 }
@@ -443,6 +450,10 @@ func (s *Service) UpdateDetails(ctx context.Context, p Poll, in Details) error {
 	in.Title = strings.TrimSpace(in.Title)
 	if in.Title == "" {
 		return ErrTitleRequired
+	}
+	in.VideoURL = strings.TrimSpace(in.VideoURL)
+	if !validVideoURL(in.VideoURL) {
+		return ErrBadVideoURL
 	}
 	err := s.store.UpdatePollDetails(ctx, sqlite.UpdatePollDetailsParams{
 		ID:                p.ID,

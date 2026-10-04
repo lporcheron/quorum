@@ -326,6 +326,10 @@ func errStatus(err error) (int, string) {
 		return http.StatusUnprocessableEntity, "error.name_required"
 	case errors.Is(err, poll.ErrEmailRequired):
 		return http.StatusUnprocessableEntity, "error.email_required"
+	case errors.Is(err, poll.ErrBadEmail):
+		return http.StatusUnprocessableEntity, "error.bad_email"
+	case errors.Is(err, poll.ErrBadVideoURL):
+		return http.StatusUnprocessableEntity, "error.bad_video_url"
 	case errors.Is(err, poll.ErrPollClosed):
 		return http.StatusConflict, "error.poll_closed"
 	case errors.Is(err, poll.ErrCommentsDisabled):

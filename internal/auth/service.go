@@ -283,8 +283,8 @@ func (s *Service) domainAllowed(email string) bool {
 // does nothing: the response never reveals whether an account exists.
 func (s *Service) RequestMagicLink(ctx context.Context, email, redirect string, send func(email, token string) error) error {
 	email = strings.ToLower(strings.TrimSpace(email))
-	if _, err := mail.ParseAddress(email); err != nil {
-		return ErrEmailNotAllowed
+	if addr, err := mail.ParseAddress(email); err != nil || addr.Address != email {
+		return ErrEmailNotAllowed // bare addresses only: no display name, no duplicate account
 	}
 	if _, err := s.store.GetUserByEmail(ctx, email); errors.Is(err, sql.ErrNoRows) {
 		if s.registrationAllowed(ctx, "email", email) != nil {

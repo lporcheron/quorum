@@ -55,6 +55,8 @@ var (
 	ErrDuplicateOption  = errors.New("duplicate option")
 	ErrNameRequired     = errors.New("participant name required")
 	ErrEmailRequired    = errors.New("participant email required")
+	ErrBadEmail         = errors.New("invalid participant email")
+	ErrBadVideoURL      = errors.New("video link must be an absolute http(s) URL")
 	ErrPollClosed       = errors.New("poll is not open for votes")
 	ErrCommentsDisabled = errors.New("comments are disabled")
 	ErrBodyRequired     = errors.New("comment body required")

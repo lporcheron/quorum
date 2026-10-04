@@ -6,6 +6,7 @@ package ics
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	ical "github.com/arran4/golang-ical"
@@ -42,17 +43,38 @@ func setEventTimes(ev *ical.VEvent, o poll.Option) {
 	ev.SetEndAt(o.EndsAt().UTC())
 }
 
+// golang-ical escapes TEXT values but writes URI and CAL-ADDRESS
+// values, and parameter values such as CN, verbatim. A CR or LF in one
+// of them ends the property line and lets the rest of the value forge
+// new properties — or a whole new event — inside an invitation mailed
+// to every attendee. Those values go through oneLine, which drops every
+// control character; TEXT values go through text, which turns bare CRs
+// into the LF the library knows how to escape.
+
+func oneLine(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f {
+			return -1
+		}
+		return r
+	}, s)
+}
+
+func text(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, "\r\n", "\n"), "\r", "\n")
+}
+
 func fillEvent(ev *ical.VEvent, p poll.Poll, o poll.Option, baseURL string, now time.Time) {
 	ev.SetDtStampTime(now.UTC())
-	ev.SetSummary(p.Title)
+	ev.SetSummary(text(p.Title))
 	if p.Description != "" {
-		ev.SetDescription(p.Description)
+		ev.SetDescription(text(p.Description))
 	}
 	if p.Location != "" {
-		ev.SetLocation(p.Location)
+		ev.SetLocation(text(p.Location))
 	}
 	if p.VideoURL != "" {
-		ev.SetURL(p.VideoURL)
+		ev.SetURL(oneLine(p.VideoURL))
 	} else {
 		ev.SetURL(baseURL + "/polls/" + p.PublicID)
 	}
@@ -71,7 +93,7 @@ func Invite(p poll.Poll, o poll.Option, org Organizer, attendees []string, baseU
 	ev.SetSequence(0)
 	setOrganizer(ev, org)
 	for _, a := range attendees {
-		ev.AddAttendee(a, ical.WithRSVP(false))
+		ev.AddAttendee(oneLine(a), ical.WithRSVP(false))
 	}
 	return []byte(cal.Serialize())
 }
@@ -88,7 +110,7 @@ func Cancel(p poll.Poll, o poll.Option, org Organizer, attendees []string, baseU
 	ev.SetSequence(1)
 	setOrganizer(ev, org)
 	for _, a := range attendees {
-		ev.AddAttendee(a)
+		ev.AddAttendee(oneLine(a))
 	}
 	return []byte(cal.Serialize())
 }
@@ -100,7 +122,7 @@ func Feed(p poll.Poll, options []poll.Option, finalizedOptionID int64, baseURL s
 	cal := ical.NewCalendar()
 	cal.SetProductId("-//Quorum//Quorum//EN")
 	cal.SetMethod(ical.MethodPublish)
-	cal.SetName(p.Title)
+	cal.SetName(text(p.Title))
 
 	for _, o := range options {
 		switch {
@@ -128,7 +150,7 @@ func setOrganizer(ev *ical.VEvent, org Organizer) {
 	}
 	props := []ical.PropertyParameter{}
 	if org.Name != "" {
-		props = append(props, ical.WithCN(org.Name))
+		props = append(props, ical.WithCN(oneLine(org.Name)))
 	}
-	ev.SetOrganizer("mailto:"+org.Email, props...)
+	ev.SetOrganizer("mailto:"+oneLine(org.Email), props...)
 }

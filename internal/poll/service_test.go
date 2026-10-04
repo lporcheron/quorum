@@ -191,8 +191,19 @@ func TestJoinValidation(t *testing.T) {
 	if _, _, err := s.Join(ctx, strict, "Carol", "", 0, nil); !errors.Is(err, ErrEmailRequired) {
 		t.Errorf("missing required email: %v", err)
 	}
-	if _, _, err := s.Join(ctx, strict, "Carol", "not-an-email", 0, nil); !errors.Is(err, ErrEmailRequired) {
+	if _, _, err := s.Join(ctx, strict, "Carol", "not-an-email", 0, nil); !errors.Is(err, ErrBadEmail) {
 		t.Errorf("malformed required email: %v", err)
+	}
+	// An optional email is still validated when given: it ends up in
+	// calendar invitations, where a CR/LF would forge properties.
+	for _, bad := range []string{
+		"a@b.c\r\nEND:VEVENT\r\nBEGIN:VEVENT",
+		"Eve <eve@example.com>",
+		"not-an-email",
+	} {
+		if _, _, err := s.Join(ctx, p, "Dave", bad, 0, nil); !errors.Is(err, ErrBadEmail) {
+			t.Errorf("Join(email %q): %v, want ErrBadEmail", bad, err)
+		}
 	}
 
 	if err := s.SetPaused(ctx, p, true); err != nil {
@@ -302,5 +313,39 @@ func TestDeletePollCascades(t *testing.T) {
 	}
 	if _, err := s.ByPublicID(ctx, p.PublicID); !errors.Is(err, ErrNotFound) {
 		t.Errorf("poll still there: %v", err)
+	}
+}
+
+func TestVideoURLValidation(t *testing.T) {
+	ctx, s := newTestService(t)
+	base := NewPoll{Title: "Call", Kind: KindAllDay, Dates: []Date{{2026, time.September, 1}}}
+	for _, tc := range []struct {
+		url string
+		ok  bool
+	}{
+		{"", true},
+		{"https://meet.example.com/abc", true},
+		{"  http://visio.example.org/room  ", true},
+		{"javascript:alert(1)", false},
+		{"meet.example.com/abc", false},
+		{"https://meet.example.com/x\r\nSUMMARY:Forged", false},
+		{"https://", false},
+	} {
+		in := base
+		in.VideoURL = tc.url
+		_, _, err := s.Create(ctx, in)
+		if tc.ok && err != nil {
+			t.Errorf("Create(video %q): %v", tc.url, err)
+		}
+		if !tc.ok && !errors.Is(err, ErrBadVideoURL) {
+			t.Errorf("Create(video %q): %v, want ErrBadVideoURL", tc.url, err)
+		}
+	}
+	p, _, err := s.Create(ctx, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.UpdateDetails(ctx, p, Details{Title: "Call", VideoURL: "ftp://x.example"}); !errors.Is(err, ErrBadVideoURL) {
+		t.Errorf("UpdateDetails(ftp): %v, want ErrBadVideoURL", err)
 	}
 }

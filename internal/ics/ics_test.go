@@ -109,3 +109,40 @@ func TestFeedStates(t *testing.T) {
 		t.Errorf("cancelled feed wrong:\n%s", feed)
 	}
 }
+
+// TestNoPropertyInjection feeds CR/LF through every user-controlled
+// value. Each must stay on its own property line: an attacker-chosen
+// voter email or video link must not forge properties or a second
+// event in the invitation every attendee receives.
+func TestNoPropertyInjection(t *testing.T) {
+	p, o := timedPoll()
+	p.Title = "Dinner\rATTENDEE:mailto:evil@example.com"
+	p.Description = "line one\r\nline two"
+	p.VideoURL = "https://meet.example.com/x\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Forged"
+	evilOrg := Organizer{Email: "quorum@example.com", Name: "Eve\r\nSUMMARY:Forged"}
+	attendees := []string{"bob@example.com\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Pay invoice"}
+
+	for name, out := range map[string]string{
+		"invite": string(Invite(p, o, evilOrg, attendees, base, testNow)),
+		"cancel": string(Cancel(p, o, evilOrg, attendees, base, testNow)),
+		"feed":   string(Feed(p, []poll.Option{o}, 0, base, testNow)),
+	} {
+		events := 0
+		for _, line := range strings.Split(out, "\n") {
+			line = strings.TrimSuffix(line, "\r") // the line terminator itself
+			if line == "BEGIN:VEVENT" {
+				events++
+			}
+			if strings.HasPrefix(line, "SUMMARY:Forged") || strings.HasPrefix(line, "SUMMARY:Pay invoice") ||
+				strings.HasPrefix(line, "ATTENDEE:mailto:evil") {
+				t.Errorf("%s: injected line %q", name, line)
+			}
+			if strings.Contains(line, "\r") {
+				t.Errorf("%s: bare CR in line %q", name, line)
+			}
+		}
+		if events != 1 {
+			t.Errorf("%s: %d events, want 1:\n%s", name, events, out)
+		}
+	}
+}
