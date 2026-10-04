@@ -34,6 +34,10 @@ type SMTP struct {
 	Username string // QUORUM_SMTP_USERNAME
 	Password string // QUORUM_SMTP_PASSWORD
 	From     string // QUORUM_SMTP_FROM
+	// Insecure accepts any TLS certificate (QUORUM_SMTP_INSECURE), for
+	// internal relays with self-signed or mismatched certificates. The
+	// connection stays encrypted, but is no longer authenticated.
+	Insecure bool
 }
 
 func (s SMTP) Enabled() bool { return s.Host != "" }
@@ -226,6 +230,7 @@ func Load(getenv func(string) string) (Config, error) {
 	}{
 		{"QUORUM_METRICS", &cfg.MetricsEnabled},
 		{"QUORUM_TRUST_PROXY", &cfg.TrustProxy},
+		{"QUORUM_SMTP_INSECURE", &cfg.SMTP.Insecure},
 	} {
 		if v := getenv(key.env); v != "" {
 			b, err := strconv.ParseBool(v)

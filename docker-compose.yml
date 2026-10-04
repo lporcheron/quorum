@@ -18,6 +18,7 @@ services:
       # QUORUM_SMTP_USERNAME: "quorum"
       # QUORUM_SMTP_PASSWORD: "secret"
       # QUORUM_SMTP_FROM: "polls@example.com"
+      # QUORUM_SMTP_INSECURE: "true"   # only for a relay with a self-signed certificate
       # --- sign-in providers (all optional)
       # QUORUM_OAUTH_GOOGLE_CLIENT_ID: ""
       # QUORUM_OAUTH_GOOGLE_CLIENT_SECRET: ""

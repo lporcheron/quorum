@@ -105,9 +105,10 @@ OAuth callback URLs are `<base URL>/auth/<google|github|microsoft|oidc>/callback
 | Variable | Purpose |
 |---|---|
 | `QUORUM_SMTP_HOST` | SMTP server; setting it enables email |
-| `QUORUM_SMTP_PORT` | SMTP port (`587`) |
-| `QUORUM_SMTP_USERNAME` / `QUORUM_SMTP_PASSWORD` | SMTP credentials (optional) |
-| `QUORUM_SMTP_FROM` | Sender address (required with SMTP) |
+| `QUORUM_SMTP_PORT` | SMTP port (`587`); `465` switches to implicit TLS |
+| `QUORUM_SMTP_USERNAME` / `QUORUM_SMTP_PASSWORD` | SMTP credentials (optional); when set, STARTTLS is mandatory so they never travel in clear |
+| `QUORUM_SMTP_FROM` | Sender address, bare (`polls@example.com`; required with SMTP) — the display name is the instance name, set in `/admin` |
+| `QUORUM_SMTP_INSECURE` | Accept any TLS certificate (`false`), for internal relays with self-signed or mismatched certificates; the connection stays encrypted but unauthenticated |
 
 ### Instance policy
 

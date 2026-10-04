@@ -5,6 +5,7 @@ package mail
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 
@@ -94,10 +95,7 @@ func (m *smtpMailer) Send(ctx context.Context, message Message) error {
 		}
 	}
 
-	opts := []gomail.Option{
-		gomail.WithPort(m.cfg.Port),
-		gomail.WithTLSPortPolicy(gomail.TLSOpportunistic),
-	}
+	opts := append([]gomail.Option{gomail.WithPort(m.cfg.Port)}, tlsOptions(m.cfg)...)
 	if m.cfg.Username != "" {
 		opts = append(opts,
 			gomail.WithSMTPAuth(gomail.SMTPAuthAutoDiscover),
@@ -113,4 +111,32 @@ func (m *smtpMailer) Send(ctx context.Context, message Message) error {
 		return fmt.Errorf("send mail to %s: %w", message.To, err)
 	}
 	return nil
+}
+
+// tlsOptions picks how the connection is secured:
+//   - port 465 speaks TLS from the first byte (implicit TLS);
+//   - with credentials, STARTTLS is mandatory, so a missing or stripped
+//     STARTTLS offer fails the send instead of exposing the password;
+//   - an anonymous relay (typically local) upgrades when it can.
+//
+// WithTLSPolicy, unlike WithTLSPortPolicy, leaves the configured port
+// alone: the latter silently moves port 25 to 587.
+func tlsOptions(cfg config.SMTP) []gomail.Option {
+	var opts []gomail.Option
+	switch {
+	case cfg.Port == 465:
+		opts = append(opts, gomail.WithSSL())
+	case cfg.Username != "":
+		opts = append(opts, gomail.WithTLSPolicy(gomail.TLSMandatory))
+	default:
+		opts = append(opts, gomail.WithTLSPolicy(gomail.TLSOpportunistic))
+	}
+	if cfg.Insecure {
+		opts = append(opts, gomail.WithTLSConfig(&tls.Config{
+			ServerName:         cfg.Host,
+			MinVersion:         tls.VersionTLS12,
+			InsecureSkipVerify: true, // opted in through QUORUM_SMTP_INSECURE
+		}))
+	}
+	return opts
 }
