@@ -18,3 +18,8 @@ DELETE FROM jobs WHERE id = @id;
 
 -- name: CountDeadJobs :one
 SELECT COUNT(*) FROM jobs WHERE attempts >= @max_attempts;
+
+-- name: DeleteDeadJobsBefore :exec
+-- Dead jobs are kept for inspection, not forever: their payloads hold
+-- recipient addresses.
+DELETE FROM jobs WHERE attempts >= @max_attempts AND created_at < @before;

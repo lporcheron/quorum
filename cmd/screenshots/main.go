@@ -223,7 +223,7 @@ func seed(ctx context.Context, dbPath string) (string, error) {
 		{"Malik Boureau", "Tuesday suits me best — the morning is quieter."},
 		{"Claire Fontaine", "Works for me too. I can bring the release notes."},
 	} {
-		if _, err := polls.AddComment(ctx, p, nil, c.who, c.body); err != nil {
+		if _, err := polls.AddComment(ctx, p, nil, 0, c.who, c.body); err != nil {
 			return "", err
 		}
 	}

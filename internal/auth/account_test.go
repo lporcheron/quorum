@@ -90,7 +90,7 @@ func newAccountFixture(t *testing.T) (context.Context, *accountFixture) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.polls.AddComment(ctx, f.otherPoll, &f.victimPart, "", "see you there"); err != nil {
+	if _, err := f.polls.AddComment(ctx, f.otherPoll, &f.victimPart, 0, "", "see you there"); err != nil {
 		t.Fatal(err)
 	}
 	return ctx, f
@@ -139,6 +139,60 @@ func TestDeleteAccountErasesPersonalData(t *testing.T) {
 	// Other's data is untouched.
 	if _, err := f.users.UserByID(ctx, f.other.ID); err != nil {
 		t.Errorf("bystander account touched: %v", err)
+	}
+}
+
+// TestDeleteAccountWithPendingInvitations covers the erasure path that
+// used to fail on a foreign key: an admin of someone else's space with
+// an invitation still pending. Invitations they sent and invitations
+// addressed to them both go, and so does a comment left signed in
+// without voting.
+func TestDeleteAccountWithPendingInvitations(t *testing.T) {
+	ctx, f := newAccountFixture(t)
+
+	club, err := f.spaces.Create(ctx, f.other.ID, "Club")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, err := f.spaces.Invite(ctx, club, f.other.ID, f.victim.Email, space.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.spaces.Accept(ctx, tok, f.victim.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.spaces.Invite(ctx, club, f.victim.ID, "pending@example.com", space.RoleMember); err != nil {
+		t.Fatalf("victim invites: %v", err)
+	}
+	other2, err := f.spaces.Create(ctx, f.other.ID, "Other club")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.spaces.Invite(ctx, other2, f.other.ID, f.victim.Email, space.RoleMember); err != nil {
+		t.Fatalf("invite to victim: %v", err)
+	}
+	if _, err := f.polls.AddComment(ctx, f.otherPoll, nil, f.victim.ID, "Victim", "drive-by"); err != nil {
+		t.Fatalf("drive-by comment: %v", err)
+	}
+
+	if err := f.users.DeleteAccount(ctx, f.victim.ID); err != nil {
+		t.Fatalf("DeleteAccount with pending invitations: %v", err)
+	}
+	for _, sp := range []space.Space{club, other2} {
+		invs, err := f.st.ListSpaceInvitations(ctx, sp.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(invs) != 0 {
+			t.Errorf("space %s keeps %d invitations tied to the deleted account", sp.Name, len(invs))
+		}
+	}
+	v, err := f.polls.View(ctx, f.otherPoll)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v.Comments) != 0 {
+		t.Errorf("%d comments survived the account", len(v.Comments))
 	}
 }
 

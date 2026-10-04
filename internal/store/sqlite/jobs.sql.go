@@ -54,6 +54,22 @@ func (q *Queries) CreateJob(ctx context.Context, arg CreateJobParams) (Job, erro
 	return i, err
 }
 
+const deleteDeadJobsBefore = `-- name: DeleteDeadJobsBefore :exec
+DELETE FROM jobs WHERE attempts >= ?1 AND created_at < ?2
+`
+
+type DeleteDeadJobsBeforeParams struct {
+	MaxAttempts int64
+	Before      string
+}
+
+// Dead jobs are kept for inspection, not forever: their payloads hold
+// recipient addresses.
+func (q *Queries) DeleteDeadJobsBefore(ctx context.Context, arg DeleteDeadJobsBeforeParams) error {
+	_, err := q.db.ExecContext(ctx, deleteDeadJobsBefore, arg.MaxAttempts, arg.Before)
+	return err
+}
+
 const deleteJob = `-- name: DeleteJob :exec
 DELETE FROM jobs WHERE id = ?1
 `

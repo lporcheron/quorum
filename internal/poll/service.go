@@ -637,7 +637,9 @@ func (s *Service) RegenerateAdminToken(ctx context.Context, p Poll) (string, err
 
 // AddComment posts a comment; participant is nil for a drive-by
 // commenter who only gives a name.
-func (s *Service) AddComment(ctx context.Context, p Poll, participant *Participant, authorName, body string) (Comment, error) {
+// userID links the comment to a signed-in account (0 for guests), so
+// that deleting the account erases it.
+func (s *Service) AddComment(ctx context.Context, p Poll, participant *Participant, userID int64, authorName, body string) (Comment, error) {
 	if !p.AllowComments {
 		return Comment{}, ErrCommentsDisabled
 	}
@@ -663,6 +665,7 @@ func (s *Service) AddComment(ctx context.Context, p Poll, participant *Participa
 			PublicID:      ids.PublicID(),
 			PollID:        p.ID,
 			ParticipantID: participantID,
+			UserID:        nullInt64(userID),
 			AuthorName:    authorName,
 			Body:          body,
 			CreatedAt:     store.FormatTime(now),

@@ -34,7 +34,11 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		participant = &pa
 		back = "/polls/" + p.PublicID + "/p/" + token
 	}
-	c, err := h.polls.AddComment(r.Context(), p, participant, r.PostForm.Get("author_name"), r.PostForm.Get("body"))
+	var userID int64
+	if u := h.currentUser(r); u != nil {
+		userID = u.ID
+	}
+	c, err := h.polls.AddComment(r.Context(), p, participant, userID, r.PostForm.Get("author_name"), r.PostForm.Get("body"))
 	if err != nil {
 		h.domainError(w, r, err)
 		return

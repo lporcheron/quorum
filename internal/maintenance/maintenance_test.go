@@ -239,3 +239,45 @@ func TestRunStopsOnCancel(t *testing.T) {
 		t.Fatal("Run did not return after cancel")
 	}
 }
+
+// TestRunOnceDropsOldDeadJobs: dead jobs stay inspectable for a while,
+// then go — their payloads carry recipient addresses. Live jobs, even
+// old ones still retrying, are never touched.
+func TestRunOnceDropsOldDeadJobs(t *testing.T) {
+	f := newFixture(t)
+	mk := func(createdAt time.Time, attempts int64) {
+		row, err := f.store.CreateJob(f.ctx, sqlite.CreateJobParams{
+			Type: "notify", Payload: `{"to":"someone@example.com"}`,
+			RunAt: store.FormatTime(createdAt), CreatedAt: store.FormatTime(createdAt),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if attempts > 0 {
+			if err := f.store.RescheduleJob(f.ctx, sqlite.RescheduleJobParams{
+				ID: row.ID, Attempts: attempts, RunAt: store.FormatTime(createdAt),
+				LastError: sql.NullString{String: "smtp down", Valid: true},
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	mk(start.Add(-31*24*time.Hour), job.MaxAttempts)   // old and dead: purged
+	mk(start.Add(-2*24*time.Hour), job.MaxAttempts)    // recently dead: kept
+	mk(start.Add(-40*24*time.Hour), job.MaxAttempts-1) // old but still retrying: kept
+
+	if err := f.runner.RunOnce(f.ctx); err != nil {
+		t.Fatalf("RunOnce: %v", err)
+	}
+	dead, err := f.store.CountDeadJobs(f.ctx, job.MaxAttempts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pending, err := f.store.CountPendingJobs(f.ctx, job.MaxAttempts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dead != 1 || pending != 1 {
+		t.Errorf("after purge: %d dead, %d pending; want 1 and 1", dead, pending)
+	}
+}

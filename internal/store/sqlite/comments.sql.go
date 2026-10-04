@@ -11,8 +11,8 @@ import (
 )
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO comments (public_id, poll_id, participant_id, author_name, body, created_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+INSERT INTO comments (public_id, poll_id, participant_id, user_id, author_name, body, created_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
 RETURNING id, public_id, poll_id, participant_id, user_id, author_name, body, created_at
 `
 
@@ -20,6 +20,7 @@ type CreateCommentParams struct {
 	PublicID      string
 	PollID        int64
 	ParticipantID sql.NullInt64
+	UserID        sql.NullInt64
 	AuthorName    string
 	Body          string
 	CreatedAt     string
@@ -30,6 +31,7 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 		arg.PublicID,
 		arg.PollID,
 		arg.ParticipantID,
+		arg.UserID,
 		arg.AuthorName,
 		arg.Body,
 		arg.CreatedAt,

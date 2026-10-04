@@ -1,6 +1,6 @@
 -- name: CreateComment :one
-INSERT INTO comments (public_id, poll_id, participant_id, author_name, body, created_at)
-VALUES (@public_id, @poll_id, @participant_id, @author_name, @body, @created_at)
+INSERT INTO comments (public_id, poll_id, participant_id, user_id, author_name, body, created_at)
+VALUES (@public_id, @poll_id, @participant_id, @user_id, @author_name, @body, @created_at)
 RETURNING *;
 
 -- name: ListPollComments :many

@@ -10,6 +10,16 @@ import (
 	"database/sql"
 )
 
+const deleteCommentsByUser = `-- name: DeleteCommentsByUser :exec
+DELETE FROM comments WHERE user_id = ?1
+`
+
+// Comments a signed-in user left without a participant row.
+func (q *Queries) DeleteCommentsByUser(ctx context.Context, userID sql.NullInt64) error {
+	_, err := q.db.ExecContext(ctx, deleteCommentsByUser, userID)
+	return err
+}
+
 const deleteCommentsByUserParticipants = `-- name: DeleteCommentsByUserParticipants :exec
 DELETE FROM comments WHERE participant_id IN (
   SELECT participants.id FROM participants WHERE participants.user_id = ?1
@@ -18,6 +28,22 @@ DELETE FROM comments WHERE participant_id IN (
 
 func (q *Queries) DeleteCommentsByUserParticipants(ctx context.Context, authorID sql.NullInt64) error {
 	_, err := q.db.ExecContext(ctx, deleteCommentsByUserParticipants, authorID)
+	return err
+}
+
+const deleteInvitationsByInviterOrEmail = `-- name: DeleteInvitationsByInviterOrEmail :exec
+DELETE FROM space_invitations WHERE invited_by_user_id = ?1 OR email = ?2
+`
+
+type DeleteInvitationsByInviterOrEmailParams struct {
+	UserID int64
+	Email  string
+}
+
+// Invitations the user sent (their invited_by_user_id has no ON DELETE
+// rule and would block the deletion) and those addressed to them.
+func (q *Queries) DeleteInvitationsByInviterOrEmail(ctx context.Context, arg DeleteInvitationsByInviterOrEmailParams) error {
+	_, err := q.db.ExecContext(ctx, deleteInvitationsByInviterOrEmail, arg.UserID, arg.Email)
 	return err
 }
 

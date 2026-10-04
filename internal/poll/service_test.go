@@ -263,22 +263,22 @@ func TestComments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Join: %v", err)
 	}
-	c1, err := s.AddComment(ctx, p, &alice, "ignored", "I prefer Saturday")
+	c1, err := s.AddComment(ctx, p, &alice, 0, "ignored", "I prefer Saturday")
 	if err != nil {
 		t.Fatalf("AddComment: %v", err)
 	}
 	if c1.AuthorName != "Alice" || c1.ParticipantID != alice.ID {
 		t.Errorf("participant comment attribution: %+v", c1)
 	}
-	c2, err := s.AddComment(ctx, p, nil, "Drive-by", "Either works")
+	c2, err := s.AddComment(ctx, p, nil, 0, "Drive-by", "Either works")
 	if err != nil {
 		t.Fatalf("AddComment anonymous: %v", err)
 	}
 
-	if _, err := s.AddComment(ctx, p, nil, "", "hello"); !errors.Is(err, ErrNameRequired) {
+	if _, err := s.AddComment(ctx, p, nil, 0, "", "hello"); !errors.Is(err, ErrNameRequired) {
 		t.Errorf("anonymous comment without name: %v", err)
 	}
-	if _, err := s.AddComment(ctx, p, &alice, "", "  "); !errors.Is(err, ErrBodyRequired) {
+	if _, err := s.AddComment(ctx, p, &alice, 0, "", "  "); !errors.Is(err, ErrBodyRequired) {
 		t.Errorf("empty body: %v", err)
 	}
 
@@ -296,7 +296,7 @@ func TestComments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if _, err := s.AddComment(ctx, noComments, nil, "X", "hi"); !errors.Is(err, ErrCommentsDisabled) {
+	if _, err := s.AddComment(ctx, noComments, nil, 0, "X", "hi"); !errors.Is(err, ErrCommentsDisabled) {
 		t.Errorf("comment on disabled poll: %v", err)
 	}
 }

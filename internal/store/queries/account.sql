@@ -39,3 +39,12 @@ DELETE FROM users WHERE id = @id;
 
 -- name: DeleteLoginTokensByEmail :exec
 DELETE FROM login_tokens WHERE email = @email;
+
+-- name: DeleteInvitationsByInviterOrEmail :exec
+-- Invitations the user sent (their invited_by_user_id has no ON DELETE
+-- rule and would block the deletion) and those addressed to them.
+DELETE FROM space_invitations WHERE invited_by_user_id = @user_id OR email = @email;
+
+-- name: DeleteCommentsByUser :exec
+-- Comments a signed-in user left without a participant row.
+DELETE FROM comments WHERE user_id = @user_id;

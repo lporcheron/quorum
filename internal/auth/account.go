@@ -48,6 +48,14 @@ func (s *Service) DeleteAccount(ctx context.Context, userID int64) error {
 		if err := q.DeleteParticipantsByUser(ctx, nullInt64(userID)); err != nil {
 			return fmt.Errorf("delete participations: %w", err)
 		}
+		if err := q.DeleteCommentsByUser(ctx, nullInt64(userID)); err != nil {
+			return fmt.Errorf("delete comments by user: %w", err)
+		}
+		if err := q.DeleteInvitationsByInviterOrEmail(ctx, sqlite.DeleteInvitationsByInviterOrEmailParams{
+			UserID: userID, Email: urow.Email,
+		}); err != nil {
+			return fmt.Errorf("delete invitations: %w", err)
+		}
 
 		soleSpaces, err := q.ListSolelyOwnedSpaceIDs(ctx, userID)
 		if err != nil {

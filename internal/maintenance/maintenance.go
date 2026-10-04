@@ -1,6 +1,6 @@
 // Package maintenance runs the housekeeping loop: warn organizers
 // before their polls expire, purge polls past their horizon, and drop
-// stale login tokens.
+// stale login tokens and old dead jobs.
 package maintenance
 
 import (
@@ -9,15 +9,20 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/lporcheron/quorum/internal/job"
 	"github.com/lporcheron/quorum/internal/notify"
 	"github.com/lporcheron/quorum/internal/poll"
 	"github.com/lporcheron/quorum/internal/store"
+	"github.com/lporcheron/quorum/internal/store/sqlite"
 )
 
 const (
 	interval       = time.Hour
 	reminderWindow = 7 * 24 * time.Hour
 	batch          = 100
+	// deadJobRetention bounds how long a failed job (and the recipient
+	// address in its payload) stays around for operators to inspect.
+	deadJobRetention = 30 * 24 * time.Hour
 )
 
 // Runner executes the periodic housekeeping.
@@ -79,11 +84,17 @@ func (r *Runner) RunOnce(ctx context.Context) error {
 		if err := r.polls.Delete(ctx, p); err != nil {
 			return fmt.Errorf("purge poll %s: %w", p.PublicID, err)
 		}
-		r.log.InfoContext(ctx, "poll purged", "poll", p.PublicID, "title", p.Title)
+		r.log.InfoContext(ctx, "poll purged", "poll", p.PublicID)
 	}
 
 	if err := r.store.DeleteExpiredLoginTokens(ctx, store.FormatTime(r.now())); err != nil {
 		return fmt.Errorf("clean login tokens: %w", err)
+	}
+	if err := r.store.DeleteDeadJobsBefore(ctx, sqlite.DeleteDeadJobsBeforeParams{
+		MaxAttempts: job.MaxAttempts,
+		Before:      store.FormatTime(r.now().Add(-deadJobRetention)),
+	}); err != nil {
+		return fmt.Errorf("clean dead jobs: %w", err)
 	}
 	return nil
 }
