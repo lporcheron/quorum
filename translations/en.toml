@@ -536,7 +536,7 @@ other = "Join this space"
 other = "Sign in to accept this invitation."
 
 [dashboard.space_polls]
-other = "Polls in this space"
+other = "Polls in your spaces"
 
 [dashboard.empty_space]
 other = "No poll in this space yet."

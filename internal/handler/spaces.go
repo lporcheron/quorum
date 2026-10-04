@@ -67,7 +67,10 @@ func (h *Handler) currentSpace(r *http.Request, user *auth.User) (space.Space, s
 	return sp, role, nil
 }
 
-// Dashboard shows the current space's polls plus the user's votes.
+// Dashboard shows the polls of every space the user belongs to,
+// grouped by space with the current one first, plus the user's votes.
+// Listing all spaces at once keeps a poll from going missing behind
+// the space switcher.
 func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	user := h.currentUser(r)
 	if user == nil {
@@ -84,11 +87,6 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		h.spaceError(w, r, err)
 		return
 	}
-	spacePolls, err := h.polls.ListBySpace(r.Context(), sp.ID)
-	if err != nil {
-		h.domainError(w, r, err)
-		return
-	}
 	voted, err := h.polls.ListVotedBy(r.Context(), user.ID)
 	if err != nil {
 		h.domainError(w, r, err)
@@ -102,11 +100,34 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		Role:    role,
 		Spaces:  memberships,
 	}
-	for _, p := range spacePolls {
-		props.Polls = append(props.Polls, templates.SpacePollItem{
-			SpacePoll:  p,
-			Manageable: p.CreatedByUserID == user.ID || role.AtLeast(space.RoleAdmin),
-		})
+	// memberships comes from the membership helper, so every space
+	// listed here is one the user may see. The current space leads.
+	ordered := make([]space.Membership, 0, len(memberships))
+	for _, m := range memberships {
+		if m.Space.ID == sp.ID {
+			ordered = append([]space.Membership{m}, ordered...)
+		} else {
+			ordered = append(ordered, m)
+		}
+	}
+	for _, m := range ordered {
+		spacePolls, err := h.polls.ListBySpace(r.Context(), m.Space.ID)
+		if err != nil {
+			h.domainError(w, r, err)
+			return
+		}
+		current := m.Space.ID == sp.ID
+		if len(spacePolls) == 0 && !current {
+			continue // an empty space elsewhere is only noise
+		}
+		group := templates.SpaceGroup{Space: m.Space, Current: current}
+		for _, p := range spacePolls {
+			group.Polls = append(group.Polls, templates.SpacePollItem{
+				SpacePoll:  p,
+				Manageable: p.CreatedByUserID == user.ID || m.Role.AtLeast(space.RoleAdmin),
+			})
+		}
+		props.Groups = append(props.Groups, group)
 	}
 	for _, p := range voted {
 		if p.CreatedByUserID != user.ID {

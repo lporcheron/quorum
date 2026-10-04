@@ -228,3 +228,44 @@ func TestTransferOwnershipFlow(t *testing.T) {
 		t.Errorf("previous owner still changes roles: %d", resp.StatusCode)
 	}
 }
+
+// TestDashboardListsEverySpace covers the all-spaces dashboard: a poll
+// in a shared space stays visible from the personal space, and space
+// access control still applies — a stranger's dashboard never lists it.
+func TestDashboardListsEverySpace(t *testing.T) {
+	ts, mailer := newTestServer(t)
+
+	owner := jarClient(t)
+	signInByEmail(t, ts, mailer, owner, "owner@example.com")
+	createSpace(t, ts, owner, "Team") // switches to it
+
+	resp, _ := cPost(t, owner, ts.URL+"/polls", url.Values{
+		"title":       {"Team offsite"},
+		"kind":        {"allday"},
+		"option_date": {"2026-10-01"},
+	})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("create poll: %d", resp.StatusCode)
+	}
+	pollPublic := strings.TrimSuffix(resp.Request.URL.Path, "/manage")
+
+	// Back to the personal space: the only unselected switcher option.
+	_, body := cGet(t, owner, ts.URL+"/dashboard")
+	m := regexp.MustCompile(`<option value="([a-z0-9]+)">`).FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("no other space in the switcher:\n%s", body)
+	}
+	resp, body = cPostS(t, ts, owner, "/spaces/switch", url.Values{"slug": {m[1]}})
+	if resp.StatusCode != http.StatusOK || resp.Request.URL.Path != "/dashboard" {
+		t.Fatalf("switch: %d at %s", resp.StatusCode, resp.Request.URL.Path)
+	}
+	if !strings.Contains(body, "Team offsite") || !strings.Contains(body, pollPublic+"/manage") {
+		t.Errorf("personal-space dashboard hides the shared space's poll")
+	}
+
+	stranger := jarClient(t)
+	signInByEmail(t, ts, mailer, stranger, "stranger@example.com")
+	if _, body := cGet(t, stranger, ts.URL+"/dashboard"); strings.Contains(body, "Team offsite") {
+		t.Errorf("stranger's dashboard lists a poll from a space they are not in")
+	}
+}

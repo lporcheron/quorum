@@ -13,15 +13,22 @@ type SpacePollItem struct {
 	Manageable bool
 }
 
-// DashboardProps feeds the signed-in home: the current space's polls
-// plus the user's votes elsewhere.
+// SpaceGroup is one space's polls on the dashboard.
+type SpaceGroup struct {
+	Space   space.Space
+	Current bool
+	Polls   []SpacePollItem
+}
+
+// DashboardProps feeds the signed-in home: the polls of every space the
+// user belongs to (current space first) plus the user's votes elsewhere.
 type DashboardProps struct {
 	Loc     *i18n.Locale
 	User    *auth.User
 	Current space.Space
 	Role    space.Role
 	Spaces  []space.Membership
-	Polls   []SpacePollItem
+	Groups  []SpaceGroup
 	Voted   []poll.Poll
 }
 
@@ -48,33 +55,12 @@ templ DashboardPage(p DashboardProps) {
 				<a class="btn btn-primary" href="/">{ p.Loc.T("dashboard.new_poll") }</a>
 			</div>
 		</div>
-
 		<section class="mt-8">
 			<h2 class="panel-title">{ p.Loc.T("dashboard.space_polls") }</h2>
-			if len(p.Polls) == 0 {
-				<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("dashboard.empty_space") }</p>
-			} else {
-				<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
-					for _, item := range p.Polls {
-						<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
-							<span>
-								<a class="underline" href={ templ.URL("/polls/" + item.PublicID) }>{ item.Title }</a>
-								if item.OwnerName != "" {
-									<span class="ml-2 text-xs text-ink/60">{ p.Loc.T("dashboard.by") } { item.OwnerName }</span>
-								}
-							</span>
-							<span class="flex items-center gap-3">
-								<span class="font-mono text-xs text-ink/60">{ p.Loc.T("dashboard.status_" + string(item.Status)) }</span>
-								if item.Manageable {
-									<a class="underline" href={ templ.URL("/polls/" + item.PublicID + "/manage") }>{ p.Loc.T("dashboard.manage") }</a>
-								}
-							</span>
-						</li>
-					}
-				</ul>
+			for _, g := range p.Groups {
+				@spaceGroup(p, g, len(p.Groups) > 1)
 			}
 		</section>
-
 		<section class="mt-8">
 			<h2 class="panel-title">{ p.Loc.T("dashboard.voted") }</h2>
 			if len(p.Voted) == 0 {
@@ -90,7 +76,6 @@ templ DashboardPage(p DashboardProps) {
 				</ul>
 			}
 		</section>
-
 		<section class="mt-12 border-t border-ink/15 pt-6">
 			<details>
 				<summary class="cursor-pointer text-sm font-semibold">{ p.Loc.T("space.new_heading") }</summary>
@@ -106,4 +91,37 @@ templ DashboardPage(p DashboardProps) {
 			</details>
 		</section>
 	}
+}
+
+// spaceGroup lists one space's polls. The space name is shown only when
+// several groups are on the page; the current space keeps its empty
+// state, which invites creating a poll.
+templ spaceGroup(p DashboardProps, g SpaceGroup, named bool) {
+	<div class="mt-4">
+		if named {
+			<h3 class="text-sm font-semibold">{ g.Space.Name }</h3>
+		}
+		if len(g.Polls) == 0 {
+			<p class="mt-2 text-sm text-ink/60">{ p.Loc.T("dashboard.empty_space") }</p>
+		} else {
+			<ul class="mt-2 divide-y divide-ink/10 border-y border-ink/15">
+				for _, item := range g.Polls {
+					<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+						<span>
+							<a class="underline" href={ templ.URL("/polls/" + item.PublicID) }>{ item.Title }</a>
+							if item.OwnerName != "" {
+								<span class="ml-2 text-xs text-ink/60">{ p.Loc.T("dashboard.by") } { item.OwnerName }</span>
+							}
+						</span>
+						<span class="flex items-center gap-3">
+							<span class="font-mono text-xs text-ink/60">{ p.Loc.T("dashboard.status_" + string(item.Status)) }</span>
+							if item.Manageable {
+								<a class="underline" href={ templ.URL("/polls/" + item.PublicID + "/manage") }>{ p.Loc.T("dashboard.manage") }</a>
+							}
+						</span>
+					</li>
+				}
+			</ul>
+		}
+	</div>
 }
