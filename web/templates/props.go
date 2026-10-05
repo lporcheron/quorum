@@ -18,6 +18,11 @@ type HomeProps struct {
 	// CanCreate is false when the instance reserves poll creation for
 	// signed-in users and the visitor is signed out.
 	CanCreate bool
+	// CanNotify offers the organizer email toggle: only an account can
+	// receive it, and only when the instance sends mail.
+	CanNotify bool
+	// SpaceName is where a signed-in creator's poll will land.
+	SpaceName string
 	Error     string // localized message after a failed submission
 	// Submitted, when set, echoes a refused form back in full — the
 	// calendar picks its options up again, so nothing is lost.

@@ -405,9 +405,9 @@ func SpaceSettingsPage(p SpaceSettingsProps) templ.Component {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var22 string
-						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Loc.T("admin.confirm"))
+						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Loc.T("space.confirm_remove"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/space.templ`, Line: 82, Col: 96}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/space.templ`, Line: 82, Col: 103}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 						if templ_7745c5c3_Err != nil {
@@ -420,7 +420,7 @@ func SpaceSettingsPage(p SpaceSettingsProps) templ.Component {
 						var templ_7745c5c3_Var23 string
 						templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(p.Loc.T("space.remove"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/space.templ`, Line: 82, Col: 124}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/templates/space.templ`, Line: 82, Col: 131}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 						if templ_7745c5c3_Err != nil {

@@ -26,6 +26,13 @@ templ PollPage(p PollPageProps) {
 		if p.Updated {
 			<p class="notice mt-6">{ p.Loc.T("vote.updated") }</p>
 		}
+		// The device remembers personal edit links (quorum.js): the edit
+		// page records this one, the public page offers it back.
+		if p.Me != nil && p.EditToken != "" {
+			<div hidden data-my-vote={ p.Poll.PublicID } data-url={ p.pollPath("/p/" + p.EditToken) } data-name={ p.Me.Name }></div>
+		} else if p.Me == nil {
+			<p class="notice mt-6" hidden data-remembered-vote={ p.Poll.PublicID } data-l10n={ p.Loc.T("vote.remembered") } data-l10n-link={ p.Loc.T("vote.remembered_link") }></p>
+		}
 		if p.JustJoined && p.EditURL != "" {
 			<div class="banner mt-6">
 				<p class="font-semibold">{ p.Loc.T("vote.edit_banner_title") }</p>
@@ -86,7 +93,7 @@ templ commentsSection(p PollPageProps) {
 						<p class="mt-0.5 whitespace-pre-line text-sm">{ c.Body }</p>
 						if p.Me != nil && p.EditToken != "" && c.ParticipantID == p.Me.ID {
 							<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/comments/" + itoa(c.ID) + "/delete")) }>
-								<button class="btn-link text-xs" type="submit">{ p.Loc.T("comments.delete") }</button>
+								<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("comments.confirm_delete") }>{ p.Loc.T("comments.delete") }</button>
 							</form>
 						}
 					</li>

@@ -164,7 +164,7 @@ other = "Editing your vote as"
 other = "Comments"
 
 [comments.empty]
-other = "Nothing here yet."
+other = "No comments yet. Ask a question or leave a note for the group."
 
 [comments.name_label]
 other = "Your name"
@@ -265,8 +265,6 @@ other = "Delete this poll"
 [admin.delete_help]
 other = "Removes the poll, all votes and all comments. No undo."
 
-[admin.confirm]
-other = "Are you sure? This cannot be undone."
 
 # ---- Errors ----
 
@@ -739,11 +737,29 @@ other = "Dark"
 [space.new_help]
 other = "A space groups a team's polls. Invite members by email: admins manage every poll in the space, members only their own. Your personal polls already live in your own space."
 
+[create.prev_month]
+other = "Previous month"
+
+[create.next_month]
+other = "Next month"
+
+[create.lands_in]
+other = "It goes into {{.Space}}."
+
 [error.back_poll]
 other = "Back to the poll"
 
 [vote.email_hint]
 other = "Leave your email to get the chosen date in your calendar."
+
+[vote.remembered]
+other = "You already voted on this poll from this device."
+
+[vote.remembered_link]
+other = "Edit my vote"
+
+[vote.confirm_leave]
+other = "Remove your name and votes from this poll?"
 
 [comments.confirm_delete]
 other = "Delete this comment?"
@@ -774,6 +790,9 @@ other = "Cancel this event? Everyone who got the invitation receives a cancellat
 
 [admin.finalize_confirm_nomail]
 other = "Close the poll on this date? Voting stops and the date shows on the poll page."
+
+[space.confirm_remove]
+other = "Remove this member from the space?"
 
 [grid.tally_sr]
 other = "{{.Yes}} yes, {{.IfNeedBe}} if need be"

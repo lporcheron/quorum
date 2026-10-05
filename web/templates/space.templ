@@ -79,7 +79,7 @@ templ SpaceSettingsPage(p SpaceSettingsProps) {
 								if p.Role == space.RoleOwner || m.Role == space.RoleMember {
 									<form method="post" action={ templ.URL(p.path("/members/" + fmt.Sprintf("%d", m.UserID) + "/remove")) }>
 										@csrfField()
-										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("admin.confirm") }>{ p.Loc.T("space.remove") }</button>
+										<button class="btn-link text-xs" type="submit" data-confirm={ p.Loc.T("space.confirm_remove") }>{ p.Loc.T("space.remove") }</button>
 									</form>
 								}
 							}

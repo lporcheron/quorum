@@ -27,6 +27,12 @@ func (h *Handler) homeProps(r *http.Request) templates.HomeProps {
 		User:      user,
 		Timezones: poll.CommonTimezones,
 		CanCreate: h.canCreatePoll(r, user),
+		CanNotify: user != nil && h.mailer.Enabled(),
+	}
+	if user != nil {
+		if sp, _, err := h.currentSpace(r, user); err == nil {
+			props.SpaceName = sp.Name
+		}
 	}
 	return props
 }

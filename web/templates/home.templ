@@ -14,7 +14,7 @@ templ Home(p HomeProps) {
 				<p class="mt-4 border-l-2 border-ink pl-4 text-xl">{ p.Loc.T("home.tagline") }</p>
 				<p class="mt-3 max-w-prose text-ink/70">{ p.Loc.T("home.blurb") }</p>
 			</div>
-			<section class="hidden" data-recent-polls data-heading={ p.Loc.T("home.recent") }></section>
+			<section class="border-t border-ink/15 pt-6 pb-8" hidden data-recent-polls data-heading={ p.Loc.T("home.recent") }></section>
 			if p.CanCreate {
 				<section class="border-t border-ink/15 pt-8">
 					<h2 class="font-display text-2xl font-semibold">{ p.Loc.T("create.heading") }</h2>
@@ -60,6 +60,8 @@ templ Home(p HomeProps) {
 								data-l10n-add={ p.Loc.T("create.add_slot") }
 								data-l10n-remove={ p.Loc.T("create.remove") }
 								data-l10n-copy={ p.Loc.T("create.copy_times") }
+								data-l10n-prev={ p.Loc.T("create.prev_month") }
+								data-l10n-next={ p.Loc.T("create.next_month") }
 							></div>
 							<div data-option-inputs></div>
 							<noscript>
@@ -112,14 +114,24 @@ templ Home(p HomeProps) {
 									<input type="checkbox" name="allow_comments" value="1" checked?={ d.AllowComments }/>
 									{ p.Loc.T("create.allow_comments") }
 								</label>
-								<label class="flex items-center gap-2 text-sm">
-									<input type="checkbox" name="notify_organizer" value="1" checked/>
-									{ p.Loc.T("create.notify_organizer") }
-								</label>
+								// Only an account can receive the organizer emails;
+								// a guest keeps the default for when they claim it.
+								if p.CanNotify {
+									<label class="flex items-center gap-2 text-sm">
+										<input type="checkbox" name="notify_organizer" value="1" checked?={ d.NotifyOrganizer }/>
+										{ p.Loc.T("create.notify_organizer") }
+									</label>
+								} else {
+									<input type="hidden" name="notify_organizer" value="1"/>
+								}
 							</div>
 						</details>
-
-						<button class="btn btn-primary" type="submit">{ p.Loc.T("create.submit") }</button>
+						<div class="flex flex-wrap items-center gap-3">
+							<button class="btn btn-primary" type="submit">{ p.Loc.T("create.submit") }</button>
+							if p.SpaceName != "" {
+								<span class="text-sm text-ink/70">{ p.Loc.TD("create.lands_in", map[string]any{"Space": p.SpaceName}) }</span>
+							}
+						</div>
 					</form>
 				</section>
 			} else {

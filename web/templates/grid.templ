@@ -207,8 +207,8 @@ templ voteForm(p PollPageProps) {
 		// Leaving needs the edit link; a voter recognized by account
 		// does not carry it.
 		if p.Me != nil && p.EditToken != "" {
-			<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/delete")) } class="mt-3">
-				<button class="btn-link text-sm" type="submit" data-confirm={ p.Loc.T("admin.confirm") }>{ p.Loc.T("vote.leave") }</button>
+			<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/delete")) } class="mt-3" data-forget-vote={ p.Poll.PublicID }>
+				<button class="btn-link text-sm" type="submit" data-confirm={ p.Loc.T("vote.confirm_leave") }>{ p.Loc.T("vote.leave") }</button>
 			</form>
 		}
 	}
