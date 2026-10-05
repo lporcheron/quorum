@@ -36,6 +36,34 @@ func (h *Handler) voter(r *http.Request, userID int64) poll.Voter {
 	}
 }
 
+// rerenderPoll shows the poll page again after a refused submission:
+// the message in place and set() echoing what the visitor typed, so
+// nothing has to be entered twice. Server faults keep the error page.
+func (h *Handler) rerenderPoll(w http.ResponseWriter, r *http.Request, p poll.Poll, me *poll.Participant, token string, err error, set func(*templates.PollPageProps, string)) {
+	status, msgID := errStatus(err)
+	if status >= 500 || status == http.StatusNotFound {
+		h.domainError(w, r, err)
+		return
+	}
+	props, perr := h.pollProps(r, p, me, token)
+	if perr != nil {
+		h.domainError(w, r, perr)
+		return
+	}
+	set(&props, props.Loc.T(msgID))
+	h.render(w, r, status, templates.PollPage(props))
+}
+
+// rerenderVote echoes a refused ballot.
+func (h *Handler) rerenderVote(w http.ResponseWriter, r *http.Request, p poll.Poll, me *poll.Participant, token string, err error) {
+	h.rerenderPoll(w, r, p, me, token, err, func(props *templates.PollPageProps, msg string) {
+		props.VoteError = msg
+		props.Draft = &templates.VoteDraft{
+			Name: r.PostForm.Get("name"), Email: r.PostForm.Get("email"), Votes: parseVotes(r.PostForm),
+		}
+	})
+}
+
 // CreateParticipant records a first-time guest vote and redirects to
 // the personal edit page, where the edit link is shown once. A
 // signed-in voter who already has a row gets it updated instead, and
@@ -64,7 +92,7 @@ func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 	pa, editToken, err := h.polls.Join(r.Context(), p, h.voter(r, userID), parseVotes(r.PostForm))
 	if err != nil {
-		h.domainError(w, r, err)
+		h.rerenderVote(w, r, p, nil, "", err)
 		return
 	}
 	if editToken == "" {
@@ -119,7 +147,7 @@ func (h *Handler) UpdateVotes(w http.ResponseWriter, r *http.Request) {
 	}
 	err := h.polls.UpdateVotes(r.Context(), p, pa, h.voter(r, 0), parseVotes(r.PostForm))
 	if err != nil {
-		h.domainError(w, r, err)
+		h.rerenderVote(w, r, p, &pa, token, err)
 		return
 	}
 	redirect(w, r, "/polls/"+p.PublicID+"/p/"+token+"?updated=1")

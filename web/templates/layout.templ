@@ -123,7 +123,10 @@ templ ErrorPage(p ErrorProps) {
 		<div class="mx-auto max-w-xl py-24">
 			<h1 class="font-display text-3xl font-semibold">{ p.Loc.T("error.heading") }</h1>
 			<p class="mt-4 text-lg">{ p.Message }</p>
-			<p class="mt-8">
+			<p class="mt-8 flex flex-wrap gap-3">
+				if p.BackURL != "" {
+					<a href={ templ.SafeURL(p.BackURL) } class="btn btn-primary">{ p.Loc.T("error.back_poll") }</a>
+				}
 				<a href="/" class="btn">{ p.Loc.T("error.back_home") }</a>
 			</p>
 		</div>

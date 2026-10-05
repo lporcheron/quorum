@@ -93,6 +93,9 @@ templ commentsSection(p PollPageProps) {
 				}
 			</ul>
 			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2" data-unsaved-guard id="comment">
+				if p.CommentError != "" {
+					<p class="error" role="alert">{ p.CommentError }</p>
+				}
 				switch  {
 					case p.Me != nil && p.EditToken != "":
 						<input type="hidden" name="ptoken" value={ p.EditToken }/>
@@ -102,12 +105,12 @@ templ commentsSection(p PollPageProps) {
 					default:
 						<label class="block">
 							<span class="lbl">{ p.Loc.T("comments.name_label") }</span>
-							<input class="field" type="text" name="author_name" required/>
+							<input class="field" type="text" name="author_name" required value={ commentName(p) }/>
 						</label>
 				}
 				<label class="block">
 					<span class="lbl">{ p.Loc.T("comments.body_label") }</span>
-					<textarea class="field w-full" name="body" rows="2" required></textarea>
+					<textarea class="field w-full" name="body" rows="2" required>{ p.CommentBody }</textarea>
 				</label>
 				<button class="btn" type="submit">{ p.Loc.T("comments.submit") }</button>
 			</form>

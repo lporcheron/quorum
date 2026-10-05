@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -18,8 +19,55 @@ type HomeProps struct {
 	// signed-in users and the visitor is signed out.
 	CanCreate bool
 	Error     string // localized message after a failed submission
-	// Submitted values echoed back on error so text fields survive.
+	// Submitted, when set, echoes a refused form back in full — the
+	// calendar picks its options up again, so nothing is lost.
+	Submitted *CreateDraft
+}
+
+// CreateDraft is a refused creation form, as posted.
+type CreateDraft struct {
 	Title, Description, Location, VideoURL string
+	Kind, Timezone                         string
+	HideParticipants, RequireVoterEmail    bool
+	AllowComments, NotifyOrganizer         bool
+	Options                                []DraftOption
+}
+
+// DraftOption is one posted option row; Start and Duration are empty
+// for whole days.
+type DraftOption struct {
+	Date     string `json:"d"`
+	Start    string `json:"s,omitempty"`
+	Duration string `json:"m,omitempty"`
+}
+
+// draft returns the echoed form, or the defaults of a fresh one.
+func (p HomeProps) draft() CreateDraft {
+	if p.Submitted != nil {
+		return *p.Submitted
+	}
+	return CreateDraft{Kind: "timed", Timezone: "UTC", AllowComments: true, NotifyOrganizer: true}
+}
+
+// draftOptionsJSON seeds the calendar with the echoed options.
+func (p HomeProps) draftOptionsJSON() string {
+	if p.Submitted == nil || len(p.Submitted.Options) == 0 {
+		return ""
+	}
+	b, err := json.Marshal(p.Submitted.Options)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+// noscriptRows pads the echoed options to the fallback's five rows.
+func (p HomeProps) noscriptRows() []DraftOption {
+	rows := append([]DraftOption(nil), p.draft().Options...)
+	for len(rows) < 5 {
+		rows = append(rows, DraftOption{})
+	}
+	return rows
 }
 
 // PollPageProps feeds the public poll page and its grid partial.
@@ -46,6 +94,21 @@ type PollPageProps struct {
 	FinalizedLabel string
 	// OGImage is the absolute URL of the link-preview banner.
 	OGImage string
+
+	// After a refused submission the page is rendered again with the
+	// message in place and what the visitor typed: VoteError/Draft for
+	// the ballot, CommentError/CommentName/CommentBody for a comment.
+	VoteError    string
+	Draft        *VoteDraft
+	CommentError string
+	CommentName  string
+	CommentBody  string
+}
+
+// VoteDraft is a ballot echoed back after a refused submission.
+type VoteDraft struct {
+	Name, Email string
+	Votes       map[int64]poll.VoteValue
 }
 
 func (p PollPageProps) lang() string { return p.Loc.Lang }
@@ -74,8 +137,12 @@ func (p PollPageProps) voteAction() string {
 	return p.pollPath("/participants")
 }
 
-// myVote returns the viewer's recorded vote for an option, "" if none.
+// myVote returns the viewer's vote for an option, "" if none: the
+// refused draft first, else what is recorded.
 func (p PollPageProps) myVote(optionID int64) poll.VoteValue {
+	if p.Draft != nil {
+		return p.Draft.Votes[optionID]
+	}
 	if p.Me == nil {
 		return ""
 	}
@@ -164,6 +231,8 @@ type ErrorProps struct {
 	Loc     *i18n.Locale
 	User    *auth.User
 	Message string
+	// BackURL, when set, leads back to the poll the error came from.
+	BackURL string
 }
 
 func itoa(n int64) string { return fmt.Sprintf("%d", n) }
@@ -200,6 +269,9 @@ func ringDash(t poll.Tally, participants int) string {
 // meName prefills the vote form: the participant being edited, else
 // the signed-in account.
 func meName(p PollPageProps) string {
+	if p.Draft != nil {
+		return p.Draft.Name
+	}
 	if p.Me != nil {
 		return p.Me.Name
 	}
@@ -210,11 +282,35 @@ func meName(p PollPageProps) string {
 }
 
 func meEmail(p PollPageProps) string {
+	if p.Draft != nil {
+		return p.Draft.Email
+	}
 	if p.Me != nil {
 		return p.Me.Email
 	}
 	if p.User != nil {
 		return p.User.Email
+	}
+	return ""
+}
+
+// durationPicked preselects a duration option: the echoed value, or
+// one hour when there is none.
+func durationPicked(minutes int, selected string) bool {
+	if selected == "" {
+		return minutes == 60
+	}
+	return fmt.Sprintf("%d", minutes) == selected
+}
+
+// commentName prefills a guest comment's name: the refused draft, else
+// the signed-in account.
+func commentName(p PollPageProps) string {
+	if p.CommentName != "" {
+		return p.CommentName
+	}
+	if p.User != nil {
+		return p.User.Name
 	}
 	return ""
 }

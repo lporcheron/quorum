@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -330,8 +331,25 @@ func (h *Handler) parseForm(w http.ResponseWriter, r *http.Request) bool {
 func (h *Handler) renderError(w http.ResponseWriter, r *http.Request, status int, msgID string) {
 	loc := h.locale(r)
 	h.render(w, r, status, templates.ErrorPage(templates.ErrorProps{
-		Loc: loc, User: h.currentUser(r), Message: loc.T(msgID),
+		Loc: loc, User: h.currentUser(r), Message: loc.T(msgID), BackURL: backToPoll(r, status),
 	}))
+}
+
+// backToPoll is where the error page sends a visitor whose action on a
+// poll failed: the page they came from when it is that poll's (the
+// admin or edit page keeps its capability path), else the public page.
+// Nothing for a missing poll, or outside poll routes.
+func backToPoll(r *http.Request, status int) string {
+	id := r.PathValue("pollID")
+	if id == "" || status == http.StatusNotFound {
+		return ""
+	}
+	base := "/polls/" + id
+	if ref, err := url.Parse(r.Referer()); err == nil && ref.Host == r.Host &&
+		(ref.Path == base || strings.HasPrefix(ref.Path, base+"/")) {
+		return ref.RequestURI()
+	}
+	return base
 }
 
 // defaults gathers the profile hints for a first sign-in.

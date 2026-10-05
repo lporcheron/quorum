@@ -16,13 +16,19 @@ import (
 // Home renders the landing page, with the creation form when the
 // visitor is allowed to create a poll.
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
+	h.render(w, r, http.StatusOK, templates.Home(h.homeProps(r)))
+}
+
+// homeProps assembles the landing page for the current visitor.
+func (h *Handler) homeProps(r *http.Request) templates.HomeProps {
 	user := h.currentUser(r)
-	h.render(w, r, http.StatusOK, templates.Home(templates.HomeProps{
+	props := templates.HomeProps{
 		Loc:       h.locale(r),
 		User:      user,
 		Timezones: poll.CommonTimezones,
 		CanCreate: h.canCreatePoll(r, user),
-	}))
+	}
+	return props
 }
 
 // canCreatePoll answers the instance policy on guest poll creation:
@@ -94,26 +100,43 @@ func (h *Handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	redirect(w, r, "/polls/"+p.PublicID+"/admin/"+adminToken+"?new=1")
 }
 
-// rerenderCreate shows the creation form again with the error and the
-// text fields preserved.
+// rerenderCreate shows the creation form again with the error and
+// everything that was posted, options included.
 func (h *Handler) rerenderCreate(w http.ResponseWriter, r *http.Request, err error) {
 	status, msgID := errStatus(err)
 	if status >= 500 {
 		h.domainError(w, r, err)
 		return
 	}
-	loc := h.locale(r)
-	h.render(w, r, status, templates.Home(templates.HomeProps{
-		Loc:         loc,
-		User:        h.currentUser(r),
-		Timezones:   poll.CommonTimezones,
-		CanCreate:   true,
-		Error:       loc.T(msgID),
-		Title:       r.PostForm.Get("title"),
-		Description: r.PostForm.Get("description"),
-		Location:    r.PostForm.Get("location"),
-		VideoURL:    r.PostForm.Get("video_url"),
-	}))
+	f := r.PostForm
+	d := &templates.CreateDraft{
+		Title: f.Get("title"), Description: f.Get("description"),
+		Location: f.Get("location"), VideoURL: f.Get("video_url"),
+		Kind: f.Get("kind"), Timezone: f.Get("timezone"),
+		HideParticipants:  f.Get("hide_participants") == "1",
+		RequireVoterEmail: f.Get("require_voter_email") == "1",
+		AllowComments:     f.Get("allow_comments") == "1",
+		NotifyOrganizer:   f.Get("notify_organizer") == "1",
+	}
+	for i, date := range f["option_date"] {
+		if strings.TrimSpace(date) == "" {
+			continue
+		}
+		o := templates.DraftOption{Date: date}
+		if d.Kind != string(poll.KindAllDay) {
+			if i < len(f["option_start"]) {
+				o.Start = f["option_start"][i]
+			}
+			if i < len(f["option_duration"]) {
+				o.Duration = f["option_duration"][i]
+			}
+		}
+		d.Options = append(d.Options, o)
+	}
+	props := h.homeProps(r)
+	props.Error = props.Loc.T(msgID)
+	props.Submitted = d
+	h.render(w, r, status, templates.Home(props))
 }
 
 // parseOptionRows turns the parallel option_* form arrays into domain

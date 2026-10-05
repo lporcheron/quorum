@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/lporcheron/quorum/internal/poll"
+	"github.com/lporcheron/quorum/web/templates"
 )
 
 // CreateComment posts a comment, attributed to the participant when a
@@ -25,7 +26,8 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 	back := "/polls/" + p.PublicID
 	var participant *poll.Participant
-	if token := r.PostForm.Get("ptoken"); token != "" {
+	token := r.PostForm.Get("ptoken")
+	if token != "" {
 		pa, err := h.polls.ParticipantByToken(r.Context(), p, token)
 		if err != nil {
 			h.domainError(w, r, err)
@@ -40,7 +42,11 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 	c, err := h.polls.AddComment(r.Context(), p, participant, userID, r.PostForm.Get("author_name"), r.PostForm.Get("body"))
 	if err != nil {
-		h.domainError(w, r, err)
+		h.rerenderPoll(w, r, p, participant, token, err, func(props *templates.PollPageProps, msg string) {
+			props.CommentError = msg
+			props.CommentName = r.PostForm.Get("author_name")
+			props.CommentBody = r.PostForm.Get("body")
+		})
 		return
 	}
 	h.notify.CommentPosted(r.Context(), p, c.AuthorName)
