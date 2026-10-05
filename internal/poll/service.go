@@ -337,11 +337,39 @@ func checkVoter(p Poll, name, email string) (string, string, error) {
 	return name, email, nil
 }
 
+// ParticipantForUser returns the row a signed-in account voted with on
+// this poll, or ErrNotFound.
+func (s *Service) ParticipantForUser(ctx context.Context, p Poll, userID int64) (Participant, error) {
+	row, err := s.store.GetParticipantByUser(ctx, sqlite.GetParticipantByUserParams{
+		PollID: p.ID, UserID: nullInt64(userID),
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		return Participant{}, ErrNotFound
+	}
+	if err != nil {
+		return Participant{}, fmt.Errorf("get participant by user: %w", err)
+	}
+	return participantFromRow(row)
+}
+
 // Join records a first-time voter and returns their personal edit
-// token — shown once, stored hashed. userID links the participant to a
-// signed-in account (0 for guests).
-func (s *Service) Join(ctx context.Context, p Poll, name, email string, userID int64, votes map[int64]VoteValue) (Participant, string, error) {
-	name, email, err := checkVoter(p, name, email)
+// token — shown once, stored hashed. A signed-in account votes at most
+// once per poll: when it already has a row, Join updates that row and
+// returns an empty token (the account, not a link, is the way back).
+func (s *Service) Join(ctx context.Context, p Poll, v Voter, votes map[int64]VoteValue) (Participant, string, error) {
+	if v.UserID != 0 {
+		existing, err := s.ParticipantForUser(ctx, p, v.UserID)
+		if err == nil {
+			if err := s.UpdateVotes(ctx, p, existing, v, votes); err != nil {
+				return Participant{}, "", err
+			}
+			return existing, "", nil
+		}
+		if !errors.Is(err, ErrNotFound) {
+			return Participant{}, "", err
+		}
+	}
+	name, email, err := checkVoter(p, v.Name, v.Email)
 	if err != nil {
 		return Participant{}, "", err
 	}
@@ -360,7 +388,7 @@ func (s *Service) Join(ctx context.Context, p Poll, name, email string, userID i
 			PollID:        p.ID,
 			Name:          name,
 			Email:         nullString(email),
-			UserID:        nullInt64(userID),
+			UserID:        nullInt64(v.UserID),
 			EditTokenHash: ids.HashToken(editToken),
 			CreatedAt:     store.FormatTime(now),
 			UpdatedAt:     store.FormatTime(now),
@@ -382,8 +410,8 @@ func (s *Service) Join(ctx context.Context, p Poll, name, email string, userID i
 
 // UpdateVotes replaces a participant's votes (and name/email) — the
 // personal edit link flow. Options absent from votes become "no answer".
-func (s *Service) UpdateVotes(ctx context.Context, p Poll, participant Participant, name, email string, votes map[int64]VoteValue) error {
-	name, email, err := checkVoter(p, name, email)
+func (s *Service) UpdateVotes(ctx context.Context, p Poll, participant Participant, v Voter, votes map[int64]VoteValue) error {
+	name, email, err := checkVoter(p, v.Name, v.Email)
 	if err != nil {
 		return err
 	}

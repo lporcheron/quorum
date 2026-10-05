@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -166,9 +167,19 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 		return templates.PollPageProps{}, err
 	}
 	tzName, tz := h.viewerTZ(r, p)
+	user := h.currentUser(r)
+	// A signed-in visitor without an edit link is recognized by their
+	// account: their row is shown as theirs, ready to edit.
+	if me == nil && user != nil {
+		if pa, err := h.polls.ParticipantForUser(r.Context(), p, user.ID); err == nil {
+			me = &pa
+		} else if !errors.Is(err, poll.ErrNotFound) {
+			return templates.PollPageProps{}, err
+		}
+	}
 	props := templates.PollPageProps{
 		Loc:       h.locale(r),
-		User:      h.currentUser(r),
+		User:      user,
 		Poll:      p,
 		View:      v,
 		TZ:        tz,
@@ -196,6 +207,7 @@ func (h *Handler) ShowPoll(w http.ResponseWriter, r *http.Request) {
 		h.domainError(w, r, err)
 		return
 	}
+	props.Updated = r.URL.Query().Get("updated") == "1"
 	h.render(w, r, http.StatusOK, templates.PollPage(props))
 }
 

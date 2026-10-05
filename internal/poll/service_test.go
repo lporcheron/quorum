@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lporcheron/quorum/internal/ids"
+	"github.com/lporcheron/quorum/internal/store"
+	"github.com/lporcheron/quorum/internal/store/sqlite"
 	"github.com/lporcheron/quorum/internal/store/storetest"
 )
 
@@ -122,11 +125,11 @@ func TestJoinVoteEditFlow(t *testing.T) {
 	v, _ := s.View(ctx, p)
 	opt1, opt2 := v.Options[0].ID, v.Options[1].ID
 
-	alice, aliceToken, err := s.Join(ctx, p, "Alice", "alice@example.com", 0, map[int64]VoteValue{opt1: VoteYes, opt2: VoteNo})
+	alice, aliceToken, err := s.Join(ctx, p, Voter{Name: "Alice", Email: "alice@example.com"}, map[int64]VoteValue{opt1: VoteYes, opt2: VoteNo})
 	if err != nil {
 		t.Fatalf("Join: %v", err)
 	}
-	_, _, err = s.Join(ctx, p, "Bob", "", 0, map[int64]VoteValue{opt1: VoteIfNeedBe, opt2: VoteYes, 99999: VoteYes})
+	_, _, err = s.Join(ctx, p, Voter{Name: "Bob"}, map[int64]VoteValue{opt1: VoteIfNeedBe, opt2: VoteYes, 99999: VoteYes})
 	if err != nil {
 		t.Fatalf("Join bob: %v", err)
 	}
@@ -154,7 +157,7 @@ func TestJoinVoteEditFlow(t *testing.T) {
 	if err != nil || got.ID != alice.ID {
 		t.Fatalf("ParticipantByToken: %v (got %+v)", err, got)
 	}
-	if err := s.UpdateVotes(ctx, p, got, "Alice L.", "alice@example.com", map[int64]VoteValue{opt2: VoteYes}); err != nil {
+	if err := s.UpdateVotes(ctx, p, got, Voter{Name: "Alice L.", Email: "alice@example.com"}, map[int64]VoteValue{opt2: VoteYes}); err != nil {
 		t.Fatalf("UpdateVotes: %v", err)
 	}
 	v, _ = s.View(ctx, p)
@@ -177,7 +180,7 @@ func TestJoinValidation(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 
-	if _, _, err := s.Join(ctx, p, "  ", "", 0, nil); !errors.Is(err, ErrNameRequired) {
+	if _, _, err := s.Join(ctx, p, Voter{Name: "  "}, nil); !errors.Is(err, ErrNameRequired) {
 		t.Errorf("blank name: %v", err)
 	}
 
@@ -188,10 +191,10 @@ func TestJoinValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	if _, _, err := s.Join(ctx, strict, "Carol", "", 0, nil); !errors.Is(err, ErrEmailRequired) {
+	if _, _, err := s.Join(ctx, strict, Voter{Name: "Carol"}, nil); !errors.Is(err, ErrEmailRequired) {
 		t.Errorf("missing required email: %v", err)
 	}
-	if _, _, err := s.Join(ctx, strict, "Carol", "not-an-email", 0, nil); !errors.Is(err, ErrBadEmail) {
+	if _, _, err := s.Join(ctx, strict, Voter{Name: "Carol", Email: "not-an-email"}, nil); !errors.Is(err, ErrBadEmail) {
 		t.Errorf("malformed required email: %v", err)
 	}
 	// An optional email is still validated when given: it ends up in
@@ -201,7 +204,7 @@ func TestJoinValidation(t *testing.T) {
 		"Eve <eve@example.com>",
 		"not-an-email",
 	} {
-		if _, _, err := s.Join(ctx, p, "Dave", bad, 0, nil); !errors.Is(err, ErrBadEmail) {
+		if _, _, err := s.Join(ctx, p, Voter{Name: "Dave", Email: bad}, nil); !errors.Is(err, ErrBadEmail) {
 			t.Errorf("Join(email %q): %v, want ErrBadEmail", bad, err)
 		}
 	}
@@ -210,7 +213,7 @@ func TestJoinValidation(t *testing.T) {
 		t.Fatalf("SetPaused: %v", err)
 	}
 	paused, _ := s.ByPublicID(ctx, p.PublicID)
-	if _, _, err := s.Join(ctx, paused, "Dave", "", 0, nil); !errors.Is(err, ErrPollClosed) {
+	if _, _, err := s.Join(ctx, paused, Voter{Name: "Dave"}, nil); !errors.Is(err, ErrPollClosed) {
 		t.Errorf("paused poll accepted a vote: %v", err)
 	}
 }
@@ -221,7 +224,7 @@ func TestOptionManagement(t *testing.T) {
 	v, _ := s.View(ctx, p)
 
 	// Add an option later; existing participants get "no answer" on it.
-	if _, _, err := s.Join(ctx, p, "Alice", "", 0, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
+	if _, _, err := s.Join(ctx, p, Voter{Name: "Alice"}, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
 		t.Fatalf("Join: %v", err)
 	}
 	err := s.AddOptions(ctx, p, []TimedSlot{{Date: Date{2026, time.September, 14}, Hour: 19, Duration: 2 * time.Hour}}, nil)
@@ -259,7 +262,7 @@ func TestComments(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 
-	alice, _, err := s.Join(ctx, p, "Alice", "", 0, nil)
+	alice, _, err := s.Join(ctx, p, Voter{Name: "Alice"}, nil)
 	if err != nil {
 		t.Fatalf("Join: %v", err)
 	}
@@ -305,7 +308,7 @@ func TestDeletePollCascades(t *testing.T) {
 	ctx, s := newTestService(t)
 	p, _ := createTimedPoll(t, ctx, s)
 	v, _ := s.View(ctx, p)
-	if _, _, err := s.Join(ctx, p, "Alice", "", 0, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
+	if _, _, err := s.Join(ctx, p, Voter{Name: "Alice"}, map[int64]VoteValue{v.Options[0].ID: VoteYes}); err != nil {
 		t.Fatalf("Join: %v", err)
 	}
 	if err := s.Delete(ctx, p); err != nil {
@@ -378,4 +381,59 @@ func TestDecidedPollStaysDecided(t *testing.T) {
 	if p, _ = s.ByPublicID(ctx, p.PublicID); p.Status != StatusFinalized {
 		t.Errorf("status = %s, want finalized", p.Status)
 	}
+}
+
+// TestSignedInVoterKeepsOneRow: an account votes once per poll. A
+// second ballot updates the same row instead of adding a duplicate,
+// and ParticipantForUser finds it for the returning visitor.
+func TestSignedInVoterKeepsOneRow(t *testing.T) {
+	ctx, s := newTestService(t)
+	p, _, err := s.Create(ctx, NewPoll{Title: "Once", Kind: KindAllDay, Dates: []Date{{2026, time.September, 1}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := s.View(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opt := v.Options[0].ID
+	// The account needs a real users row: the column is a foreign key.
+	uid := createTestUser(t, s, "voter@example.com")
+
+	first, token, err := s.Join(ctx, p, Voter{Name: "Alice", UserID: uid}, map[int64]VoteValue{opt: VoteNo})
+	if err != nil || token == "" {
+		t.Fatalf("first Join: token %q, err %v", token, err)
+	}
+	again, token, err := s.Join(ctx, p, Voter{Name: "Alice B.", UserID: uid}, map[int64]VoteValue{opt: VoteYes})
+	if err != nil {
+		t.Fatalf("second Join: %v", err)
+	}
+	if token != "" || again.ID != first.ID {
+		t.Errorf("second Join: participant %d token %q, want the same row and no new link", again.ID, token)
+	}
+	v, err = s.View(ctx, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(v.Participants) != 1 || v.Votes[first.ID][opt] != VoteYes || v.Participants[0].Name != "Alice B." {
+		t.Errorf("after re-vote: %d participants, vote %q", len(v.Participants), v.Votes[first.ID][opt])
+	}
+	if got, err := s.ParticipantForUser(ctx, p, uid); err != nil || got.ID != first.ID {
+		t.Errorf("ParticipantForUser = %d, %v", got.ID, err)
+	}
+	if _, err := s.ParticipantForUser(ctx, p, uid+1); !errors.Is(err, ErrNotFound) {
+		t.Errorf("stranger: %v, want ErrNotFound", err)
+	}
+}
+
+func createTestUser(t *testing.T, s *Service, email string) int64 {
+	t.Helper()
+	u, err := s.store.CreateUser(context.Background(), sqlite.CreateUserParams{
+		PublicID: ids.PublicID(), Email: email, Name: email, Locale: "en", Timezone: "UTC",
+		CreatedAt: store.FormatTime(testNow),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u.ID
 }

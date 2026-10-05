@@ -135,7 +135,10 @@ templ quorumRing(t poll.Tally, participants int) {
 // voting must work without JavaScript.
 templ voteForm(p PollPageProps) {
 	if p.Poll.Open() && !p.IsAdmin {
-		<form method="post" action={ templ.URL(p.voteAction()) } class="qvote mt-6" data-unsaved-guard>
+		<form method="post" action={ templ.URL(p.voteAction()) } class="qvote mt-6" data-unsaved-guard id="vote">
+			if p.User != nil {
+				@csrfField()
+			}
 			<h2 class="font-display text-lg font-semibold">
 				{ p.Loc.T("vote.your_row") }
 				if p.Me != nil {
@@ -183,7 +186,9 @@ templ voteForm(p PollPageProps) {
 				}
 			</div>
 		</form>
-		if p.Me != nil {
+		// Leaving needs the edit link; a voter recognized by account
+		// does not carry it.
+		if p.Me != nil && p.EditToken != "" {
 			<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/delete")) } class="mt-3">
 				<button class="btn-link text-sm" type="submit" data-confirm={ p.Loc.T("admin.confirm") }>{ p.Loc.T("vote.leave") }</button>
 			</form>

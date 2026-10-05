@@ -257,14 +257,20 @@ func (h *Handler) CSRF(next http.HandlerFunc) http.HandlerFunc {
 		if !h.parseForm(w, r) {
 			return
 		}
-		want := h.sessions.GetString(r.Context(), sessCSRFKey)
-		got := r.PostForm.Get("csrf")
-		if want == "" || subtle.ConstantTimeCompare([]byte(got), []byte(want)) != 1 {
+		if !h.csrfOK(r) {
 			h.renderError(w, r, http.StatusForbidden, "error.csrf")
 			return
 		}
 		next(w, r)
 	}
+}
+
+// csrfOK checks the synchronizer token of an already parsed form. For
+// routes open to guests that act on the session when one exists.
+func (h *Handler) csrfOK(r *http.Request) bool {
+	want := h.sessions.GetString(r.Context(), sessCSRFKey)
+	got := r.PostForm.Get("csrf")
+	return want != "" && subtle.ConstantTimeCompare([]byte(got), []byte(want)) == 1
 }
 
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {

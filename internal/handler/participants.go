@@ -28,8 +28,18 @@ func parseVotes(form map[string][]string) map[int64]poll.VoteValue {
 	return votes
 }
 
+// voter reads the ballot's identity fields.
+func (h *Handler) voter(r *http.Request, userID int64) poll.Voter {
+	return poll.Voter{
+		Name: r.PostForm.Get("name"), Email: r.PostForm.Get("email"),
+		UserID: userID,
+	}
+}
+
 // CreateParticipant records a first-time guest vote and redirects to
-// the personal edit page, where the edit link is shown once.
+// the personal edit page, where the edit link is shown once. A
+// signed-in voter who already has a row gets it updated instead, and
+// lands back on the poll.
 func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	if !h.allow(w, r, h.limitVote) {
 		return
@@ -44,11 +54,21 @@ func (h *Handler) CreateParticipant(w http.ResponseWriter, r *http.Request) {
 	}
 	var userID int64
 	if u := h.currentUser(r); u != nil {
+		// The vote now acts on the account's row: a forged form must
+		// not be able to change it.
+		if !h.csrfOK(r) {
+			h.renderError(w, r, http.StatusForbidden, "error.csrf")
+			return
+		}
 		userID = u.ID
 	}
-	pa, editToken, err := h.polls.Join(r.Context(), p, r.PostForm.Get("name"), r.PostForm.Get("email"), userID, parseVotes(r.PostForm))
+	pa, editToken, err := h.polls.Join(r.Context(), p, h.voter(r, userID), parseVotes(r.PostForm))
 	if err != nil {
 		h.domainError(w, r, err)
+		return
+	}
+	if editToken == "" {
+		redirect(w, r, "/polls/"+p.PublicID+"?updated=1")
 		return
 	}
 	h.notify.VoteCast(r.Context(), p, pa.Name)
@@ -97,7 +117,7 @@ func (h *Handler) UpdateVotes(w http.ResponseWriter, r *http.Request) {
 	if !h.parseForm(w, r) {
 		return
 	}
-	err := h.polls.UpdateVotes(r.Context(), p, pa, r.PostForm.Get("name"), r.PostForm.Get("email"), parseVotes(r.PostForm))
+	err := h.polls.UpdateVotes(r.Context(), p, pa, h.voter(r, 0), parseVotes(r.PostForm))
 	if err != nil {
 		h.domainError(w, r, err)
 		return

@@ -214,7 +214,7 @@ func seed(ctx context.Context, dbPath string) (string, error) {
 				votes[opt.ID] = poll.VoteNo
 			}
 		}
-		if _, _, err := polls.Join(ctx, p, b.name, "", 0, votes); err != nil {
+		if _, _, err := polls.Join(ctx, p, poll.Voter{Name: b.name}, votes); err != nil {
 			return "", fmt.Errorf("ballot for %s: %w", b.name, err)
 		}
 	}

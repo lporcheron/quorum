@@ -64,9 +64,11 @@ func (p PollPageProps) gridURL() string {
 	return u
 }
 
-// voteAction is where the vote form posts.
+// voteAction is where the vote form posts. A viewer recognized by
+// account posts to the same endpoint as a first vote: the service
+// updates their row.
 func (p PollPageProps) voteAction() string {
-	if p.Me != nil {
+	if p.Me != nil && p.EditToken != "" {
 		return p.pollPath("/p/" + p.EditToken + "/votes")
 	}
 	return p.pollPath("/participants")

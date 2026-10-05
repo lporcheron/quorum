@@ -137,6 +137,13 @@ type Participant struct {
 	CreatedAt time.Time
 }
 
+// Voter is who casts a ballot: what they typed and the signed-in
+// account behind them (0 for a guest).
+type Voter struct {
+	Name, Email string
+	UserID      int64
+}
+
 // Comment is a message on the poll page.
 type Comment struct {
 	ID            int64

@@ -84,7 +84,7 @@ templ commentsSection(p PollPageProps) {
 							<span class="ml-2 font-mono text-xs text-ink/50">{ Stamp(p.lang(), c.CreatedAt, p.TZ) }</span>
 						</p>
 						<p class="mt-0.5 whitespace-pre-line text-sm">{ c.Body }</p>
-						if p.Me != nil && c.ParticipantID == p.Me.ID {
+						if p.Me != nil && p.EditToken != "" && c.ParticipantID == p.Me.ID {
 							<form method="post" action={ templ.URL(p.pollPath("/p/" + p.EditToken + "/comments/" + itoa(c.ID) + "/delete")) }>
 								<button class="btn-link text-xs" type="submit">{ p.Loc.T("comments.delete") }</button>
 							</form>
@@ -92,14 +92,18 @@ templ commentsSection(p PollPageProps) {
 					</li>
 				}
 			</ul>
-			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2" data-unsaved-guard>
-				if p.Me != nil {
-					<input type="hidden" name="ptoken" value={ p.EditToken }/>
-				} else {
-					<label class="block">
-						<span class="lbl">{ p.Loc.T("comments.name_label") }</span>
-						<input class="field" type="text" name="author_name" required/>
-					</label>
+			<form method="post" action={ templ.URL(p.pollPath("/comments")) } class="mt-5 space-y-2" data-unsaved-guard id="comment">
+				switch  {
+					case p.Me != nil && p.EditToken != "":
+						<input type="hidden" name="ptoken" value={ p.EditToken }/>
+					case p.Me != nil:
+						// Recognized by account: comment under the voting name.
+						<input type="hidden" name="author_name" value={ p.Me.Name }/>
+					default:
+						<label class="block">
+							<span class="lbl">{ p.Loc.T("comments.name_label") }</span>
+							<input class="field" type="text" name="author_name" required/>
+						</label>
 				}
 				<label class="block">
 					<span class="lbl">{ p.Loc.T("comments.body_label") }</span>

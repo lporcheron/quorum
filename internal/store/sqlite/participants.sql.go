@@ -125,6 +125,34 @@ func (q *Queries) GetParticipantByEditTokenHash(ctx context.Context, editTokenHa
 	return i, err
 }
 
+const getParticipantByUser = `-- name: GetParticipantByUser :one
+SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE poll_id = ?1 AND user_id = ?2 ORDER BY id LIMIT 1
+`
+
+type GetParticipantByUserParams struct {
+	PollID int64
+	UserID sql.NullInt64
+}
+
+// The row a signed-in account voted with, oldest first should an
+// account somehow hold two.
+func (q *Queries) GetParticipantByUser(ctx context.Context, arg GetParticipantByUserParams) (Participant, error) {
+	row := q.db.QueryRowContext(ctx, getParticipantByUser, arg.PollID, arg.UserID)
+	var i Participant
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.PollID,
+		&i.Name,
+		&i.Email,
+		&i.UserID,
+		&i.EditTokenHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listPollParticipants = `-- name: ListPollParticipants :many
 SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE poll_id = ?1 ORDER BY created_at, id
 `

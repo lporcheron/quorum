@@ -85,7 +85,7 @@ func newAccountFixture(t *testing.T) (context.Context, *accountFixture) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.victimPart, _, err = f.polls.Join(ctx, f.otherPoll, "Victim", "victim@example.com", f.victim.ID,
+	f.victimPart, _, err = f.polls.Join(ctx, f.otherPoll, poll.Voter{Name: "Victim", Email: "victim@example.com", UserID: f.victim.ID},
 		map[int64]poll.VoteValue{v.Options[0].ID: poll.VoteYes})
 	if err != nil {
 		t.Fatal(err)

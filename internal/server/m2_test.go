@@ -200,11 +200,36 @@ func TestSignedInVoteLinksAccount(t *testing.T) {
 		t.Errorf("vote form not prefilled from the account")
 	}
 	ids := optionIDs(t, body)
-	resp, _ := cPost(t, c, ts.URL+public+"/participants", url.Values{
+	// The vote acts on the account: a form without its CSRF token is refused.
+	if resp, _ := cPost(t, c, ts.URL+public+"/participants", url.Values{
+		"name": {"Forged"}, "vote_" + ids[0]: {"no"},
+	}); resp.StatusCode != http.StatusForbidden {
+		t.Errorf("vote without CSRF token: %d, want 403", resp.StatusCode)
+	}
+	resp, _ := cPostS(t, ts, c, public+"/participants", url.Values{
 		"name": {"Voter V."}, "vote_" + ids[0]: {"yes"},
 	})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("vote: %d", resp.StatusCode)
+	}
+
+	// Back on the public page, without any edit link, the account finds
+	// its own ballot ready to edit…
+	_, body = cGet(t, c, ts.URL+public)
+	yes := regexp.MustCompile(`name="vote_` + ids[0] + `" value="yes" checked`)
+	if !strings.Contains(body, `value="Voter V."`) || !yes.MatchString(body) {
+		t.Errorf("returning voter does not see their ballot")
+	}
+	// …and voting again updates that row instead of adding a second one.
+	resp, _ = cPostS(t, ts, c, public+"/participants", url.Values{
+		"name": {"Voter V."}, "vote_" + ids[0]: {"no"},
+	})
+	if resp.StatusCode != http.StatusOK || resp.Request.URL.Query().Get("updated") != "1" {
+		t.Fatalf("re-vote: %d at %s", resp.StatusCode, resp.Request.URL)
+	}
+	_, body = cGet(t, c, ts.URL+public)
+	if !strings.Contains(body, "1 participant") || strings.Contains(body, "2 participants") {
+		t.Errorf("re-vote added a participant row")
 	}
 
 	// The poll shows up under "polls I voted in".
