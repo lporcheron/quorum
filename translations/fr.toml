@@ -742,6 +742,9 @@ other = "Un espace regroupe les sondages d'une équipe. Invitez des membres par 
 [error.back_poll]
 other = "Revenir au sondage"
 
+[vote.email_hint]
+other = "Laissez votre email pour recevoir la date retenue dans votre agenda."
+
 [comments.confirm_delete]
 other = "Supprimer ce commentaire ?"
 

@@ -94,6 +94,9 @@ type PollPageProps struct {
 	FinalizedLabel string
 	// OGImage is the absolute URL of the link-preview banner.
 	OGImage string
+	// MailEnabled tells voters whether leaving an email brings them the
+	// final date.
+	MailEnabled bool
 
 	// After a refused submission the page is rendered again with the
 	// message in place and what the visitor typed: VoteError/Draft for
@@ -307,6 +310,14 @@ func durationPicked(minutes int, selected string) bool {
 // "3 +1" shorthand does not serve.
 func tallyText(loc *i18n.Locale, t poll.Tally) string {
 	return loc.TD("grid.tally_sr", map[string]any{"Yes": t.Yes, "IfNeedBe": t.IfNeedBe})
+}
+
+// emailHintID ties the email field to its hint, when there is one.
+func emailHintID(p PollPageProps) string {
+	if p.MailEnabled {
+		return "email-hint"
+	}
+	return ""
 }
 
 // commentName prefills a guest comment's name: the refused draft, else

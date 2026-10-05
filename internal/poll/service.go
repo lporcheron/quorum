@@ -389,6 +389,7 @@ func (s *Service) Join(ctx context.Context, p Poll, v Voter, votes map[int64]Vot
 			Name:          name,
 			Email:         nullString(email),
 			UserID:        nullInt64(v.UserID),
+			Locale:        nullString(v.Locale),
 			EditTokenHash: ids.HashToken(editToken),
 			CreatedAt:     store.FormatTime(now),
 			UpdatedAt:     store.FormatTime(now),
@@ -426,6 +427,7 @@ func (s *Service) UpdateVotes(ctx context.Context, p Poll, participant Participa
 			ID:        participant.ID,
 			Name:      name,
 			Email:     nullString(email),
+			Locale:    nullString(v.Locale),
 			UpdatedAt: store.FormatTime(now),
 		}); err != nil {
 			return fmt.Errorf("update participant: %w", err)

@@ -32,7 +32,7 @@ func parseVotes(form map[string][]string) map[int64]poll.VoteValue {
 func (h *Handler) voter(r *http.Request, userID int64) poll.Voter {
 	return poll.Voter{
 		Name: r.PostForm.Get("name"), Email: r.PostForm.Get("email"),
-		UserID: userID,
+		Locale: h.locale(r).Lang, UserID: userID,
 	}
 }
 

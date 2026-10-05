@@ -742,6 +742,9 @@ other = "A space groups a team's polls. Invite members by email: admins manage e
 [error.back_poll]
 other = "Back to the poll"
 
+[vote.email_hint]
+other = "Leave your email to get the chosen date in your calendar."
+
 [comments.confirm_delete]
 other = "Delete this comment?"
 

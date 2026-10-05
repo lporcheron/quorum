@@ -57,6 +57,7 @@ type Participant struct {
 	EditTokenHash string
 	CreatedAt     string
 	UpdatedAt     string
+	Locale        sql.NullString
 }
 
 type Poll struct {

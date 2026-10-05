@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/lporcheron/quorum/internal/mail"
 )
 
 // TestRefusedVoteKeepsTheBallot: a ballot refused for a bad email comes
@@ -93,5 +95,42 @@ func TestErrorPageLeadsBackToThePoll(t *testing.T) {
 	_, body := cGet(t, jarClient(t), ts.URL+"/polls/doesnotexist")
 	if strings.Contains(body, "Back to the poll") {
 		t.Errorf("404 offers a way back to a poll that does not exist")
+	}
+}
+
+// TestDecisionMailSpeaksTheVotersLanguage: each participant gets the
+// finalized date in the language they voted in.
+func TestDecisionMailSpeaksTheVotersLanguage(t *testing.T) {
+	ts, mailer := newTestServer(t)
+	adminPath := createPoll(t, ts, nil)
+	public := pollPath(adminPath)
+	_, page := cGet(t, jarClient(t), ts.URL+public)
+	ids := optionIDs(t, page)
+
+	french := jarClient(t)
+	u, _ := url.Parse(ts.URL)
+	french.Jar.SetCookies(u, []*http.Cookie{{Name: "quorum_lang", Value: "fr", Path: "/"}})
+	cPost(t, french, ts.URL+public+"/participants", url.Values{
+		"name": {"Élodie"}, "email": {"elodie@example.com"}, "vote_" + ids[0]: {"yes"},
+	})
+	cPost(t, jarClient(t), ts.URL+public+"/participants", url.Values{
+		"name": {"Bob"}, "email": {"bob@example.com"}, "vote_" + ids[0]: {"yes"},
+	})
+	if resp, _ := cPost(t, jarClient(t), ts.URL+adminPath+"/finalize", url.Values{"option_id": {ids[0]}}); resp.StatusCode != http.StatusOK {
+		t.Fatalf("finalize: %d", resp.StatusCode)
+	}
+
+	subject := map[string]string{}
+	mailer.waitFor(t, func(msgs []mail.Message) bool {
+		for _, m := range msgs {
+			subject[m.To] = m.Subject
+		}
+		return subject["elodie@example.com"] != "" && subject["bob@example.com"] != ""
+	})
+	if !strings.Contains(subject["elodie@example.com"], "ce sera le") {
+		t.Errorf("French voter got %q", subject["elodie@example.com"])
+	}
+	if !strings.Contains(subject["bob@example.com"], "it will be") {
+		t.Errorf("English voter got %q", subject["bob@example.com"])
 	}
 }

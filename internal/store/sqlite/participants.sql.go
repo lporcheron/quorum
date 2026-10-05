@@ -22,9 +22,9 @@ func (q *Queries) CountPollParticipants(ctx context.Context, pollID int64) (int6
 }
 
 const createParticipant = `-- name: CreateParticipant :one
-INSERT INTO participants (public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
-RETURNING id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at
+INSERT INTO participants (public_id, poll_id, name, email, user_id, locale, edit_token_hash, created_at, updated_at)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+RETURNING id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at, locale
 `
 
 type CreateParticipantParams struct {
@@ -33,6 +33,7 @@ type CreateParticipantParams struct {
 	Name          string
 	Email         sql.NullString
 	UserID        sql.NullInt64
+	Locale        sql.NullString
 	EditTokenHash string
 	CreatedAt     string
 	UpdatedAt     string
@@ -45,6 +46,7 @@ func (q *Queries) CreateParticipant(ctx context.Context, arg CreateParticipantPa
 		arg.Name,
 		arg.Email,
 		arg.UserID,
+		arg.Locale,
 		arg.EditTokenHash,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -60,6 +62,7 @@ func (q *Queries) CreateParticipant(ctx context.Context, arg CreateParticipantPa
 		&i.EditTokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Locale,
 	)
 	return i, err
 }
@@ -79,7 +82,7 @@ func (q *Queries) DeleteParticipant(ctx context.Context, arg DeleteParticipantPa
 }
 
 const getParticipant = `-- name: GetParticipant :one
-SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE id = ?1 AND poll_id = ?2
+SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at, locale FROM participants WHERE id = ?1 AND poll_id = ?2
 `
 
 type GetParticipantParams struct {
@@ -100,12 +103,13 @@ func (q *Queries) GetParticipant(ctx context.Context, arg GetParticipantParams) 
 		&i.EditTokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const getParticipantByEditTokenHash = `-- name: GetParticipantByEditTokenHash :one
-SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE edit_token_hash = ?1
+SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at, locale FROM participants WHERE edit_token_hash = ?1
 `
 
 func (q *Queries) GetParticipantByEditTokenHash(ctx context.Context, editTokenHash string) (Participant, error) {
@@ -121,12 +125,13 @@ func (q *Queries) GetParticipantByEditTokenHash(ctx context.Context, editTokenHa
 		&i.EditTokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const getParticipantByUser = `-- name: GetParticipantByUser :one
-SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE poll_id = ?1 AND user_id = ?2 ORDER BY id LIMIT 1
+SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at, locale FROM participants WHERE poll_id = ?1 AND user_id = ?2 ORDER BY id LIMIT 1
 `
 
 type GetParticipantByUserParams struct {
@@ -149,12 +154,13 @@ func (q *Queries) GetParticipantByUser(ctx context.Context, arg GetParticipantBy
 		&i.EditTokenHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Locale,
 	)
 	return i, err
 }
 
 const listPollParticipants = `-- name: ListPollParticipants :many
-SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at FROM participants WHERE poll_id = ?1 ORDER BY created_at, id
+SELECT id, public_id, poll_id, name, email, user_id, edit_token_hash, created_at, updated_at, locale FROM participants WHERE poll_id = ?1 ORDER BY created_at, id
 `
 
 func (q *Queries) ListPollParticipants(ctx context.Context, pollID int64) ([]Participant, error) {
@@ -176,6 +182,7 @@ func (q *Queries) ListPollParticipants(ctx context.Context, pollID int64) ([]Par
 			&i.EditTokenHash,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Locale,
 		); err != nil {
 			return nil, err
 		}
@@ -191,12 +198,13 @@ func (q *Queries) ListPollParticipants(ctx context.Context, pollID int64) ([]Par
 }
 
 const updateParticipant = `-- name: UpdateParticipant :exec
-UPDATE participants SET name = ?1, email = ?2, updated_at = ?3 WHERE id = ?4
+UPDATE participants SET name = ?1, email = ?2, locale = ?3, updated_at = ?4 WHERE id = ?5
 `
 
 type UpdateParticipantParams struct {
 	Name      string
 	Email     sql.NullString
+	Locale    sql.NullString
 	UpdatedAt string
 	ID        int64
 }
@@ -205,6 +213,7 @@ func (q *Queries) UpdateParticipant(ctx context.Context, arg UpdateParticipantPa
 	_, err := q.db.ExecContext(ctx, updateParticipant,
 		arg.Name,
 		arg.Email,
+		arg.Locale,
 		arg.UpdatedAt,
 		arg.ID,
 	)

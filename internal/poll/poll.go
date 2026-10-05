@@ -134,14 +134,15 @@ type Participant struct {
 	PublicID  string
 	Name      string
 	Email     string
+	Locale    string // language they voted in; "" when unknown
 	CreatedAt time.Time
 }
 
-// Voter is who casts a ballot: what they typed and the signed-in
-// account behind them (0 for a guest).
+// Voter is who casts a ballot: what they typed, the language they
+// voted in, and the signed-in account behind them (0 for a guest).
 type Voter struct {
-	Name, Email string
-	UserID      int64
+	Name, Email, Locale string
+	UserID              int64
 }
 
 // Comment is a message on the poll page.
@@ -233,6 +234,7 @@ func participantFromRow(r sqlite.Participant) (Participant, error) {
 		PublicID:  r.PublicID,
 		Name:      r.Name,
 		Email:     r.Email.String,
+		Locale:    r.Locale.String,
 		CreatedAt: createdAt,
 	}, nil
 }

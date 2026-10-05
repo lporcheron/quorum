@@ -400,11 +400,11 @@ func TestSignedInVoterKeepsOneRow(t *testing.T) {
 	// The account needs a real users row: the column is a foreign key.
 	uid := createTestUser(t, s, "voter@example.com")
 
-	first, token, err := s.Join(ctx, p, Voter{Name: "Alice", UserID: uid}, map[int64]VoteValue{opt: VoteNo})
+	first, token, err := s.Join(ctx, p, Voter{Name: "Alice", UserID: uid, Locale: "fr"}, map[int64]VoteValue{opt: VoteNo})
 	if err != nil || token == "" {
 		t.Fatalf("first Join: token %q, err %v", token, err)
 	}
-	again, token, err := s.Join(ctx, p, Voter{Name: "Alice B.", UserID: uid}, map[int64]VoteValue{opt: VoteYes})
+	again, token, err := s.Join(ctx, p, Voter{Name: "Alice B.", UserID: uid, Locale: "fr"}, map[int64]VoteValue{opt: VoteYes})
 	if err != nil {
 		t.Fatalf("second Join: %v", err)
 	}
@@ -417,6 +417,9 @@ func TestSignedInVoterKeepsOneRow(t *testing.T) {
 	}
 	if len(v.Participants) != 1 || v.Votes[first.ID][opt] != VoteYes || v.Participants[0].Name != "Alice B." {
 		t.Errorf("after re-vote: %d participants, vote %q", len(v.Participants), v.Votes[first.ID][opt])
+	}
+	if v.Participants[0].Locale != "fr" {
+		t.Errorf("locale = %q, want fr", v.Participants[0].Locale)
 	}
 	if got, err := s.ParticipantForUser(ctx, p, uid); err != nil || got.ID != first.ID {
 		t.Errorf("ParticipantForUser = %d, %v", got.ID, err)

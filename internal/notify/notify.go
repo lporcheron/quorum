@@ -120,7 +120,13 @@ func (n *Notifier) EventDecision(ctx context.Context, p poll.Poll, cancelled boo
 	}
 	for _, pa := range v.Participants {
 		if pa.Email != "" {
-			n.enqueue(ctx, typeEvent, eventPayload{PollID: p.PublicID, To: pa.Email, Cancelled: cancelled, Locale: locale})
+			// Each voter in the language they voted in; older rows, which
+			// predate that record, fall back to the organizer's.
+			lang := locale
+			if pa.Locale != "" {
+				lang = pa.Locale
+			}
+			n.enqueue(ctx, typeEvent, eventPayload{PollID: p.PublicID, To: pa.Email, Cancelled: cancelled, Locale: lang})
 		}
 	}
 }

@@ -211,6 +211,8 @@ func (h *Handler) pollProps(r *http.Request, p poll.Poll, me *poll.Participant, 
 		Me:        me,
 		EditToken: editToken,
 		OGImage:   h.baseURL + web.AssetURL("og.png"),
+
+		MailEnabled: h.mailer.Enabled(),
 	}
 	if p.FinalizedOptionID != 0 {
 		props.FinalizedLabel = h.finalizedOptionLabel(r, p, props.Loc.Lang, tz)

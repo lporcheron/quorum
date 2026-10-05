@@ -188,10 +188,10 @@ templ voteForm(p PollPageProps) {
 				<label class="block">
 					if p.Poll.RequireVoterEmail {
 						<span class="lbl">{ p.Loc.T("vote.email_label") }</span>
-						<input class="field" type="email" name="email" required value={ meEmail(p) }/>
+						<input class="field" type="email" name="email" required value={ meEmail(p) } aria-describedby={ emailHintID(p) }/>
 					} else {
 						<span class="lbl">{ p.Loc.T("vote.email_optional") }</span>
-						<input class="field" type="email" name="email" value={ meEmail(p) }/>
+						<input class="field" type="email" name="email" value={ meEmail(p) } aria-describedby={ emailHintID(p) }/>
 					}
 				</label>
 				if p.Me != nil {
@@ -200,6 +200,9 @@ templ voteForm(p PollPageProps) {
 					<button class="btn btn-primary" type="submit">{ p.Loc.T("vote.submit") }</button>
 				}
 			</div>
+			if p.MailEnabled {
+				<p class="mt-2 text-xs text-ink/60" id="email-hint">{ p.Loc.T("vote.email_hint") }</p>
+			}
 		</form>
 		// Leaving needs the edit link; a voter recognized by account
 		// does not carry it.
