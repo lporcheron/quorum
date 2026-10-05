@@ -219,9 +219,6 @@ other = "Changes saved."
 [admin.options_heading]
 other = "Options"
 
-[admin.option_votes]
-one = "{{.Count}} answer"
-other = "{{.Count}} answers"
 
 [admin.delete_option]
 other = "Delete"
@@ -744,6 +741,36 @@ other = "A space groups a team's polls. Invite members by email: admins manage e
 
 [error.back_poll]
 other = "Back to the poll"
+
+[comments.confirm_delete]
+other = "Delete this comment?"
+
+[admin.results_heading]
+other = "Results"
+
+[admin.no_votes_yet]
+other = "Nobody voted yet. Share the link above to collect answers."
+
+[admin.times_in]
+other = "Times shown in {{.Zone}}, like the results."
+
+[admin.confirm_delete_option]
+other = "Delete this option? Its votes are lost."
+
+[admin.confirm_remove_participant]
+other = "Remove this participant and their votes?"
+
+[admin.confirm_regenerate]
+other = "Make a new admin link? The current one stops working."
+
+[admin.confirm_delete_poll]
+other = "Delete this poll, its votes and comments? This cannot be undone."
+
+[admin.confirm_cancel_event]
+other = "Cancel this event? Everyone who got the invitation receives a cancellation."
+
+[admin.finalize_confirm_nomail]
+other = "Close the poll on this date? Voting stops and the date shows on the poll page."
 
 [grid.tally_sr]
 other = "{{.Yes}} yes, {{.IfNeedBe}} if need be"

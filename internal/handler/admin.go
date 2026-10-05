@@ -82,7 +82,8 @@ func (h *Handler) ShowPollAdmin(w http.ResponseWriter, r *http.Request) {
 		PublicURL:      h.baseURL + "/polls/" + p.PublicID,
 		New:            r.URL.Query().Get("new") == "1" && adminURL != "",
 		Saved:          r.URL.Query().Get("saved") == "1",
-		FinalizedLabel: h.finalizedOptionLabel(r, p, grid.Loc.Lang, p.TZ()),
+		FinalizedLabel: h.finalizedOptionLabel(r, p, grid.Loc.Lang, grid.TZ),
+		MailEnabled:    h.mailer.Enabled(),
 	}, grid))
 }
 

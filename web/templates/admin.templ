@@ -1,6 +1,10 @@
 package templates
 
-import "github.com/lporcheron/quorum/internal/poll"
+import (
+	"fmt"
+
+	"github.com/lporcheron/quorum/internal/poll"
+)
 
 // AdminPage is the organizer's control panel, reached only through the
 // capability URL.
@@ -25,26 +29,22 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 			<h1 class="font-display text-3xl font-semibold tracking-tight">{ a.Poll.Title }</h1>
 			<span class="text-sm text-ink/60">{ a.Loc.T("admin.heading") }</span>
 		</div>
-
-		if !a.Poll.Claimed() {
-			<section class="panel mt-6">
-				<h2 class="panel-title">{ a.Loc.T("claim.heading") }</h2>
-				<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("claim.body") }</p>
-				if a.User != nil {
-					<form method="post" action={ templ.URL(a.adminPath("/claim")) } class="mt-2">
-						@csrfField()
-						<button class="btn btn-sm" type="submit">{ a.Loc.T("claim.submit") }</button>
-					</form>
-				} else {
-					<p class="mt-2 text-sm">
-						<a class="underline" href={ templ.URL("/login?next=" + a.BasePath) }>{ a.Loc.T("claim.login_hint") }</a>
-					</p>
-				}
-			</section>
-		} else if a.User != nil && a.Poll.CreatedByUserID == a.User.ID {
-			<p class="notice mt-6">{ a.Loc.T("claim.owned") }</p>
+		if a.Poll.Status == poll.StatusFinalized {
+			<div class="banner mt-6">
+				<p>
+					<span class="font-semibold">{ a.Loc.T("admin.finalized_banner") }</span>
+					<span class="ml-1 font-mono">{ a.FinalizedLabel }</span>
+				</p>
+				<form method="post" action={ templ.URL(a.adminPath("/cancel")) } class="mt-2">
+					@csrfField()
+					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm_cancel_event") }>{ a.Loc.T("admin.cancel_event") }</button>
+					<span class="ml-2 text-xs text-ink/60">{ a.Loc.T("admin.cancel_help") }</span>
+				</form>
+			</div>
 		}
-
+		if a.Poll.Status == poll.StatusCancelled {
+			<p class="error mt-6">{ a.Loc.T("poll.cancelled_banner") }</p>
+		}
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ a.Loc.T("admin.share_heading") }</h2>
 			<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("admin.share_body") }</p>
@@ -59,24 +59,17 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 				<a class="underline" href={ templ.URL("/polls/" + a.Poll.PublicID + "/calendar.ics") }>{ a.Loc.T("admin.calendar_feed") }</a>
 			</div>
 		</section>
-
-		if a.Poll.Status == poll.StatusFinalized {
-			<div class="banner mt-6">
-				<p>
-					<span class="font-semibold">{ a.Loc.T("admin.finalized_banner") }</span>
-					<span class="ml-1 font-mono">{ a.FinalizedLabel }</span>
-				</p>
-				<form method="post" action={ templ.URL(a.adminPath("/cancel")) } class="mt-2">
-					@csrfField()
-					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.cancel_event") }</button>
-					<span class="ml-2 text-xs text-ink/60">{ a.Loc.T("admin.cancel_help") }</span>
-				</form>
-			</div>
-		}
-		if a.Poll.Status == poll.StatusCancelled {
-			<p class="error mt-6">{ a.Loc.T("poll.cancelled_banner") }</p>
-		}
-
+		<section class="panel mt-6">
+			<h2 class="panel-title">{ a.Loc.T("admin.results_heading") }</h2>
+			if len(a.View.Participants) == 0 {
+				<p class="mt-2 text-sm text-ink/60">{ a.Loc.T("admin.no_votes_yet") }</p>
+			} else {
+				<div class="mt-3">
+					@matrix(grid)
+				</div>
+				@mobileBreakdown(grid)
+			}
+		</section>
 		<section class="panel mt-6">
 			<h2 class="panel-title">
 				if a.Poll.Status == poll.StatusPaused {
@@ -97,21 +90,35 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 					}
 				</form>
 			}
+			if a.Poll.Kind == poll.KindTimed {
+				<p class="mt-2 text-xs text-ink/60">{ a.Loc.TD("admin.times_in", map[string]any{"Zone": grid.TZName}) }</p>
+			}
 			<ul class="mt-3 divide-y divide-ink/10 border-y border-ink/15">
-				for _, o := range a.View.Options {
-					<li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
-						<span>{ OptionLabel(a.lang(), o, a.Poll.TZ()) }</span>
-						<span class="ml-auto font-mono text-xs tabular-nums text-ink/60">{ a.Loc.TN("admin.option_votes", a.answers(o.ID)) }</span>
+				for i, o := range a.View.Options {
+					<li class={ "flex flex-wrap items-center justify-between gap-3 py-2 text-sm", templ.KV("qwinrow", a.View.Tallies[i].Winner) }>
+						<span>
+							{ OptionLabel(a.lang(), o, grid.TZ) }
+							if a.View.Tallies[i].Winner {
+								<span class="qwinbadge">{ a.Loc.T("poll.winner") }</span>
+							}
+						</span>
+						<span class="ml-auto font-mono text-xs tabular-nums text-ink/60">
+							{ fmt.Sprintf("%d ✓", a.View.Tallies[i].Yes) }
+							if a.View.Tallies[i].IfNeedBe > 0 {
+								<span class="text-ifneedbe-text">{ fmt.Sprintf(" +%d", a.View.Tallies[i].IfNeedBe) }</span>
+							}
+							<span class="sr-only">{ tallyText(a.Loc, a.View.Tallies[i]) }</span>
+						</span>
 						if a.Poll.Status == poll.StatusLive || a.Poll.Status == poll.StatusPaused {
 							<form method="post" action={ templ.URL(a.adminPath("/finalize")) }>
 								@csrfField()
 								<input type="hidden" name="option_id" value={ itoa(o.ID) }/>
-								<button class="btn btn-sm" type="submit" data-confirm={ a.Loc.T("admin.finalize_confirm") }>{ a.Loc.T("admin.finalize") }</button>
+								<button class={ "btn btn-sm", templ.KV("btn-primary", a.View.Tallies[i].Winner) } type="submit" data-confirm={ a.finalizeConfirm() }>{ a.Loc.T("admin.finalize") }</button>
 							</form>
 						}
 						<form method="post" action={ templ.URL(a.adminPath("/options/" + itoa(o.ID) + "/delete")) }>
 							@csrfField()
-							<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.delete_option") }</button>
+							<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm_delete_option") }>{ a.Loc.T("admin.delete_option") }</button>
 						</form>
 					</li>
 				}
@@ -142,7 +149,24 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 				</form>
 			</details>
 		</section>
-
+		if !a.Poll.Claimed() {
+			<section class="panel mt-6">
+				<h2 class="panel-title">{ a.Loc.T("claim.heading") }</h2>
+				<p class="mt-1 text-sm text-ink/70">{ a.Loc.T("claim.body") }</p>
+				if a.User != nil {
+					<form method="post" action={ templ.URL(a.adminPath("/claim")) } class="mt-2">
+						@csrfField()
+						<button class="btn btn-sm" type="submit">{ a.Loc.T("claim.submit") }</button>
+					</form>
+				} else {
+					<p class="mt-2 text-sm">
+						<a class="underline" href={ templ.URL("/login?next=" + a.BasePath) }>{ a.Loc.T("claim.login_hint") }</a>
+					</p>
+				}
+			</section>
+		} else if a.User != nil && a.Poll.CreatedByUserID == a.User.ID {
+			<p class="notice mt-6">{ a.Loc.T("claim.owned") }</p>
+		}
 		<section class="panel mt-6">
 			<h2 class="panel-title">{ a.Loc.T("admin.participants_heading") }</h2>
 			if len(a.View.Participants) == 0 {
@@ -159,13 +183,12 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 							</span>
 							<form method="post" action={ templ.URL(a.adminPath("/participants/" + itoa(pa.ID) + "/delete")) }>
 								@csrfField()
-								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.remove_participant") }</button>
+								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm_remove_participant") }>{ a.Loc.T("admin.remove_participant") }</button>
 							</form>
 						</li>
 					}
 				</ul>
 			}
-			@matrix(grid)
 		</section>
 
 		if a.Poll.AllowComments && len(a.View.Comments) > 0 {
@@ -179,7 +202,7 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 							<p class="mt-0.5 whitespace-pre-line">{ c.Body }</p>
 							<form method="post" action={ templ.URL(a.adminPath("/comments/" + itoa(c.ID) + "/delete")) }>
 								@csrfField()
-								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("comments.delete") }</button>
+								<button class="btn-link text-xs" type="submit" data-confirm={ a.Loc.T("comments.confirm_delete") }>{ a.Loc.T("comments.delete") }</button>
 							</form>
 						</li>
 					}
@@ -219,10 +242,14 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 					<input type="checkbox" name="allow_comments" value="1" checked?={ a.Poll.AllowComments }/>
 					{ a.Loc.T("create.allow_comments") }
 				</label>
-				<label class="flex items-center gap-2 text-sm">
-					<input type="checkbox" name="notify_organizer" value="1" checked?={ a.Poll.NotifyOrganizer }/>
-					{ a.Loc.T("create.notify_organizer") }
-				</label>
+				if a.MailEnabled && a.Poll.Claimed() {
+					<label class="flex items-center gap-2 text-sm">
+						<input type="checkbox" name="notify_organizer" value="1" checked?={ a.Poll.NotifyOrganizer }/>
+						{ a.Loc.T("create.notify_organizer") }
+					</label>
+				} else if a.Poll.NotifyOrganizer {
+					<input type="hidden" name="notify_organizer" value="1"/>
+				}
 				<button class="btn" type="submit">{ a.Loc.T("admin.save") }</button>
 			</form>
 		</section>
@@ -232,12 +259,12 @@ templ AdminPage(a AdminProps, grid PollPageProps) {
 			<div class="mt-3 space-y-4 text-sm">
 				<form method="post" action={ templ.URL(a.adminPath("/regenerate")) }>
 					@csrfField()
-					<button class="btn btn-sm" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.regenerate") }</button>
+					<button class="btn btn-sm" type="submit" data-confirm={ a.Loc.T("admin.confirm_regenerate") }>{ a.Loc.T("admin.regenerate") }</button>
 					<span class="ml-2 text-ink/60">{ a.Loc.T("admin.regenerate_help") }</span>
 				</form>
 				<form method="post" action={ templ.URL(a.adminPath("/delete")) }>
 					@csrfField()
-					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm") }>{ a.Loc.T("admin.delete_poll") }</button>
+					<button class="btn btn-sm btn-danger" type="submit" data-confirm={ a.Loc.T("admin.confirm_delete_poll") }>{ a.Loc.T("admin.delete_poll") }</button>
 					<span class="ml-2 text-ink/60">{ a.Loc.T("admin.delete_help") }</span>
 				</form>
 			</div>

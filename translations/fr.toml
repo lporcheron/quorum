@@ -219,9 +219,6 @@ other = "Modifications enregistrées."
 [admin.options_heading]
 other = "Options"
 
-[admin.option_votes]
-one = "{{.Count}} réponse"
-other = "{{.Count}} réponses"
 
 [admin.delete_option]
 other = "Supprimer"
@@ -744,6 +741,36 @@ other = "Un espace regroupe les sondages d'une équipe. Invitez des membres par 
 
 [error.back_poll]
 other = "Revenir au sondage"
+
+[comments.confirm_delete]
+other = "Supprimer ce commentaire ?"
+
+[admin.results_heading]
+other = "Résultats"
+
+[admin.no_votes_yet]
+other = "Personne n'a encore voté. Partagez le lien ci-dessus pour recueillir les réponses."
+
+[admin.times_in]
+other = "Horaires en {{.Zone}}, comme les résultats."
+
+[admin.confirm_delete_option]
+other = "Supprimer cette option ? Ses votes seront perdus."
+
+[admin.confirm_remove_participant]
+other = "Retirer ce participant et ses votes ?"
+
+[admin.confirm_regenerate]
+other = "Créer un nouveau lien admin ? L'actuel cessera de fonctionner."
+
+[admin.confirm_delete_poll]
+other = "Supprimer ce sondage, ses votes et ses commentaires ? C'est définitif."
+
+[admin.confirm_cancel_event]
+other = "Annuler cet événement ? Tous ceux qui ont reçu l'invitation recevront une annulation."
+
+[admin.finalize_confirm_nomail]
+other = "Clore le sondage sur cette date ? Le vote s'arrête et la date s'affiche sur la page du sondage."
 
 [grid.tally_sr]
 other = "{{.Yes}} oui, {{.IfNeedBe}} si besoin"

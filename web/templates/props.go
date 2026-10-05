@@ -208,22 +208,22 @@ type AdminProps struct {
 	Saved     bool
 	// FinalizedLabel is the chosen option's label once decided.
 	FinalizedLabel string
+	// MailEnabled shapes what the page promises about emails.
+	MailEnabled bool
+}
+
+// finalizeConfirm only promises invitations when mail goes out.
+func (a AdminProps) finalizeConfirm() string {
+	if a.MailEnabled {
+		return a.Loc.T("admin.finalize_confirm")
+	}
+	return a.Loc.T("admin.finalize_confirm_nomail")
 }
 
 func (a AdminProps) lang() string { return a.Loc.Lang }
 
 func (a AdminProps) adminPath(suffix string) string {
 	return a.BasePath + suffix
-}
-
-// answers counts non-missing votes for an option.
-func (a AdminProps) answers(optionID int64) int {
-	for _, t := range a.View.Tallies {
-		if t.OptionID == optionID {
-			return t.Yes + t.IfNeedBe + t.No
-		}
-	}
-	return 0
 }
 
 // ErrorProps feeds the error page.
