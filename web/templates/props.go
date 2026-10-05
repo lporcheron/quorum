@@ -303,6 +303,12 @@ func durationPicked(minutes int, selected string) bool {
 	return fmt.Sprintf("%d", minutes) == selected
 }
 
+// tallyText spells an option's count out for screen readers, which the
+// "3 +1" shorthand does not serve.
+func tallyText(loc *i18n.Locale, t poll.Tally) string {
+	return loc.TD("grid.tally_sr", map[string]any{"Yes": t.Yes, "IfNeedBe": t.IfNeedBe})
+}
+
 // commentName prefills a guest comment's name: the refused draft, else
 // the signed-in account.
 func commentName(p PollPageProps) string {

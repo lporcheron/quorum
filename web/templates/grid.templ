@@ -61,43 +61,54 @@ templ matrix(p PollPageProps) {
 		<div
 			class="qmatrix hidden md:grid"
 			style={ fmt.Sprintf("grid-template-columns: minmax(8rem, 14rem) repeat(%d, minmax(5.5rem, 1fr))", len(p.View.Options)) }
+			role="table"
+			aria-label={ p.Poll.Title }
 		>
-			<div class="qcell qhead">
-				<span class="font-mono text-xs text-ink/50">{ p.Loc.TN("poll.participants", len(p.View.Participants)) }</span>
-			</div>
-			for i, o := range p.View.Options {
-				<div class={ "qcell qhead qopt", templ.KV("qwin", p.View.Tallies[i].Winner) }>
-					<span class="text-xs text-ink/60">{ OptionWeekday(p.lang(), o, p.TZ) }</span>
-					<span class="font-display text-2xl leading-none">{ OptionDay(o, p.TZ) }</span>
-					<span class="text-xs text-ink/60">{ OptionMonthYear(p.lang(), o, p.TZ) }</span>
-					if tr := OptionTimeRange(o, p.TZ); tr != "" {
-						<span class="mt-1 font-mono text-xs">{ tr }</span>
-					}
+			// One CSS grid for every cell; rows exist for assistive
+			// technology only (display: contents keeps the layout).
+			<div class="contents" role="row">
+				<div class="qcell qhead" role="columnheader">
+					<span class="font-mono text-xs text-ink/50">{ p.Loc.TN("poll.participants", len(p.View.Participants)) }</span>
 				</div>
-			}
-			if p.showParticipants() {
-				for _, pa := range p.View.Participants {
-					<div class="qcell qname">
-						{ pa.Name }
-						if p.Me != nil && pa.ID == p.Me.ID {
-							<span class="ml-1 text-xs text-ink/50">({ p.Loc.T("vote.you") })</span>
+				for i, o := range p.View.Options {
+					<div class={ "qcell qhead qopt", templ.KV("qwin", p.View.Tallies[i].Winner) } role="columnheader">
+						<span class="text-xs text-ink/60">{ OptionWeekday(p.lang(), o, p.TZ) }</span>
+						<span class="font-display text-2xl leading-none">{ OptionDay(o, p.TZ) }</span>
+						<span class="text-xs text-ink/60">{ OptionMonthYear(p.lang(), o, p.TZ) }</span>
+						if tr := OptionTimeRange(o, p.TZ); tr != "" {
+							<span class="mt-1 font-mono text-xs">{ tr }</span>
 						}
 					</div>
-					for i, o := range p.View.Options {
-						<div class={ "qcell", voteClass(p.View.Votes[pa.ID][o.ID]), templ.KV("qwincell", p.View.Tallies[i].Winner) } title={ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) }>
-							{ voteSymbol(p.View.Votes[pa.ID][o.ID]) }
-						</div>
-					}
-				}
-			}
-			<div class="qcell qtally-label text-xs text-ink/60">
-				if hasWinner(p.View.Tallies) {
-					{ p.Loc.T("poll.winner") }
 				}
 			</div>
-			for i := range p.View.Options {
-				@tallyCell(p, i)
+			if p.showParticipants() {
+				for _, pa := range p.View.Participants {
+					<div class="contents" role="row">
+						<div class="qcell qname" role="rowheader">
+							{ pa.Name }
+							if p.Me != nil && pa.ID == p.Me.ID {
+								<span class="ml-1 text-xs text-ink/50">({ p.Loc.T("vote.you") })</span>
+							}
+						</div>
+						for i, o := range p.View.Options {
+							<div class={ "qcell", voteClass(p.View.Votes[pa.ID][o.ID]), templ.KV("qwincell", p.View.Tallies[i].Winner) } title={ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) } role="cell">
+								<span aria-hidden="true">{ voteSymbol(p.View.Votes[pa.ID][o.ID]) }</span>
+								<span class="sr-only">{ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) }</span>
+							</div>
+						}
+					</div>
+				}
 			}
+			<div class="contents" role="row">
+				<div class="qcell qtally-label text-xs text-ink/60" role="rowheader">
+					if hasWinner(p.View.Tallies) {
+						{ p.Loc.T("poll.winner") }
+					}
+				</div>
+				for i := range p.View.Options {
+					@tallyCell(p, i)
+				}
+			</div>
 		</div>
 	}
 }
@@ -105,14 +116,15 @@ templ matrix(p PollPageProps) {
 // tallyCell shows the count for one option; the winner gets the one
 // vivid-blue treatment of the whole interface.
 templ tallyCell(p PollPageProps, i int) {
-	<div class={ "qcell qtally", templ.KV("qwin", p.View.Tallies[i].Winner) }>
+	<div class={ "qcell qtally", templ.KV("qwin", p.View.Tallies[i].Winner) } role="cell">
 		if p.View.Tallies[i].Winner {
 			@quorumRing(p.View.Tallies[i], len(p.View.Participants))
 		}
-		<span class="font-mono text-lg font-semibold tabular-nums">{ fmt.Sprintf("%d", p.View.Tallies[i].Yes) }</span>
+		<span class="font-mono text-lg font-semibold tabular-nums" aria-hidden="true">{ fmt.Sprintf("%d", p.View.Tallies[i].Yes) }</span>
 		if p.View.Tallies[i].IfNeedBe > 0 {
-			<span class="font-mono text-xs tabular-nums text-ifneedbe-text">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
+			<span class="font-mono text-xs tabular-nums text-ifneedbe-text" aria-hidden="true">{ fmt.Sprintf("+%d", p.View.Tallies[i].IfNeedBe) }</span>
 		}
+		<span class="sr-only">{ tallyText(p.Loc, p.View.Tallies[i]) }</span>
 	</div>
 }
 
@@ -238,7 +250,8 @@ templ mobileBreakdown(p PollPageProps) {
 					<ul class="pb-2 pl-2 text-sm">
 						for _, pa := range p.View.Participants {
 							<li class="flex items-center gap-2 py-0.5">
-								<span class={ voteClass(p.View.Votes[pa.ID][o.ID]), "qdot" }>{ voteSymbol(p.View.Votes[pa.ID][o.ID]) }</span>
+								<span class={ voteClass(p.View.Votes[pa.ID][o.ID]), "qdot" } aria-hidden="true">{ voteSymbol(p.View.Votes[pa.ID][o.ID]) }</span>
+								<span class="sr-only">{ p.Loc.T(voteLabelKey(p.View.Votes[pa.ID][o.ID])) }:</span>
 								<span>{ pa.Name }</span>
 							</li>
 						}

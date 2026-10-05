@@ -744,3 +744,6 @@ other = "Un espace regroupe les sondages d'une équipe. Invitez des membres par 
 
 [error.back_poll]
 other = "Revenir au sondage"
+
+[grid.tally_sr]
+other = "{{.Yes}} oui, {{.IfNeedBe}} si besoin"
